@@ -1,0 +1,697 @@
+[
+    {
+        "id": 1,
+        "account_type_id": 1,
+        "name": "Accounts Receivable (A/R)"
+    },
+    {
+        "id": 2,
+        "account_type_id": 2,
+        "name": "Allowance for bad debts"
+    },
+    {
+        "id": 3,
+        "account_type_id": 2,
+        "name": "Assets available for sale"
+    },
+    {
+        "id": 4,
+        "account_type_id": 2,
+        "name": "Development Costs"
+    },
+    {
+        "id": 141,
+        "account_type_id": 2,
+        "name": "Employee Cash Advances"
+    },
+    {
+        "id": 5,
+        "account_type_id": 2,
+        "name": "Inventory"
+    },
+    {
+        "id": 6,
+        "account_type_id": 2,
+        "name": "Investments - Other"
+    },
+    {
+        "id": 7,
+        "account_type_id": 2,
+        "name": "Loans To Officers"
+    },
+    {
+        "id": 8,
+        "account_type_id": 2,
+        "name": "Loans To Others"
+    },
+    {
+        "id": 9,
+        "account_type_id": 2,
+        "name": "Loans To Shareholders"
+    },
+    {
+        "id": 10,
+        "account_type_id": 2,
+        "name": "Other current assets"
+    },
+    {
+        "id": 11,
+        "account_type_id": 2,
+        "name": "Prepaid Expenses"
+    },
+    {
+        "id": 12,
+        "account_type_id": 2,
+        "name": "Retainage"
+    },
+    {
+        "id": 13,
+        "account_type_id": 2,
+        "name": "Undeposited Funds"
+    },
+    {
+        "id": 14,
+        "account_type_id": 16,
+        "name": "Bank"
+    },
+    {
+        "id": 15,
+        "account_type_id": 3,
+        "name": "Cash and cash equivalents"
+    },
+    {
+        "id": 16,
+        "account_type_id": 3,
+        "name": "Cash on hand"
+    },
+    {
+        "id": 17,
+        "account_type_id": 3,
+        "name": "Client trust account"
+    },
+    {
+        "id": 18,
+        "account_type_id": 3,
+        "name": "Money Market"
+    },
+    {
+        "id": 19,
+        "account_type_id": 3,
+        "name": "Rents Held in Trust"
+    },
+    {
+        "id": 20,
+        "account_type_id": 3,
+        "name": "Savings"
+    },
+    {
+        "id": 21,
+        "account_type_id": 4,
+        "name": "Accumulated depletion"
+    },
+    {
+        "id": 22,
+        "account_type_id": 4,
+        "name": "Accumulated depreciation on property, plant and equipment"
+    },
+    {
+        "id": 23,
+        "account_type_id": 4,
+        "name": "Buildings"
+    },
+    {
+        "id": 24,
+        "account_type_id": 4,
+        "name": "Depletable Assets"
+    },
+    {
+        "id": 25,
+        "account_type_id": 4,
+        "name": "Furniture and Fixtures"
+    },
+    {
+        "id": 26,
+        "account_type_id": 4,
+        "name": "Land"
+    },
+    {
+        "id": 27,
+        "account_type_id": 4,
+        "name": "Leasehold Improvements"
+    },
+    {
+        "id": 28,
+        "account_type_id": 4,
+        "name": "Machinery and equipment"
+    },
+    {
+        "id": 29,
+        "account_type_id": 4,
+        "name": "Other fixed assets"
+    },
+    {
+        "id": 30,
+        "account_type_id": 4,
+        "name": "Vehicles"
+    },
+    {
+        "id": 31,
+        "account_type_id": 5,
+        "name": "Accumulated amortisation of non-current assets"
+    },
+    {
+        "id": 32,
+        "account_type_id": 5,
+        "name": "Assets held for sale"
+    },
+    {
+        "id": 33,
+        "account_type_id": 5,
+        "name": "Deferred tax"
+    },
+    {
+        "id": 34,
+        "account_type_id": 5,
+        "name": "Goodwill"
+    },
+    {
+        "id": 35,
+        "account_type_id": 5,
+        "name": "Intangible Assets"
+    },
+    {
+        "id": 36,
+        "account_type_id": 5,
+        "name": "Lease Buyout"
+    },
+    {
+        "id": 37,
+        "account_type_id": 5,
+        "name": "Licences"
+    },
+    {
+        "id": 38,
+        "account_type_id": 5,
+        "name": "Long-term investments"
+    },
+    {
+        "id": 39,
+        "account_type_id": 5,
+        "name": "Organisational Costs"
+    },
+    {
+        "id": 40,
+        "account_type_id": 5,
+        "name": "Other non-current assets"
+    },
+    {
+        "id": 41,
+        "account_type_id": 5,
+        "name": "Security Deposits"
+    },
+    {
+        "id": 42,
+        "account_type_id": 6,
+        "name": "Accounts Payable (A/P)"
+    },
+    {
+        "id": 43,
+        "account_type_id": 7,
+        "name": "Credit Card"
+    },
+    {
+        "id": 44,
+        "account_type_id": 8,
+        "name": "Accrued liabilities"
+    },
+    {
+        "id": 45,
+        "account_type_id": 8,
+        "name": "Client Trust Accounts - Liabilities"
+    },
+    {
+        "id": 46,
+        "account_type_id": 8,
+        "name": "Current Tax Liability"
+    },
+    {
+        "id": 47,
+        "account_type_id": 8,
+        "name": "Current portion of obligations under finance leases"
+    },
+    {
+        "id": 48,
+        "account_type_id": 8,
+        "name": "Dividends payable"
+    },
+    {
+        "id": 50,
+        "account_type_id": 8,
+        "name": "Income tax payable"
+    },
+    {
+        "id": 51,
+        "account_type_id": 8,
+        "name": "Insurance payable"
+    },
+    {
+        "id": 52,
+        "account_type_id": 8,
+        "name": "Line of Credit"
+    },
+    {
+        "id": 53,
+        "account_type_id": 8,
+        "name": "Loan Payable"
+    },
+    {
+        "id": 54,
+        "account_type_id": 8,
+        "name": "Other current liabilities"
+    },
+    {
+        "id": 55,
+        "account_type_id": 8,
+        "name": "Payroll Clearing"
+    },
+    {
+        "id": 56,
+        "account_type_id": 8,
+        "name": "Payroll liabilities"
+    },
+    {
+        "id": 58,
+        "account_type_id": 8,
+        "name": "Prepaid Expenses Payable"
+    },
+    {
+        "id": 59,
+        "account_type_id": 8,
+        "name": "Rents in trust - Liability"
+    },
+    {
+        "id": 60,
+        "account_type_id": 8,
+        "name": "Sales and service tax payable"
+    },
+    {
+        "id": 61,
+        "account_type_id": 9,
+        "name": "Accrued holiday payable"
+    },
+    {
+        "id": 62,
+        "account_type_id": 9,
+        "name": "Accrued non-current liabilities"
+    },
+    {
+        "id": 63,
+        "account_type_id": 9,
+        "name": "Liabilities related to assets held for sale"
+    },
+    {
+        "id": 64,
+        "account_type_id": 9,
+        "name": "Long-term debt"
+    },
+    {
+        "id": 65,
+        "account_type_id": 9,
+        "name": "Notes Payable"
+    },
+    {
+        "id": 66,
+        "account_type_id": 9,
+        "name": "Other non-current liabilities"
+    },
+    {
+        "id": 67,
+        "account_type_id": 9,
+        "name": "Shareholder Notes Payable"
+    },
+    {
+        "id": 68,
+        "account_type_id": 10,
+        "name": "Accumulated adjustment"
+    },
+    {
+        "id": 69,
+        "account_type_id": 10,
+        "name": "Dividend disbursed"
+    },
+    {
+        "id": 70,
+        "account_type_id": 10,
+        "name": "Equity in earnings of subsidiaries"
+    },
+    {
+        "id": 71,
+        "account_type_id": 10,
+        "name": "Opening Balance Equity"
+    },
+    {
+        "id": 72,
+        "account_type_id": 10,
+        "name": "Ordinary shares"
+    },
+    {
+        "id": 73,
+        "account_type_id": 10,
+        "name": "Other comprehensive income"
+    },
+    {
+        "id": 74,
+        "account_type_id": 10,
+        "name": "Owner's Equity"
+    },
+    {
+        "id": 75,
+        "account_type_id": 10,
+        "name": "Paid-in capital or surplus"
+    },
+    {
+        "id": 76,
+        "account_type_id": 10,
+        "name": "Partner Contributions"
+    },
+    {
+        "id": 77,
+        "account_type_id": 10,
+        "name": "Partner Distributions"
+    },
+    {
+        "id": 78,
+        "account_type_id": 10,
+        "name": "Partner's Equity"
+    },
+    {
+        "id": 79,
+        "account_type_id": 10,
+        "name": "Preferred shares"
+    },
+    {
+        "id": 80,
+        "account_type_id": 10,
+        "name": "Retained Earnings"
+    },
+    {
+        "id": 81,
+        "account_type_id": 10,
+        "name": "Share capital"
+    },
+    {
+        "id": 82,
+        "account_type_id": 10,
+        "name": "Treasury Shares"
+    },
+    {
+        "id": 83,
+        "account_type_id": 11,
+        "name": "Discounts/Refunds Given"
+    },
+    {
+        "id": 84,
+        "account_type_id": 11,
+        "name": "Non-Profit Income"
+    },
+    {
+        "id": 85,
+        "account_type_id": 11,
+        "name": "Other Primary Income"
+    },
+    {
+        "id": 86,
+        "account_type_id": 11,
+        "name": "Revenue - General"
+    },
+    {
+        "id": 87,
+        "account_type_id": 11,
+        "name": "Sales - retail"
+    },
+    {
+        "id": 88,
+        "account_type_id": 11,
+        "name": "Sales - wholesale"
+    },
+    {
+        "id": 89,
+        "account_type_id": 11,
+        "name": "Sales of Product Income"
+    },
+    {
+        "id": 90,
+        "account_type_id": 11,
+        "name": "Service/Fee Income"
+    },
+    {
+        "id": 91,
+        "account_type_id": 11,
+        "name": "Unapplied Cash Payment Income"
+    },
+    {
+        "id": 92,
+        "account_type_id": 12,
+        "name": "Dividend income"
+    },
+    {
+        "id": 93,
+        "account_type_id": 12,
+        "name": "Interest earned"
+    },
+    {
+        "id": 94,
+        "account_type_id": 12,
+        "name": "Loss on disposal of assets"
+    },
+    {
+        "id": 95,
+        "account_type_id": 12,
+        "name": "Other Investment Income"
+    },
+    {
+        "id": 96,
+        "account_type_id": 12,
+        "name": "Other Miscellaneous Income"
+    },
+    {
+        "id": 97,
+        "account_type_id": 12,
+        "name": "Other operating income"
+    },
+    {
+        "id": 98,
+        "account_type_id": 12,
+        "name": "Tax-Exempt Interest"
+    },
+    {
+        "id": 99,
+        "account_type_id": 12,
+        "name": "Unrealised loss on securities, net of tax"
+    },
+    {
+        "id": 100,
+        "account_type_id": 13,
+        "name": "Cost of labour - COS"
+    },
+    {
+        "id": 101,
+        "account_type_id": 13,
+        "name": "Equipment rental - COS"
+    },
+    {
+        "id": 102,
+        "account_type_id": 13,
+        "name": "Freight and delivery - COS"
+    },
+    {
+        "id": 103,
+        "account_type_id": 13,
+        "name": "Other costs of sales - COS"
+    },
+    {
+        "id": 104,
+        "account_type_id": 13,
+        "name": "Supplies and materials - COS"
+    },
+    {
+        "id": 105,
+        "account_type_id": 14,
+        "name": "Advertising/Promotional"
+    },
+    {
+        "id": 106,
+        "account_type_id": 14,
+        "name": "Amortisation expense"
+    },
+    {
+        "id": 107,
+        "account_type_id": 14,
+        "name": "Auto"
+    },
+    {
+        "id": 108,
+        "account_type_id": 14,
+        "name": "Bad debts"
+    },
+    {
+        "id": 109,
+        "account_type_id": 14,
+        "name": "Bank charges"
+    },
+    {
+        "id": 110,
+        "account_type_id": 14,
+        "name": "Charitable Contributions"
+    },
+    {
+        "id": 111,
+        "account_type_id": 14,
+        "name": "Commissions and fees"
+    },
+    {
+        "id": 112,
+        "account_type_id": 14,
+        "name": "Cost of Labour"
+    },
+    {
+        "id": 113,
+        "account_type_id": 14,
+        "name": "Dues and Subscriptions"
+    },
+    {
+        "id": 114,
+        "account_type_id": 14,
+        "name": "Equipment rental"
+    },
+    {
+        "id": 115,
+        "account_type_id": 14,
+        "name": "Finance costs"
+    },
+    {
+        "id": 116,
+        "account_type_id": 14,
+        "name": "Income tax expense"
+    },
+    {
+        "id": 117,
+        "account_type_id": 14,
+        "name": "Insurance"
+    },
+    {
+        "id": 118,
+        "account_type_id": 14,
+        "name": "Interest paid"
+    },
+    {
+        "id": 119,
+        "account_type_id": 14,
+        "name": "Legal and professional fees"
+    },
+    {
+        "id": 120,
+        "account_type_id": 14,
+        "name": "Loss on discontinued operations, net of tax"
+    },
+    {
+        "id": 121,
+        "account_type_id": 14,
+        "name": "Management compensation"
+    },
+    {
+        "id": 122,
+        "account_type_id": 14,
+        "name": "Meals and entertainment"
+    },
+    {
+        "id": 123,
+        "account_type_id": 14,
+        "name": "Office/General Administrative Expenses"
+    },
+    {
+        "id": 124,
+        "account_type_id": 14,
+        "name": "Other Miscellaneous Service Cost"
+    },
+    {
+        "id": 125,
+        "account_type_id": 14,
+        "name": "Other selling expenses"
+    },
+    {
+        "id": 126,
+        "account_type_id": 14,
+        "name": "Payroll Expenses"
+    },
+    {
+        "id": 127,
+        "account_type_id": 14,
+        "name": "Rent or Lease of Buildings"
+    },
+    {
+        "id": 128,
+        "account_type_id": 14,
+        "name": "Repair and maintenance"
+    },
+    {
+        "id": 129,
+        "account_type_id": 14,
+        "name": "Shipping and delivery expense"
+    },
+    {
+        "id": 130,
+        "account_type_id": 14,
+        "name": "Supplies and materials"
+    },
+    {
+        "id": 131,
+        "account_type_id": 14,
+        "name": "Taxes Paid"
+    },
+    {
+        "id": 132,
+        "account_type_id": 14,
+        "name": "Travel expenses - general and admin expenses"
+    },
+    {
+        "id": 133,
+        "account_type_id": 14,
+        "name": "Travel expenses - selling expense"
+    },
+    {
+        "id": 134,
+        "account_type_id": 14,
+        "name": "Unapplied Cash Bill Payment Expense"
+    },
+    {
+        "id": 135,
+        "account_type_id": 14,
+        "name": "Utilities"
+    },
+    {
+        "id": 136,
+        "account_type_id": 15,
+        "name": "Amortisation"
+    },
+    {
+        "id": 137,
+        "account_type_id": 15,
+        "name": "Depreciation"
+    },
+    {
+        "id": 138,
+        "account_type_id": 15,
+        "name": "Exchange Gain or Loss"
+    },
+    {
+        "id": 139,
+        "account_type_id": 15,
+        "name": "Other Expense"
+    },
+    {
+        "id": 140,
+        "account_type_id": 15,
+        "name": "Penalties and settlements"
+    }
+]

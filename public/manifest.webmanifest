@@ -1,0 +1,23 @@
+{
+    "name": "GIC Folks CRM",
+    "short_name": "GIC CRM",
+    "description": "Projects, tasks, customers, sales and support — GIC Folks CRM.",
+    "id": "/",
+    "start_url": "/?source=pwa",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#f3f5f9",
+    "theme_color": "#0b2c56",
+    "categories": ["business", "productivity"],
+    "icons": [
+        { "src": "/images/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/images/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/images/pwa-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ],
+    "shortcuts": [
+        { "name": "My tasks", "url": "/tasks", "icons": [{ "src": "/images/pwa-192.png", "sizes": "192x192" }] },
+        { "name": "Chat", "url": "/chat", "icons": [{ "src": "/images/pwa-192.png", "sizes": "192x192" }] },
+        { "name": "Customers", "url": "/customers", "icons": [{ "src": "/images/pwa-192.png", "sizes": "192x192" }] }
+    ]
+}

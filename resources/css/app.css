@@ -1,0 +1,607 @@
+@import 'tailwindcss';
+
+@source '../**/*.blade.php';
+@source '../**/*.{ts,tsx}';
+
+/*
+ * GIC Folks CRM look: Perfex's layout and screens, in the GIC Folks brand — navy sidebar and
+ * primary actions, orange accents, soft white cards on a cool grey page.
+ */
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    --color-brand: #0b2c56;
+    --color-brand-light: #164479;
+    --color-brand-dark: #08213f;
+    --color-brand-50: #eef3fa;
+    --color-brand-100: #dbe5f3;
+    --color-accent: #fa6010;
+    --color-accent-50: #fff3ec;
+    --color-page: #f3f5f9;
+
+    /* Kept for screens that still name the old Perfex colours. */
+    --color-perfex-sidebar: #0b2c56;
+    --color-perfex-sidebar-border: #08213f;
+    --color-perfex-body: #f3f5f9;
+    --color-perfex-link: #2563eb;
+}
+
+@layer base {
+    html {
+        font-size: 14px;
+    }
+
+    body {
+        color: #334155;
+        background: var(--color-page);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+        color: var(--color-perfex-link);
+    }
+
+    a:hover {
+        color: #1d4ed8;
+    }
+
+    ::selection {
+        background: #dbe5f3;
+    }
+
+    /* Slim scrollbars like the rest of the GIC Folks apps. */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+}
+
+@layer components {
+    /* Cards (Perfex .panel_s) */
+    .panel_s {
+        @apply mb-6 rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)];
+    }
+
+    .panel-body {
+        @apply relative p-6;
+    }
+
+    /* Lists (Perfex DataTables) */
+    .table-perfex {
+        @apply min-w-full text-[13.5px];
+    }
+
+    .table-perfex thead th {
+        @apply border-b border-slate-200 bg-slate-50/90 px-3 py-2.5 text-left text-[11.5px] font-semibold tracking-wide whitespace-nowrap text-slate-500 uppercase;
+    }
+
+    .table-perfex tbody td {
+        @apply border-t border-slate-100 px-3 py-3 align-top text-slate-700;
+    }
+
+    .table-perfex tbody tr {
+        @apply transition-colors;
+    }
+
+    .table-perfex tbody tr:hover {
+        @apply bg-brand-50/50;
+    }
+
+    .table-perfex tfoot td {
+        @apply border-t border-slate-200 bg-slate-50/60 px-3 py-2.5;
+    }
+
+    /* Perfex row actions: links shown under the name on hover */
+    .row-options {
+        @apply mt-0.5 flex flex-wrap gap-x-1.5 text-[12.5px] opacity-0 transition;
+    }
+
+    tr:hover .row-options,
+    .row-options:focus-within {
+        @apply opacity-100;
+    }
+
+    .row-options a,
+    .row-options button {
+        @apply text-slate-500 hover:text-brand;
+    }
+
+    .row-options .divider {
+        @apply text-slate-300;
+    }
+
+    /* Page heading above the cards */
+    .page-title {
+        @apply mb-0 text-[21px] font-bold tracking-tight text-slate-800;
+    }
+}
+
+/* Formatted content (proposals, contracts, templates): Tailwind resets headings and lists. */
+.rich-content { font-size: 14px; line-height: 1.6; color: #1f2937; overflow-wrap: anywhere; }
+.rich-content h1 { font-size: 1.5em; font-weight: 700; margin: 0.6em 0 0.4em; }
+.rich-content h2 { font-size: 1.3em; font-weight: 700; margin: 0.6em 0 0.4em; }
+.rich-content h3 { font-size: 1.12em; font-weight: 600; margin: 0.6em 0 0.3em; }
+.rich-content h4, .rich-content h5, .rich-content h6 { font-weight: 600; margin: 0.5em 0 0.3em; }
+.rich-content p { margin: 0 0 0.6em; }
+.rich-content ul { list-style: disc; padding-left: 1.6em; margin: 0 0 0.6em; }
+.rich-content ol { list-style: decimal; padding-left: 1.6em; margin: 0 0 0.6em; }
+.rich-content a { color: #2563eb; text-decoration: underline; }
+.rich-content blockquote { border-left: 3px solid #d1d5db; padding-left: 0.8em; color: #4b5563; margin: 0 0 0.6em; }
+.rich-content hr { border-top: 1px solid #d1d5db; margin: 0.8em 0; }
+.rich-content table { border-collapse: collapse; margin: 0 0 0.8em; max-width: 100%; }
+.rich-content td, .rich-content th { border: 1px solid #d1d5db; padding: 4px 8px; vertical-align: top; }
+.rich-content img { max-width: 100%; height: auto; }
+.rich-content pre { background: #f3f4f6; padding: 0.6em; border-radius: 4px; overflow-x: auto; }
+.rich-editor:empty::before { content: attr(data-placeholder); color: #9ca3af; }
+
+/* The navy GIC Folks sidebar. */
+.sidebar-brand {
+    background: linear-gradient(180deg, #0b2c56 0%, #0a2850 55%, #08213f 100%);
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
+}
+.sidebar-brand .sidebar-scroll {
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* Kanban boards (tasks, leads, estimates, milestones) */
+.kanban-col {
+    @apply flex w-[280px] flex-col rounded-xl bg-slate-100/80 ring-1 ring-slate-200/70 transition;
+}
+.kanban-col.is-over {
+    @apply bg-brand-50 ring-2 ring-brand/30;
+}
+.kanban-head {
+    @apply relative flex items-center gap-2 overflow-hidden rounded-t-xl border-b border-slate-200/80 bg-white px-3.5 pb-2.5 pt-3;
+}
+.kanban-head::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-[3px];
+    background: var(--col, #0b2c56);
+}
+.kanban-count {
+    @apply ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[11.5px] font-bold text-slate-600;
+}
+.kanban-card {
+    @apply cursor-pointer rounded-lg border border-slate-200/80 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-md;
+}
+
+/* Native selects: our own chevron instead of the browser's */
+.field-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.6rem center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+}
+
+/* Chat: a faint dotted backdrop behind the message bubbles */
+.chat-backdrop {
+    background-image: radial-gradient(rgba(11, 44, 86, 0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+}
+
+/*
+ * Dark mode (html.dark, switched from the header). The colour scales are re-stepped for a dark
+ * surface: greys invert, tints become deep washes and strong text colours lighten. "white" turns
+ * into the card surface, so white text and the translucent whites on the navy sidebar are pinned
+ * back to real white below.
+ */
+html.dark {
+    color-scheme: dark;
+    --color-white: #131c30;
+    --color-page: #0b1220;
+    --color-brand: #3a73b8;
+    --color-brand-light: #4d89d1;
+    --color-brand-dark: #2a5a94;
+    --color-brand-50: #15284a;
+    --color-brand-100: #1c3460;
+    --color-accent-50: #3a2014;
+    --color-amber-50: color-mix(in oklab, oklch(76.9% 0.188 70.08) 14%, #131c30);
+    --color-amber-100: color-mix(in oklab, oklch(76.9% 0.188 70.08) 22%, #131c30);
+    --color-amber-200: color-mix(in oklab, oklch(76.9% 0.188 70.08) 32%, #131c30);
+    --color-amber-300: color-mix(in oklab, oklch(76.9% 0.188 70.08) 48%, #131c30);
+    --color-amber-600: oklch(82.8% 0.189 84.429);
+    --color-amber-700: oklch(87.9% 0.169 91.605);
+    --color-amber-800: oklch(92.4% 0.12 95.746);
+    --color-amber-900: oklch(96.2% 0.059 95.617);
+    --color-amber-950: oklch(98.7% 0.022 95.277);
+    --color-blue-50: color-mix(in oklab, oklch(62.3% 0.214 259.815) 14%, #131c30);
+    --color-blue-100: color-mix(in oklab, oklch(62.3% 0.214 259.815) 22%, #131c30);
+    --color-blue-200: color-mix(in oklab, oklch(62.3% 0.214 259.815) 32%, #131c30);
+    --color-blue-300: color-mix(in oklab, oklch(62.3% 0.214 259.815) 48%, #131c30);
+    --color-blue-600: oklch(70.7% 0.165 254.624);
+    --color-blue-700: oklch(80.9% 0.105 251.813);
+    --color-blue-800: oklch(88.2% 0.059 254.128);
+    --color-blue-900: oklch(93.2% 0.032 255.585);
+    --color-blue-950: oklch(97% 0.014 254.604);
+    --color-cyan-50: color-mix(in oklab, oklch(71.5% 0.143 215.221) 14%, #131c30);
+    --color-cyan-100: color-mix(in oklab, oklch(71.5% 0.143 215.221) 22%, #131c30);
+    --color-cyan-200: color-mix(in oklab, oklch(71.5% 0.143 215.221) 32%, #131c30);
+    --color-cyan-300: color-mix(in oklab, oklch(71.5% 0.143 215.221) 48%, #131c30);
+    --color-cyan-600: oklch(78.9% 0.154 211.53);
+    --color-cyan-700: oklch(86.5% 0.127 207.078);
+    --color-cyan-800: oklch(91.7% 0.08 205.041);
+    --color-cyan-900: oklch(95.6% 0.045 203.388);
+    --color-cyan-950: oklch(98.4% 0.019 200.873);
+    --color-emerald-50: color-mix(in oklab, oklch(69.6% 0.17 162.48) 14%, #131c30);
+    --color-emerald-100: color-mix(in oklab, oklch(69.6% 0.17 162.48) 22%, #131c30);
+    --color-emerald-200: color-mix(in oklab, oklch(69.6% 0.17 162.48) 32%, #131c30);
+    --color-emerald-300: color-mix(in oklab, oklch(69.6% 0.17 162.48) 48%, #131c30);
+    --color-emerald-600: oklch(76.5% 0.177 163.223);
+    --color-emerald-700: oklch(84.5% 0.143 164.978);
+    --color-emerald-800: oklch(90.5% 0.093 164.15);
+    --color-emerald-900: oklch(95% 0.052 163.051);
+    --color-emerald-950: oklch(97.9% 0.021 166.113);
+    --color-fuchsia-50: color-mix(in oklab, oklch(66.7% 0.295 322.15) 14%, #131c30);
+    --color-fuchsia-100: color-mix(in oklab, oklch(66.7% 0.295 322.15) 22%, #131c30);
+    --color-fuchsia-200: color-mix(in oklab, oklch(66.7% 0.295 322.15) 32%, #131c30);
+    --color-fuchsia-300: color-mix(in oklab, oklch(66.7% 0.295 322.15) 48%, #131c30);
+    --color-fuchsia-600: oklch(74% 0.238 322.16);
+    --color-fuchsia-700: oklch(83.3% 0.145 321.434);
+    --color-fuchsia-800: oklch(90.3% 0.076 319.62);
+    --color-fuchsia-900: oklch(95.2% 0.037 318.852);
+    --color-fuchsia-950: oklch(97.7% 0.017 320.058);
+    --color-gray-50: #18223a;
+    --color-gray-100: #1d2840;
+    --color-gray-200: #283550;
+    --color-gray-300: #36445f;
+    --color-gray-400: #64748b;
+    --color-gray-500: #8391a7;
+    --color-gray-600: #a3b0c2;
+    --color-gray-700: #c3cdda;
+    --color-gray-800: #dde4ee;
+    --color-gray-900: #eef2f7;
+    --color-gray-950: #f8fafc;
+    --color-green-50: color-mix(in oklab, oklch(72.3% 0.219 149.579) 14%, #131c30);
+    --color-green-100: color-mix(in oklab, oklch(72.3% 0.219 149.579) 22%, #131c30);
+    --color-green-200: color-mix(in oklab, oklch(72.3% 0.219 149.579) 32%, #131c30);
+    --color-green-300: color-mix(in oklab, oklch(72.3% 0.219 149.579) 48%, #131c30);
+    --color-green-600: oklch(79.2% 0.209 151.711);
+    --color-green-700: oklch(87.1% 0.15 154.449);
+    --color-green-800: oklch(92.5% 0.084 155.995);
+    --color-green-900: oklch(96.2% 0.044 156.743);
+    --color-green-950: oklch(98.2% 0.018 155.826);
+    --color-indigo-50: color-mix(in oklab, oklch(58.5% 0.233 277.117) 14%, #131c30);
+    --color-indigo-100: color-mix(in oklab, oklch(58.5% 0.233 277.117) 22%, #131c30);
+    --color-indigo-200: color-mix(in oklab, oklch(58.5% 0.233 277.117) 32%, #131c30);
+    --color-indigo-300: color-mix(in oklab, oklch(58.5% 0.233 277.117) 48%, #131c30);
+    --color-indigo-600: oklch(67.3% 0.182 276.935);
+    --color-indigo-700: oklch(78.5% 0.115 274.713);
+    --color-indigo-800: oklch(87% 0.065 274.039);
+    --color-indigo-900: oklch(93% 0.034 272.788);
+    --color-indigo-950: oklch(96.2% 0.018 272.314);
+    --color-lime-50: color-mix(in oklab, oklch(76.8% 0.233 130.85) 14%, #131c30);
+    --color-lime-100: color-mix(in oklab, oklch(76.8% 0.233 130.85) 22%, #131c30);
+    --color-lime-200: color-mix(in oklab, oklch(76.8% 0.233 130.85) 32%, #131c30);
+    --color-lime-300: color-mix(in oklab, oklch(76.8% 0.233 130.85) 48%, #131c30);
+    --color-lime-600: oklch(84.1% 0.238 128.85);
+    --color-lime-700: oklch(89.7% 0.196 126.665);
+    --color-lime-800: oklch(93.8% 0.127 124.321);
+    --color-lime-900: oklch(96.7% 0.067 122.328);
+    --color-lime-950: oklch(98.6% 0.031 120.757);
+    --color-mauve-50: color-mix(in oklab, oklch(54.2% 0.034 322.5) 14%, #131c30);
+    --color-mauve-100: color-mix(in oklab, oklch(54.2% 0.034 322.5) 22%, #131c30);
+    --color-mauve-200: color-mix(in oklab, oklch(54.2% 0.034 322.5) 32%, #131c30);
+    --color-mauve-300: color-mix(in oklab, oklch(54.2% 0.034 322.5) 48%, #131c30);
+    --color-mauve-600: oklch(71.1% 0.019 323.02);
+    --color-mauve-700: oklch(86.5% 0.012 325.68);
+    --color-mauve-800: oklch(92.2% 0.005 325.62);
+    --color-mauve-900: oklch(96% 0.003 325.6);
+    --color-mauve-950: oklch(98.5% 0 none);
+    --color-mist-50: color-mix(in oklab, oklch(56% 0.021 213.5) 14%, #131c30);
+    --color-mist-100: color-mix(in oklab, oklch(56% 0.021 213.5) 22%, #131c30);
+    --color-mist-200: color-mix(in oklab, oklch(56% 0.021 213.5) 32%, #131c30);
+    --color-mist-300: color-mix(in oklab, oklch(56% 0.021 213.5) 48%, #131c30);
+    --color-mist-600: oklch(72.3% 0.014 214.4);
+    --color-mist-700: oklch(87.2% 0.007 219.6);
+    --color-mist-800: oklch(92.5% 0.005 214.3);
+    --color-mist-900: oklch(96.3% 0.002 197.1);
+    --color-mist-950: oklch(98.7% 0.002 197.1);
+    --color-neutral-50: #18223a;
+    --color-neutral-100: #1d2840;
+    --color-neutral-200: #283550;
+    --color-neutral-300: #36445f;
+    --color-neutral-400: #64748b;
+    --color-neutral-500: #8391a7;
+    --color-neutral-600: #a3b0c2;
+    --color-neutral-700: #c3cdda;
+    --color-neutral-800: #dde4ee;
+    --color-neutral-900: #eef2f7;
+    --color-neutral-950: #f8fafc;
+    --color-olive-50: color-mix(in oklab, oklch(58% 0.031 107.3) 14%, #131c30);
+    --color-olive-100: color-mix(in oklab, oklch(58% 0.031 107.3) 22%, #131c30);
+    --color-olive-200: color-mix(in oklab, oklch(58% 0.031 107.3) 32%, #131c30);
+    --color-olive-300: color-mix(in oklab, oklch(58% 0.031 107.3) 48%, #131c30);
+    --color-olive-600: oklch(73.7% 0.021 106.9);
+    --color-olive-700: oklch(88% 0.011 106.6);
+    --color-olive-800: oklch(93% 0.007 106.5);
+    --color-olive-900: oklch(96.6% 0.005 106.5);
+    --color-olive-950: oklch(98.8% 0.003 106.5);
+    --color-orange-50: color-mix(in oklab, oklch(70.5% 0.213 47.604) 14%, #131c30);
+    --color-orange-100: color-mix(in oklab, oklch(70.5% 0.213 47.604) 22%, #131c30);
+    --color-orange-200: color-mix(in oklab, oklch(70.5% 0.213 47.604) 32%, #131c30);
+    --color-orange-300: color-mix(in oklab, oklch(70.5% 0.213 47.604) 48%, #131c30);
+    --color-orange-600: oklch(75% 0.183 55.934);
+    --color-orange-700: oklch(83.7% 0.128 66.29);
+    --color-orange-800: oklch(90.1% 0.076 70.697);
+    --color-orange-900: oklch(95.4% 0.038 75.164);
+    --color-orange-950: oklch(98% 0.016 73.684);
+    --color-pink-50: color-mix(in oklab, oklch(65.6% 0.241 354.308) 14%, #131c30);
+    --color-pink-100: color-mix(in oklab, oklch(65.6% 0.241 354.308) 22%, #131c30);
+    --color-pink-200: color-mix(in oklab, oklch(65.6% 0.241 354.308) 32%, #131c30);
+    --color-pink-300: color-mix(in oklab, oklch(65.6% 0.241 354.308) 48%, #131c30);
+    --color-pink-600: oklch(71.8% 0.202 349.761);
+    --color-pink-700: oklch(82.3% 0.12 346.018);
+    --color-pink-800: oklch(89.9% 0.061 343.231);
+    --color-pink-900: oklch(94.8% 0.028 342.258);
+    --color-pink-950: oklch(97.1% 0.014 343.198);
+    --color-purple-50: color-mix(in oklab, oklch(62.7% 0.265 303.9) 14%, #131c30);
+    --color-purple-100: color-mix(in oklab, oklch(62.7% 0.265 303.9) 22%, #131c30);
+    --color-purple-200: color-mix(in oklab, oklch(62.7% 0.265 303.9) 32%, #131c30);
+    --color-purple-300: color-mix(in oklab, oklch(62.7% 0.265 303.9) 48%, #131c30);
+    --color-purple-600: oklch(71.4% 0.203 305.504);
+    --color-purple-700: oklch(82.7% 0.119 306.383);
+    --color-purple-800: oklch(90.2% 0.063 306.703);
+    --color-purple-900: oklch(94.6% 0.033 307.174);
+    --color-purple-950: oklch(97.7% 0.014 308.299);
+    --color-red-50: color-mix(in oklab, oklch(63.7% 0.237 25.331) 14%, #131c30);
+    --color-red-100: color-mix(in oklab, oklch(63.7% 0.237 25.331) 22%, #131c30);
+    --color-red-200: color-mix(in oklab, oklch(63.7% 0.237 25.331) 32%, #131c30);
+    --color-red-300: color-mix(in oklab, oklch(63.7% 0.237 25.331) 48%, #131c30);
+    --color-red-600: oklch(70.4% 0.191 22.216);
+    --color-red-700: oklch(80.8% 0.114 19.571);
+    --color-red-800: oklch(88.5% 0.062 18.334);
+    --color-red-900: oklch(93.6% 0.032 17.717);
+    --color-red-950: oklch(97.1% 0.013 17.38);
+    --color-rose-50: color-mix(in oklab, oklch(64.5% 0.246 16.439) 14%, #131c30);
+    --color-rose-100: color-mix(in oklab, oklch(64.5% 0.246 16.439) 22%, #131c30);
+    --color-rose-200: color-mix(in oklab, oklch(64.5% 0.246 16.439) 32%, #131c30);
+    --color-rose-300: color-mix(in oklab, oklch(64.5% 0.246 16.439) 48%, #131c30);
+    --color-rose-600: oklch(71.2% 0.194 13.428);
+    --color-rose-700: oklch(81% 0.117 11.638);
+    --color-rose-800: oklch(89.2% 0.058 10.001);
+    --color-rose-900: oklch(94.1% 0.03 12.58);
+    --color-rose-950: oklch(96.9% 0.015 12.422);
+    --color-sky-50: color-mix(in oklab, oklch(68.5% 0.169 237.323) 14%, #131c30);
+    --color-sky-100: color-mix(in oklab, oklch(68.5% 0.169 237.323) 22%, #131c30);
+    --color-sky-200: color-mix(in oklab, oklch(68.5% 0.169 237.323) 32%, #131c30);
+    --color-sky-300: color-mix(in oklab, oklch(68.5% 0.169 237.323) 48%, #131c30);
+    --color-sky-600: oklch(74.6% 0.16 232.661);
+    --color-sky-700: oklch(82.8% 0.111 230.318);
+    --color-sky-800: oklch(90.1% 0.058 230.902);
+    --color-sky-900: oklch(95.1% 0.026 236.824);
+    --color-sky-950: oklch(97.7% 0.013 236.62);
+    --color-slate-50: #18223a;
+    --color-slate-100: #1d2840;
+    --color-slate-200: #283550;
+    --color-slate-300: #36445f;
+    --color-slate-400: #64748b;
+    --color-slate-500: #8391a7;
+    --color-slate-600: #a3b0c2;
+    --color-slate-700: #c3cdda;
+    --color-slate-800: #dde4ee;
+    --color-slate-900: #eef2f7;
+    --color-slate-950: #f8fafc;
+    --color-stone-50: #18223a;
+    --color-stone-100: #1d2840;
+    --color-stone-200: #283550;
+    --color-stone-300: #36445f;
+    --color-stone-400: #64748b;
+    --color-stone-500: #8391a7;
+    --color-stone-600: #a3b0c2;
+    --color-stone-700: #c3cdda;
+    --color-stone-800: #dde4ee;
+    --color-stone-900: #eef2f7;
+    --color-stone-950: #f8fafc;
+    --color-taupe-50: color-mix(in oklab, oklch(54.7% 0.021 43.1) 14%, #131c30);
+    --color-taupe-100: color-mix(in oklab, oklch(54.7% 0.021 43.1) 22%, #131c30);
+    --color-taupe-200: color-mix(in oklab, oklch(54.7% 0.021 43.1) 32%, #131c30);
+    --color-taupe-300: color-mix(in oklab, oklch(54.7% 0.021 43.1) 48%, #131c30);
+    --color-taupe-600: oklch(71.4% 0.014 41.2);
+    --color-taupe-700: oklch(86.8% 0.007 39.5);
+    --color-taupe-800: oklch(92.2% 0.005 34.3);
+    --color-taupe-900: oklch(96% 0.002 17.2);
+    --color-taupe-950: oklch(98.6% 0.002 67.8);
+    --color-teal-50: color-mix(in oklab, oklch(70.4% 0.14 182.503) 14%, #131c30);
+    --color-teal-100: color-mix(in oklab, oklch(70.4% 0.14 182.503) 22%, #131c30);
+    --color-teal-200: color-mix(in oklab, oklch(70.4% 0.14 182.503) 32%, #131c30);
+    --color-teal-300: color-mix(in oklab, oklch(70.4% 0.14 182.503) 48%, #131c30);
+    --color-teal-600: oklch(77.7% 0.152 181.912);
+    --color-teal-700: oklch(85.5% 0.138 181.071);
+    --color-teal-800: oklch(91% 0.096 180.426);
+    --color-teal-900: oklch(95.3% 0.051 180.801);
+    --color-teal-950: oklch(98.4% 0.014 180.72);
+    --color-violet-50: color-mix(in oklab, oklch(60.6% 0.25 292.717) 14%, #131c30);
+    --color-violet-100: color-mix(in oklab, oklch(60.6% 0.25 292.717) 22%, #131c30);
+    --color-violet-200: color-mix(in oklab, oklch(60.6% 0.25 292.717) 32%, #131c30);
+    --color-violet-300: color-mix(in oklab, oklch(60.6% 0.25 292.717) 48%, #131c30);
+    --color-violet-600: oklch(70.2% 0.183 293.541);
+    --color-violet-700: oklch(81.1% 0.111 293.571);
+    --color-violet-800: oklch(89.4% 0.057 293.283);
+    --color-violet-900: oklch(94.3% 0.029 294.588);
+    --color-violet-950: oklch(96.9% 0.016 293.756);
+    --color-yellow-50: color-mix(in oklab, oklch(79.5% 0.184 86.047) 14%, #131c30);
+    --color-yellow-100: color-mix(in oklab, oklch(79.5% 0.184 86.047) 22%, #131c30);
+    --color-yellow-200: color-mix(in oklab, oklch(79.5% 0.184 86.047) 32%, #131c30);
+    --color-yellow-300: color-mix(in oklab, oklch(79.5% 0.184 86.047) 48%, #131c30);
+    --color-yellow-600: oklch(85.2% 0.199 91.936);
+    --color-yellow-700: oklch(90.5% 0.182 98.111);
+    --color-yellow-800: oklch(94.5% 0.129 101.54);
+    --color-yellow-900: oklch(97.3% 0.071 103.193);
+    --color-yellow-950: oklch(98.7% 0.026 102.212);
+    --color-zinc-50: #18223a;
+    --color-zinc-100: #1d2840;
+    --color-zinc-200: #283550;
+    --color-zinc-300: #36445f;
+    --color-zinc-400: #64748b;
+    --color-zinc-500: #8391a7;
+    --color-zinc-600: #a3b0c2;
+    --color-zinc-700: #c3cdda;
+    --color-zinc-800: #dde4ee;
+    --color-zinc-900: #eef2f7;
+    --color-zinc-950: #f8fafc;
+}
+html.dark .text-white,
+html.dark .hover\:text-white:hover,
+html.dark .group:hover .group-hover\:text-white { color: #fff; }
+html.dark .text-white\/70 { color: rgb(255 255 255 / 0.7); }
+html.dark .text-white\/80 { color: rgb(255 255 255 / 0.8); }
+html.dark .bg-white\/10 { background-color: rgb(255 255 255 / 0.1); }
+html.dark .bg-white\/\[0\.06\] { background-color: rgb(255 255 255 / 0.06); }
+html.dark .bg-white\/\[0\.12\] { background-color: rgb(255 255 255 / 0.12); }
+html.dark .hover\:bg-white\/10:hover { background-color: rgb(255 255 255 / 0.1); }
+html.dark .hover\:bg-white\/20:hover { background-color: rgb(255 255 255 / 0.2); }
+html.dark .hover\:bg-white\/\[0\.07\]:hover { background-color: rgb(255 255 255 / 0.07); }
+html.dark .ring-white\/10 { --tw-ring-color: rgb(255 255 255 / 0.1); }
+html.dark .ring-white\/15 { --tw-ring-color: rgb(255 255 255 / 0.15); }
+html.dark .ring-white\/20 { --tw-ring-color: rgb(255 255 255 / 0.2); }
+html.dark .border-white\/5 { border-color: rgb(255 255 255 / 0.05); }
+html.dark .border-white\/10 { border-color: rgb(255 255 255 / 0.1); }
+html.dark .hover\:border-white\/30:hover { border-color: rgb(255 255 255 / 0.3); }
+html.dark .bg-\[\#f7f8fa\] { background-color: #0e1628; }
+html.dark .text-\[\#0b2c56\] { color: #8fb4e3; }
+html.dark .chat-backdrop { background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px); }
+/* Logos are drawn for white paper: give them a light plate. */
+html.dark .logo-plate { background: #fff; border-radius: 8px; padding: 3px 8px; }
+html.dark ::-webkit-scrollbar-thumb { background-color: #36445f; }
+html.dark .sidebar-brand,
+html.dark .brand-banner {
+    --color-blue-50: oklch(97% 0.014 254.604);
+    --color-blue-100: oklch(93.2% 0.032 255.585);
+}
+html.dark .bg-slate-900\/40,
+html.dark .bg-slate-900\/50 { background-color: rgb(2 6 23 / 0.65); }
+/* Base-layer dark colours, so utility classes (sidebar links, buttons) still win. */
+@layer base {
+    html.dark body { color: #cbd5e1; }
+    html.dark a { color: #6ea8ff; }
+    html.dark a:hover { color: #9cc3ff; }
+    html.dark ::selection { background: #1c3460; }
+    html.dark * { scrollbar-color: #36445f transparent; }
+}
+html.dark .rich-content { color: #dde4ee; }
+html.dark .rich-content a { color: #6ea8ff; }
+html.dark .rich-content blockquote { border-left-color: #36445f; color: #a3b0c2; }
+html.dark .rich-content hr,
+html.dark .rich-content td,
+html.dark .rich-content th { border-color: #36445f; }
+html.dark .rich-content pre { background: #18223a; }
+
+/* Chart series (validated colour-blind safe on both surfaces: dataviz palette slots 1-2). */
+:root {
+    /* Categorical slots 1–8 (dataviz reference palette), fixed order. */
+    --viz-1: #2a78d6;
+    --viz-2: #eb6834;
+    --viz-3: #1baf7a;
+    --viz-4: #eda100;
+    --viz-5: #e87ba4;
+    --viz-6: #008300;
+    --viz-7: #6250d6;
+    --viz-8: #e34948;
+    --viz-income: #2a78d6;
+    --viz-expense: #eb6834;
+    /* Leads chart: dataviz slots 3 (aqua) and 7 (violet), validated as a pair. */
+    --viz-lead-new: #1baf7a;
+    --viz-lead-won: #6250d6;
+}
+html.dark {
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-3: #199e70;
+    --viz-4: #c98500;
+    --viz-5: #d55181;
+    --viz-6: #008300;
+    --viz-7: #9085e9;
+    --viz-8: #e66767;
+    --viz-income: #3987e5;
+    --viz-expense: #d95926;
+    --viz-lead-new: #199e70;
+    --viz-lead-won: #9085e9;
+}
+
+/* Login page: a faint grid, drifting colour and gently floating preview cards. */
+.login-grid {
+    background-image: linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 30% 40%, #000 30%, transparent 75%);
+}
+@keyframes login-drift {
+    50% {
+        transform: translate(30px, 24px) scale(1.08);
+    }
+}
+@keyframes login-float {
+    50% {
+        transform: translateY(-10px);
+    }
+}
+.login-blob {
+    animation: login-drift 14s ease-in-out infinite;
+}
+.login-blob-2 {
+    animation-duration: 18s;
+    animation-direction: reverse;
+}
+.login-float {
+    animation: login-float 6s ease-in-out infinite;
+}
+.login-float-2 {
+    animation-delay: -2s;
+}
+.login-float-3 {
+    animation-delay: -4s;
+}
+@media (prefers-reduced-motion: reduce) {
+    .login-blob,
+    .login-float {
+        animation: none;
+    }
+}
+
+/*
+ * Grid cells may shrink below their content (CSS grid's default "min-width: auto" otherwise lets
+ * a wide table or long text push the page sideways on phones); wide content scrolls inside.
+ */
+@layer base {
+    main .grid > * {
+        min-width: 0;
+    }
+}
+
+/* Tab strips scroll sideways on small screens without showing a scrollbar. */
+.scrollbar-none {
+    scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+
+/* A mouse click leaves no focus box on buttons and links; keyboard focus still shows a ring. */
+@layer base {
+    :where(button, a, [role='tab']):focus:not(:focus-visible) {
+        outline: none;
+    }
+    :where(button, a, [role='tab']):focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+        border-radius: 6px;
+    }
+}
+
+/*
+ * Long lists on desktop: the table scrolls inside the card and its header row stays in view.
+ * Phones keep normal page scrolling (and the sideways scroll for wide tables).
+ */
+@media (min-width: 1024px) {
+    .table-scroll {
+        max-height: calc(100vh - 240px);
+        overflow-y: auto;
+    }
+    .table-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: var(--color-slate-50);
+        box-shadow: inset 0 -1px 0 var(--color-slate-200);
+    }
+}

@@ -1,0 +1,642 @@
+[
+ {
+  "type": "client",
+  "slug": "new-client-created",
+  "name": "New Contact Added/Registered (Welcome Email)",
+  "subject": "Welcome aboard",
+  "message": "<p>Dear {contact_firstname} {contact_lastname}<br /><br />Greetings of the day!</p>\r\n<p>We are pleased to get associated with your company and would like to take this opportunity to welcome you as a new Client of Global Infocloud. We believe that our comprehensive approach will meet your business expectations.&nbsp;<br /><br /><span>At Global InfoCloud, we pride ourselves on offering our clients responsive, competent and excellent service. Our clients are the most important part of our business, and we work tirelessly to ensure your complete satisfaction. We would like to thank you for your time and consideration. It would be an honor to work with a reputed and prestigious organization like yours.</span></p>\r\n<p><br />You have been registered on the <strong>{companyname}</strong> CRM System for smooth process, resolving query, concern or feedback.&nbsp;<br /><br />Please contact your account manager if you need any help.<br /><br />Click here to view your profile: <a href=\"{crm_url}\">{crm_url}</a><br /><br />Kind Regards, <br />{email_signature}<br /><br /><br /><br /><br />(This is an automated email, so please don't reply to this email address)</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "invoice",
+  "slug": "invoice-send-to-client",
+  "name": "Send Invoice to Customer",
+  "subject": "Invoice with number {invoice_number} created",
+  "message": "<span style=\"font-size: 12pt;\">Dear {contact_firstname} {contact_lastname}<br /><br /></span>Greetings from Global Infocloud!<br /><br />Thank you for the opportunity&nbsp;to serve you. <span style=\"font-size: 12pt;\">We have prepared the following invoice for you: <strong># {invoice_number}</strong></span><br /><br /><span style=\"font-size: 12pt;\"><strong>Invoice status</strong>: {invoice_status}<br /><br /></span><strong>Invoice Due Date:&nbsp;</strong><span>{invoice_date}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the invoice on the following link: <a href=\"{invoice_link}\">{invoice_number}</a></span><br /><br /><span style=\"font-size: 12pt;\">Please contact us for more information.</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><br />Accounts Team<br />Global Infocloud Pvt Ltd",
+  "from_name": "{companyname} | Accounts",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "ticket",
+  "slug": "new-ticket-opened-admin",
+  "name": "New Ticket Opened (Opened by Staff, Sent to Customer)",
+  "subject": "New Support Ticket Opened",
+  "message": "<span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}<br /><br /></span>Greetings from Global Infocloud!<br /><br /><span style=\"font-size: 12pt;\">New support ticket has been opened.</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Subject:</strong> {ticket_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Department:</strong> {ticket_department}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority:</strong> {ticket_priority}</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Ticket message:</strong></span><br /><span style=\"font-size: 12pt;\">{ticket_message}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the ticket on the following link: <a href=\"{ticket_url}\">#{ticket_id}<br /><br /></a>Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "ticket",
+  "slug": "ticket-reply",
+  "name": "Ticket Reply (Sent to Customer)",
+  "subject": "New Ticket Reply",
+  "message": "<span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}<br /><br />Greetings from Global Infocloud!</span><br /><br /><span style=\"font-size: 12pt;\">You have a new ticket reply to ticket <a href=\"{ticket_url}\">#{ticket_id}</a></span><br /><br /><span style=\"font-size: 12pt;\"><strong>Ticket Subject:</strong> {ticket_subject}<br /></span><br /><span style=\"font-size: 12pt;\"><strong>Ticket message:</strong></span><br /><span style=\"font-size: 12pt;\">{ticket_message}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the ticket on the following link: <a href=\"{ticket_url}\">#{ticket_id}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "ticket",
+  "slug": "ticket-autoresponse",
+  "name": "New Ticket Opened - Autoresponse",
+  "subject": "New Support Ticket Opened",
+  "message": "<span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}</span><br /><br /><span style=\"font-size: 12pt;\">Thank you for contacting our Global Infocloud's support team. A support ticket has now been opened for your request. You will be notified when a response is made by email.<br /><br />Greetings from Global Infocloud!</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Subject:</strong> {ticket_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Department</strong>: {ticket_department}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority:</strong> {ticket_priority}</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Ticket message:</strong></span><br /><span style=\"font-size: 12pt;\">{ticket_message}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the ticket on the following link: <a href=\"{ticket_url}\">#{ticket_id}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "invoice",
+  "slug": "invoice-payment-recorded",
+  "name": "Invoice Payment Recorded (Sent to Customer)",
+  "subject": "Invoice Payment Recorded",
+  "message": "<span style=\"font-size: 12pt;\">Hello {contact_firstname}&nbsp;{contact_lastname}<br /><br /></span>Thank you for the payment. Find the payment details below:<br /><br />-------------------------------------------------<br /><br />Amount:&nbsp;<strong>{payment_total}<br /></strong>Date:&nbsp;<strong>{payment_date}</strong><br />Invoice number:&nbsp;<span style=\"font-size: 12pt;\"><strong># {invoice_number}<br /><br /></strong></span>-------------------------------------------------<br /><br />You can always view the invoice for this payment at the following link:&nbsp;<a href=\"{invoice_link}\"><span style=\"font-size: 12pt;\">{invoice_number}</span></a><br /><br />We are looking forward working with you.<br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "invoice",
+  "slug": "invoice-overdue-notice",
+  "name": "Invoice Overdue Notice",
+  "subject": "Invoice Overdue Notice - {invoice_number}",
+  "message": "<span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}<br /><br /></span>Greetings from Global Infocloud!&nbsp;<br /><br /><span style=\"font-size: 12pt;\">This is an overdue notice for invoice <strong># {invoice_number}</strong></span><br /><br /><span style=\"font-size: 12pt;\">This invoice was due: {invoice_duedate}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the invoice on the following link: <a href=\"{invoice_link}\">{invoice_number}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "invoice",
+  "slug": "invoice-already-send",
+  "name": "Invoice Already Sent to Customer",
+  "subject": "Invoice # {invoice_number} ",
+  "message": "<span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}<br /><br /></span>Greetings from Global Infocloud!&nbsp;<br /><br />This is a soft remainder for the unpaid invoice.&nbsp;<br /><br /><span style=\"font-size: 12pt;\">Here is the invoice with number <strong># {invoice_number}<br /><br /></strong></span>Due Date for the Invoice was&nbsp;<strong>{invoice_duedate}</strong><br /><br /><span style=\"font-size: 12pt;\">You can view the invoice on the following link: <a href=\"{invoice_link}\">{invoice_number}</a></span><br /><br /><span style=\"font-size: 12pt;\">Please contact us for more information.</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "ticket",
+  "slug": "new-ticket-created-staff",
+  "name": "New Ticket Created (Opened by Customer, Sent to Staff Members)",
+  "subject": "New Ticket Created",
+  "message": "<span style=\"font-size: 12pt;\">Greetings from Global Infocloud!<br /><br />A new support ticket has been opened.</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Subject</strong>: {ticket_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Department</strong>: {ticket_department}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority</strong>: {ticket_priority}</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Ticket message:</strong></span><br /><span style=\"font-size: 12pt;\">{ticket_message}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the ticket on the following link: <a href=\"{ticket_url}\">#{ticket_id}<br /></a></span><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "estimate",
+  "slug": "estimate-send-to-client",
+  "name": "Send Estimate to Customer",
+  "subject": "Estimate # {estimate_number} created",
+  "message": "<span style=\"font-size: 12pt;\"><span style=\"font-size: 12pt;\">Dear {contact_firstname} {contact_lastname}<br /><br />Greetings from Global Infocloud!<br /><br /><span style=\"font-size: 12pt;\">This is with respect to our discussion for your Online &nbsp;Requirement.&nbsp;</span><strong style=\"font-size: 12pt;\">Global Info cloud Pvt Ltd</strong><span style=\"font-size: 12pt;\">&nbsp;is working aggressively in A-Z IT Solutions. We cater many well-known Domestic as well as International Clients from all over industries in Business Automation, Marketing and Design.</span></span></span>\r\n<div style=\"text-align: justify;\">&nbsp;</div>\r\n<div style=\"text-align: justify;\"><strong>Global Infocloud</strong>&nbsp;strives to provide comprehensive, custom solutions for all your&nbsp;<strong>Information &amp; Technology needs</strong>. This means that we help in conceptualizing, designing and maintaining all IT requirements such as Business&nbsp;Consulting, Software, ERP &amp; CRM, Websites, Portals, Mobile App or Digital marketing. We identify ourselves with quality and consistent service every time.</div>\r\n<div style=\"text-align: justify;\">&nbsp;</div>\r\n<p>We are attaching Our IT profile for your easy understanding. For any further inquiry please connect us.&nbsp;We would love to meet you in person to take the discussion further, kindly let us know your availability so that we can align our meeting.<br /><br /><span>Once again, thank you for your patronage and we assure you of our best services at all times.</span></p>\r\n<p><strong>For more information about the company, kindly click on the web link &nbsp;&nbsp;<a href=\"http://www.globalinfocloud.com/\">http://www.globalinfocloud.com/</a>&nbsp;</strong></p>\r\n<br /><span style=\"font-size: 12pt;\">Please find the attached estimate <strong># {estimate_number}</strong></span><br /><br /><span style=\"font-size: 12pt;\"><strong>Estimate status:</strong> {estimate_status}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the estimate on the following link: <a href=\"{estimate_link}\">{estimate_number}</a></span><br /><br /><span style=\"font-size: 12pt;\">We look forward to your communication.</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}<br /></span>",
+  "from_name": "{companyname}",
+  "plaintext": true,
+  "active": true
+ },
+ {
+  "type": "ticket",
+  "slug": "ticket-reply-to-admin",
+  "name": "Ticket Reply (Sent to Staff)",
+  "subject": "New Support Ticket Reply",
+  "message": "<span style=\"font-size: 12pt;\">A new support ticket reply from {contact_firstname} {contact_lastname}</span><br /> <br /><span style=\"font-size: 12pt;\"><strong>Subject</strong>: {ticket_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Department</strong>: {ticket_department}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority</strong>: {ticket_priority}</span><br /> <br /><span style=\"font-size: 12pt;\"><strong>Ticket message:</strong></span><br /><span style=\"font-size: 12pt;\">{ticket_message}</span><br /> <br /><span style=\"font-size: 12pt;\">You can view the ticket on the following link: <a href=\"{ticket_url}\">#{ticket_id}</a></span><br /> <br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "estimate",
+  "slug": "estimate-already-send",
+  "name": "Estimate Already Sent to Customer",
+  "subject": "Estimate # {estimate_number} ",
+  "message": "<span style=\"font-size: 12pt;\">Dear {contact_firstname} {contact_lastname}</span><br /> <br /><span style=\"font-size: 12pt;\">Thank you for your estimate request.</span><br /> <br /><span style=\"font-size: 12pt;\">You can view the estimate on the following link: <a href=\"{estimate_link}\">{estimate_number}</a></span><br /> <br /><span style=\"font-size: 12pt;\">Please contact us for more information.</span><br /> <br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "contract",
+  "slug": "contract-expiration",
+  "name": "Contract Expiration Reminder (Sent to Customer Contacts)",
+  "subject": "Contract Expiration Reminder",
+  "message": "<span style=\"font-size: 12pt;\">Dear {client_company}</span><br /><br /><span style=\"font-size: 12pt;\">This is a reminder that the following contract will expire soon:</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Subject:</strong> {contract_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Description:</strong> {contract_description}</span><br /><span style=\"font-size: 12pt;\"><strong>Date Start:</strong> {contract_datestart}</span><br /><span style=\"font-size: 12pt;\"><strong>Date End:</strong> {contract_dateend}</span><br /><br /><span style=\"font-size: 12pt;\">Please contact us for more information.</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "tasks",
+  "slug": "task-assigned",
+  "name": "New Task Assigned (Sent to Staff)",
+  "subject": "New Task Assigned to You - {task_name}",
+  "message": "<span style=\"font-size: 12pt;\">Dear {staff_firstname}</span><br /><br /><span style=\"font-size: 12pt;\">You have been assigned to a new task:</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Name:</strong> {task_name}<br /></span><strong>Start Date:</strong> {task_startdate}<br /><span style=\"font-size: 12pt;\"><strong>Due date:</strong> {task_duedate}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority:</strong> {task_priority}<br /><br /></span><span style=\"font-size: 12pt;\"><span>You can view the task on the following link</span>: <a href=\"{task_link}\">{task_name}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "tasks",
+  "slug": "task-added-as-follower",
+  "name": "Staff Member Added as Follower on Task (Sent to Staff)",
+  "subject": "You are added as follower on task - {task_name}",
+  "message": "<span style=\"font-size: 12pt;\">Hi {staff_firstname}<br /></span><br /><span style=\"font-size: 12pt;\">You have been added as follower on the following task:</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Name:</strong> {task_name}</span><br /><span style=\"font-size: 12pt;\"><strong>Start date:</strong> {task_startdate}</span><br /><br /><span>You can view the task on the following link</span><span>: </span><a href=\"{task_link}\">{task_name}</a><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "tasks",
+  "slug": "task-commented",
+  "name": "New Comment on Task (Sent to Staff)",
+  "subject": "New Comment on Task - {task_name}",
+  "message": "Dear {staff_firstname}<br /><br />A comment has been made on the following task:<br /><br /><strong>Name:</strong> {task_name}<br /><strong>Comment:</strong> {task_comment}<br /><br />You can view the task on the following link: <a href=\"{task_link}\">{task_name}</a><br /><br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "tasks",
+  "slug": "task-added-attachment",
+  "name": "New Attachment(s) on Task (Sent to Staff)",
+  "subject": "New Attachment on Task - {task_name}",
+  "message": "Hi {staff_firstname}<br /><br /><strong>{task_user_take_action}</strong> added an attachment on the following task:<br /><br /><strong>Name:</strong> {task_name}<br /><br />You can view the task on the following link: <a href=\"{task_link}\">{task_name}</a><br /><br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "estimate",
+  "slug": "estimate-declined-to-staff",
+  "name": "Estimate Declined (Sent to Staff)",
+  "subject": "Customer Declined Estimate",
+  "message": "<span style=\"font-size: 12pt;\">Hi</span><br /> <br /><span style=\"font-size: 12pt;\">Customer ({client_company}) declined estimate with number <strong># {estimate_number}</strong></span><br /> <br /><span style=\"font-size: 12pt;\">You can view the estimate on the following link: <a href=\"{estimate_link}\">{estimate_number}</a></span><br /> <br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "estimate",
+  "slug": "estimate-accepted-to-staff",
+  "name": "Estimate Accepted (Sent to Staff)",
+  "subject": "Customer Accepted Estimate",
+  "message": "<span style=\"font-size: 12pt;\">Hi</span><br /> <br /><span style=\"font-size: 12pt;\">Customer ({client_company}) accepted estimate with number <strong># {estimate_number}</strong></span><br /> <br /><span style=\"font-size: 12pt;\">You can view the estimate on the following link: <a href=\"{estimate_link}\">{estimate_number}</a></span><br /> <br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-client-accepted",
+  "name": "Customer Action - Accepted (Sent to Staff)",
+  "subject": "Customer Accepted Proposal",
+  "message": "<div>Hi<br /> <br />Client <strong>{proposal_proposal_to}</strong> accepted the following proposal:<br /> <br /><strong>Number:</strong> {proposal_number}<br /><strong>Subject</strong>: {proposal_subject}<br /><strong>Total</strong>: {proposal_total}<br /> <br />View the proposal on the following link: <a href=\"{proposal_link}\">{proposal_number}</a><br /> <br />Kind Regards,<br />{email_signature}</div>\r\n<div>&nbsp;</div>\r\n<div>&nbsp;</div>\r\n<div>&nbsp;</div>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-send-to-customer",
+  "name": "Send Proposal to Customer",
+  "subject": "Proposal With Number {proposal_number} Created",
+  "message": "<p>Dear {proposal_proposal_to}<br /><br />Please find our attached proposal.<br /><br />This proposal is valid until: {proposal_open_till}<br />You can view the proposal on the following link: <a href=\"{proposal_link}\">{proposal_link}</a><br /><br />Please don't hesitate to comment online if you have any questions.<br /><br />We look forward to your communication.<br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-client-declined",
+  "name": "Customer Action - Declined (Sent to Staff)",
+  "subject": "Client Declined Proposal",
+  "message": "Hi<br /> <br />Customer <strong>{proposal_proposal_to}</strong> declined the proposal <strong>{proposal_subject}</strong><br /> <br />View the proposal on the following link <a href=\"{proposal_link}\">{proposal_number}</a>&nbsp;or from the admin area.<br /> <br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-client-thank-you",
+  "name": "Thank You Email (Sent to Customer After Accept)",
+  "subject": "Thank you for accepting proposal",
+  "message": "<p>Dear {proposal_proposal_to}<br><br>Thank you for accepting the proposal.<br><br>We look forward to doing business with you.<br><br>We will contact you as soon as possible<br><br>Kind Regards,<br>{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-comment-to-client",
+  "name": "New Comment  (Sent to Customer/Lead)",
+  "subject": "New Proposal Comment",
+  "message": "Dear {proposal_proposal_to}<br /> <br />A new comment has been made on the following proposal: <strong>{proposal_number}</strong><br /> <br />You can view and reply to the comment on the following link: <a href=\"{proposal_link}\">{proposal_number}</a><br /> <br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-comment-to-admin",
+  "name": "New Comment (Sent to Staff) ",
+  "subject": "New Proposal Comment",
+  "message": "Hi<br /> <br />A new comment has been made to the proposal <strong>{proposal_subject}</strong><br /> <br />You can view and reply to the comment on the following link: <a href=\"{proposal_link}\">{proposal_number}</a>&nbsp;or from the admin area.<br /> <br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "estimate",
+  "slug": "estimate-thank-you-to-customer",
+  "name": "Thank You Email (Sent to Customer After Accept)",
+  "subject": "Thank for you accepting estimate",
+  "message": "<span style=\"font-size: 12pt;\">Dear {contact_firstname} {contact_lastname}</span><br /> <br /><span style=\"font-size: 12pt;\">Thank for for accepting the estimate.</span><br /> <br /><span style=\"font-size: 12pt;\">We look forward to doing business with you.</span><br /> <br /><span style=\"font-size: 12pt;\">We will contact you as soon as possible.</span><br /> <br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "tasks",
+  "slug": "task-deadline-notification",
+  "name": "Task Deadline Reminder - Sent to Assigned Members",
+  "subject": "Task Deadline Reminder",
+  "message": "Hi {staff_firstname}&nbsp;{staff_lastname}<br /><br />This is an automated email from {companyname}.<br /><br />The task <strong>{task_name}</strong> deadline is on <strong>{task_duedate}</strong>. <br />This task is still not finished.<br /><br />You can view the task on the following link: <a href=\"{task_link}\">{task_name}</a><br /><br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "contract",
+  "slug": "send-contract",
+  "name": "Send Contract to Customer",
+  "subject": "Contract - {contract_subject}",
+  "message": "<p><span style=\"font-size: 12pt;\">Hi&nbsp;{contact_firstname}&nbsp;{contact_lastname}</span><br /><br /><span style=\"font-size: 12pt;\">Please find the attached.</span></p>\r\n<p><span style=\"font-size: 12pt;\"><br /></span>I hope this email finds you well. We are pleased to offer our services to your company and have attached a contract outlining <span style=\"font-size: 12pt;\"> {contract_subject}&nbsp;</span>the terms and conditions of our agreement.</p>\r\n<p>Please take the time to review the contract thoroughly and ensure that all terms are acceptable to you. If you have any questions or concerns regarding the agreement, please do not hesitate to contact your account manager for clarification.</p>\r\n<p>Once you have reviewed the contract and are ready to proceed, please sign the document and return it to us at your earliest convenience. We will then process your request and schedule a time to begin the project.</p>\r\n<p>Please follow the Link to reach the contract page {contract_link}<a href=\"https://support.globalinfocloud.com/admin/emails/email_template/28#\"></a></p>\r\n<p>Thank you for considering Global Infocloud for your business needs. We look forward to working with you.</p>\r\n<p><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span></p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "invoice",
+  "slug": "invoice-payment-recorded-to-staff",
+  "name": "Invoice Payment Recorded (Sent to Staff)",
+  "subject": "New Invoice Payment",
+  "message": "<span style=\"font-size: 12pt;\">Hi</span><br /><br /><span style=\"font-size: 12pt;\">Customer recorded payment for invoice <strong># {invoice_number}</strong></span><br /> <br /><span style=\"font-size: 12pt;\">You can view the invoice on the following link: <a href=\"{invoice_link}\">{invoice_number}</a></span><br /> <br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "ticket",
+  "slug": "auto-close-ticket",
+  "name": "Auto Close Ticket",
+  "subject": "Ticket Auto Closed",
+  "message": "<p><span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}<br /><br />Greetings from Global Infocloud!</span><br /><br /><span style=\"font-size: 12pt;\">Ticket {ticket_subject} has been auto close due to inactivity.</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Ticket #</strong>: <a href=\"{ticket_url}\">{ticket_id}</a></span><br /><span style=\"font-size: 12pt;\"><strong>Department</strong>: {ticket_department}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority:</strong> {ticket_priority}</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span></p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "project",
+  "slug": "new-project-discussion-created-to-staff",
+  "name": "New Project Discussion (Sent to Project Members)",
+  "subject": "New Project Discussion Created - {project_name}",
+  "message": "<p>Hi {staff_firstname}<br /><br />New project discussion created from <strong>{discussion_creator}</strong><br /><br /><strong>Subject:</strong> {discussion_subject}<br /><strong>Description:</strong> {discussion_description}<br /><br />You can view the discussion on the following link: <a href=\"{discussion_link}\">{discussion_subject}</a><br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "project",
+  "slug": "new-project-discussion-created-to-customer",
+  "name": "New Project Discussion (Sent to Customer Contacts)",
+  "subject": "New Project Discussion Created - {project_name}",
+  "message": "<p>Hello {contact_firstname} {contact_lastname}<br /><br />New project discussion created from <strong>{discussion_creator}</strong><br /><br /><strong>Subject:</strong> {discussion_subject}<br /><strong>Description:</strong> {discussion_description}<br /><br />You can view the discussion on the following link: <a href=\"{discussion_link}\">{discussion_subject}</a><br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "project",
+  "slug": "new-project-file-uploaded-to-customer",
+  "name": "New Project File(s) Uploaded (Sent to Customer Contacts)",
+  "subject": "New Project File(s) Uploaded - {project_name}",
+  "message": "<p>Hello {contact_firstname} {contact_lastname}<br /><br />New project file is uploaded on <strong>{project_name}</strong> from <strong>{file_creator}</strong><br /><br />You can view the project on the following link: <a href=\"{project_link}\">{project_name}</a><br /><br />To view the file in our CRM you can click on the following link: <a href=\"{discussion_link}\">{discussion_subject}</a><br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "project",
+  "slug": "new-project-file-uploaded-to-staff",
+  "name": "New Project File(s) Uploaded (Sent to Project Members)",
+  "subject": "New Project File(s) Uploaded - {project_name}",
+  "message": "<p>Hello&nbsp;{staff_firstname}</p>\r\n<p>New project&nbsp;file is uploaded on&nbsp;<strong>{project_name}</strong> from&nbsp;<strong>{file_creator}</strong></p>\r\n<p>You can view the project on the following link: <a href=\"{project_link}\">{project_name}<br /></a><br />To view&nbsp;the file you can click on the following link: <a href=\"{discussion_link}\">{discussion_subject}</a></p>\r\n<p>Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "project",
+  "slug": "new-project-discussion-comment-to-customer",
+  "name": "New Discussion Comment  (Sent to Customer Contacts)",
+  "subject": "New Discussion Comment",
+  "message": "<p><span style=\"font-size: 12pt;\">Hello {contact_firstname} {contact_lastname}</span><br /><br /><span style=\"font-size: 12pt;\">New discussion comment has been made on <strong>{discussion_subject}</strong> from <strong>{comment_creator}</strong></span><br /><br /><span style=\"font-size: 12pt;\"><strong>Discussion subject:</strong> {discussion_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Comment</strong>: {discussion_comment}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the discussion on the following link: <a href=\"{discussion_link}\">{discussion_subject}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span></p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "project",
+  "slug": "new-project-discussion-comment-to-staff",
+  "name": "New Discussion Comment (Sent to Project Members)",
+  "subject": "New Discussion Comment",
+  "message": "<p>Hi {staff_firstname}<br /><br />New discussion comment has been made on <span class=\"pull-right\"><strong><a href=\"https://support.globalinfocloud.com/admin/emails/email_template/36#\" class=\"add_merge_field\">{project_name}</a>&nbsp;</strong></span><strong>{discussion_subject}</strong> from <strong>{comment_creator}</strong><br /><br /><strong>Discussion subject:</strong> {discussion_subject}<br /><strong>Comment:</strong> {discussion_comment}<br /><br />You can view the discussion on the following link: <a href=\"{discussion_link}\">{discussion_subject}</a><br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "project",
+  "slug": "staff-added-as-project-member",
+  "name": "Staff Added as Project Member",
+  "subject": "New project assigned to you",
+  "message": "<p>Hi {staff_firstname}<br /><br />New project has been assigned to you.<br /><br />You can view the project on the following link <a href=\"{project_link}\">{project_name}</a><br /><br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "estimate",
+  "slug": "estimate-expiry-reminder",
+  "name": "Estimate Expiration Reminder",
+  "subject": "Estimate Expiration Reminder",
+  "message": "<p><span style=\"font-size: 12pt;\">Hello {client_company}</span><br /><br /><span style=\"font-size: 12pt;\">The estimate with <strong># {estimate_number}</strong> will expire on <strong>{estimate_expirydate}</strong></span><br /><br /><span style=\"font-size: 12pt;\">You can view the estimate on the following link: <a href=\"{estimate_link}\">{estimate_number}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span></p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "proposals",
+  "slug": "proposal-expiry-reminder",
+  "name": "Proposal Expiration Reminder",
+  "subject": "Proposal Expiration Reminder",
+  "message": "<p>Hello {proposal_proposal_to}<br /><br />The proposal {proposal_number}&nbsp;will expire on <strong>{proposal_open_till}</strong><br /><br />You can view the proposal on the following link: <a href=\"{proposal_link}\">{proposal_number}</a><br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "client",
+  "slug": "contact-forgot-password",
+  "name": "Forgot Password",
+  "subject": "Create New Password",
+  "message": "<h2>Create a new password</h2>\r\nForgot your password?<br /> To create a new password, just follow this link:<br /> <br /><a href=\"{reset_password_url}\">Reset Password</a><br /> <br /> You received this email, because it was requested by a {companyname}&nbsp;user. This is part of the procedure to create a new password on the system. If you DID NOT request a new password then please ignore this email and your password will remain the same. <br /><br /> {email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "client",
+  "slug": "contact-password-reseted",
+  "name": "Password Reset - Confirmation",
+  "subject": "Your password has been changed",
+  "message": "<strong><span style=\"font-size: 14pt;\">You have changed your password.</span><br /></strong><br /> Please, keep it in your records so you don't forget it.<br /> <br /> Your email address for login is: {contact_email}<br /><br />If this wasnt you, please contact us.<br /><br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "client",
+  "slug": "contact-set-password",
+  "name": "Set New Password",
+  "subject": "Set new password on {companyname} ",
+  "message": "<h2><span style=\"font-size: 14pt;\">Setup your new password on {companyname}</span></h2>\r\nPlease use the following link to setup your new password:<br /><br /><a href=\"{set_password_url}\">Set new password</a><br /><br />Keep it in your records so you don't forget it.<br /><br /> Please set your new password in <strong>48 hours</strong>. After that you wont be able to set your password because this link will expire.<br /><br />You can login at: <a href=\"{crm_url}\">{crm_url}</a><br /> Your email address for login: {contact_email}<br /><br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "project",
+  "slug": "assigned-to-project",
+  "name": "New Project Created (Sent to Customer Contacts)",
+  "subject": "New Project Created",
+  "message": "<p>Hello&nbsp;{contact_firstname}&nbsp;{contact_lastname}</p>\r\n<p>New project is assigned to your company.<br /><br /><strong>Project Name:</strong>&nbsp;{project_name}<br /><strong>Project Start Date:</strong>&nbsp;{project_start_date}</p>\r\n<p>You can view the project on the following link:&nbsp;<a href=\"{project_link}\">{project_name}</a></p>\r\n<p>We are looking forward hearing from you.<br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "tasks",
+  "slug": "task-added-attachment-to-contacts",
+  "name": "New Attachment(s) on Task (Sent to Customer Contacts)",
+  "subject": "New Attachment on Task - {task_name}",
+  "message": "<span>Hi {contact_firstname} {contact_lastname}</span><br /><br /><strong>{task_user_take_action}</strong><span> added an attachment on the following task:</span><br /><br /><strong>Name:</strong><span> {task_name}</span><br /><br /><span>You can view the task on the following link: </span><a href=\"{task_link}\">{task_name}</a><br /><br /><span>Kind Regards,</span><br /><span>{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "tasks",
+  "slug": "task-commented-to-contacts",
+  "name": "New Comment on Task (Sent to Customer Contacts)",
+  "subject": "New Comment on Task - {task_name}",
+  "message": "<span>Dear {contact_firstname} {contact_lastname}</span><br /><br /><span>A comment has been made on the following task:</span><br /><br /><strong>Name:</strong><span> {task_name}</span><br /><strong>Comment:</strong><span> {task_comment}</span><br /><br /><span>You can view the task on the following link: </span><a href=\"{task_link}\">{task_name}</a><br /><br /><span>Kind Regards,</span><br /><span>{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "leads",
+  "slug": "new-lead-assigned",
+  "name": "New Lead Assigned to Staff Member",
+  "subject": "New lead assigned to you",
+  "message": "<p>Hello {lead_assigned}<br /><br />New lead is assigned to you.<br /><br /><strong>Lead Name:</strong>&nbsp;{lead_name}<br /><strong>Lead Email:</strong>&nbsp;{lead_email}<br /><br />You can view the lead on the following link: <a href=\"{lead_link}\">{lead_name}</a><br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "client",
+  "slug": "client-statement",
+  "name": "Statement - Account Summary",
+  "subject": "Account Statement from {statement_from} to {statement_to}",
+  "message": "Dear {contact_firstname} {contact_lastname}, <br /><br />Its been a great experience working with you.<br /><br />Attached with this email is a list of all transactions for the period between {statement_from} to {statement_to}<br /><br />For your information your account balance due is total:&nbsp;{statement_balance_due}<br /><br />Please contact us if you need more information.<br /> <br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "ticket",
+  "slug": "ticket-assigned-to-admin",
+  "name": "New Ticket Assigned (Sent to Staff)",
+  "subject": "New support ticket has been assigned to you",
+  "message": "<p><span style=\"font-size: 12pt;\">Hi,<br /><br />Greetings from Global Infocloud!<br /></span></p>\r\n<p><span style=\"font-size: 12pt;\">A new support ticket&nbsp;has been assigned to you.</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Subject</strong>: {ticket_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Department</strong>: {ticket_department}</span><br /><span style=\"font-size: 12pt;\"><strong>Priority</strong>: {ticket_priority}</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Ticket message:</strong></span><br /><span style=\"font-size: 12pt;\">{ticket_message}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the ticket on the following link: <a href=\"{ticket_url}\">#{ticket_id}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span></p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "client",
+  "slug": "new-client-registered-to-admin",
+  "name": "New Customer Registration (Sent to admins)",
+  "subject": "New Customer Registration",
+  "message": "Hello.<br /><br />New customer registration on your customer portal:<br /><br /><strong>Firstname:</strong>&nbsp;{contact_firstname}<br /><strong>Lastname:</strong>&nbsp;{contact_lastname}<br /><strong>Company:</strong>&nbsp;{client_company}<br /><strong>Email:</strong>&nbsp;{contact_email}<br /><br />Best Regards",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "leads",
+  "slug": "new-web-to-lead-form-submitted",
+  "name": "Web to lead form submitted - Sent to lead",
+  "subject": "{lead_name} - We Received Your Request",
+  "message": "Hello {lead_name}.<br /><br /><strong>Your request has been received.</strong><br /><br />This email is to let you know that we received your request and we will get back to you as soon as possible with more information.<br /><br />Best Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "project",
+  "slug": "project-finished-to-customer",
+  "name": "Project Marked as Finished (Sent to Customer Contacts)",
+  "subject": "Project Marked as Finished",
+  "message": "<p>Hello&nbsp;{contact_firstname}&nbsp;{contact_lastname}<br /><br />Greetings for the day! <br /><br />We are pleased to inform you that we have successfully completed the work as per the work order. <br /><br />The role &amp; responsibility of Global Infocloud Pvt. Ltd. are concluded henceforth except the maintenance if in the contract. We will take care for the period as mentioned in the Contract. <br /><br />We believe you are satisfied with our work. Hoping for the future endeavor with you soon.</p>\r\n<p>You are receiving this email because project&nbsp;<strong>{project_name}</strong> has been marked as finished. This project is assigned under your company and we just wanted to keep you up to date.<br /><br />You can view the project on the following link:&nbsp;<a href=\"{project_link}\">{project_name}</a></p>\r\n<p>If you have any questions don't hesitate to contact us.<br /><br />Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "credit_note",
+  "slug": "credit-note-send-to-client",
+  "name": "Send Credit Note To Email",
+  "subject": "Credit Note With Number #{credit_note_number} Created",
+  "message": "Dear&nbsp;{contact_firstname}&nbsp;{contact_lastname}<br /><br />We have attached the credit note with number <strong>#{credit_note_number} </strong>for your reference.<br /><br /><strong>Date:</strong>&nbsp;{credit_note_date}<br /><strong>Total Amount:</strong>&nbsp;{credit_note_total}<br /><br /><span style=\"font-size: 12pt;\">Please contact us for more information.</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "tasks",
+  "slug": "task-status-change-to-staff",
+  "name": "Task Status Changed (Sent to Staff)",
+  "subject": "Task Status Changed",
+  "message": "<span style=\"font-size: 12pt;\">Hi {staff_firstname}</span><br /><br /><span style=\"font-size: 12pt;\"><strong>{task_user_take_action}</strong> marked task as <strong>{task_status}</strong></span><br /><br /><span style=\"font-size: 12pt;\"><strong>Name:</strong> {task_name}</span><br /><span style=\"font-size: 12pt;\"><strong>Due date:</strong> {task_duedate}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the task on the following link: <a href=\"{task_link}\">{task_name}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "tasks",
+  "slug": "task-status-change-to-contacts",
+  "name": "Task Status Changed (Sent to Customer Contacts)",
+  "subject": "Task Status Changed",
+  "message": "<span style=\"font-size: 12pt;\">Hi {contact_firstname} {contact_lastname}</span><br /><br /><span style=\"font-size: 12pt;\"><strong>{task_user_take_action}</strong> marked task as <strong>{task_status}</strong></span><br /><br /><span style=\"font-size: 12pt;\"><strong>Name:</strong> {task_name}</span><br /><span style=\"font-size: 12pt;\"><strong>Due date:</strong> {task_duedate}</span><br /><br /><span style=\"font-size: 12pt;\">You can view the task on the following link: <a href=\"{task_link}\">{task_name}</a></span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "staff",
+  "slug": "reminder-email-staff",
+  "name": "Staff Reminder Email",
+  "subject": "You Have a New Reminder!",
+  "message": "<p>Hello&nbsp;{staff_firstname}<br /><br /><strong>You have a new reminder&nbsp;linked to&nbsp;{staff_reminder_relation_name}!<br /><br />Reminder description:</strong><br />{staff_reminder_description}<br /><br />Click <a href=\"{staff_reminder_relation_link}\">here</a> to view&nbsp;<a href=\"{staff_reminder_relation_link}\">{staff_reminder_relation_name}</a><br /><br />Best Regards<br /><br /></p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "contract",
+  "slug": "contract-comment-to-client",
+  "name": "New Comment  (Sent to Customer Contacts)",
+  "subject": "New Contract Comment",
+  "message": "Dear {contact_firstname} {contact_lastname}<br /> <br />A new comment has been made on the following contract: <strong>{contract_subject}</strong><br /> <br />You can view and reply to the comment on the following link: <a href=\"{contract_link}\">{contract_subject}</a><br /> <br />Kind Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "contract",
+  "slug": "contract-comment-to-admin",
+  "name": "New Comment (Sent to Staff) ",
+  "subject": "New Contract Comment",
+  "message": "Hi {staff_firstname}<br /><br />A new comment has been made to the contract&nbsp;<strong>{contract_subject}</strong><br /><br />You can view and reply to the comment on the following link: <a href=\"{contract_link}\">{contract_subject}</a>&nbsp;or from the admin area.<br /><br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "subscriptions",
+  "slug": "send-subscription",
+  "name": "Send Subscription to Customer",
+  "subject": "Subscription Created",
+  "message": "Hello&nbsp;{contact_firstname}&nbsp;{contact_lastname}<br /><br />We have prepared the subscription&nbsp;<strong>{subscription_name}</strong> for your company.<br /><br />Click <a href=\"{subscription_link}\">here</a> to review the subscription and subscribe.<br /><br />Best Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "subscriptions",
+  "slug": "subscription-payment-failed",
+  "name": "Subscription Payment Failed",
+  "subject": "Your most recent invoice payment failed",
+  "message": "Hello&nbsp;{contact_firstname}&nbsp;{contact_lastname}<br /><br br=\"\" />Unfortunately, your most recent invoice payment for&nbsp;<strong>{subscription_name}</strong> was declined.<br /><br /> This could be due to a change in your card number, your card expiring,<br /> cancellation of your credit card, or the card issuer not recognizing the<br /> payment and therefore taking action to prevent it.<br /><br /> Please update your payment information as soon as possible by logging in here:<br /><a href=\"{crm_url}\">{crm_url}</a><br /><br />Best Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "subscriptions",
+  "slug": "subscription-canceled",
+  "name": "Subscription Canceled (Sent to customer primary contact)",
+  "subject": "Your subscription has been canceled",
+  "message": "Hello&nbsp;{contact_firstname}&nbsp;{contact_lastname}<br /><br />Your subscription&nbsp;<strong>{subscription_name} </strong>has been canceled, if you have any questions don't hesitate to contact us.<br /><br />It was a pleasure doing business with you.<br /><br />Best Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "subscriptions",
+  "slug": "subscription-payment-succeeded",
+  "name": "Subscription Payment Succeeded (Sent to customer primary contact)",
+  "subject": "Subscription  Payment Receipt - {subscription_name}",
+  "message": "Hello&nbsp;{contact_firstname}&nbsp;{contact_lastname}<br /><br />This email is to let you know that we received your payment for subscription&nbsp;<strong>{subscription_name}&nbsp;</strong>of&nbsp;<strong><span>{payment_total}<br /><br /></span></strong>The invoice associated with it is now with status&nbsp;<strong>{invoice_status}<br /></strong><br />Thank you for your confidence.<br /><br />Best Regards,<br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "contract",
+  "slug": "contract-expiration-to-staff",
+  "name": "Contract Expiration Reminder (Sent to Staff)",
+  "subject": "Contract Expiration Reminder",
+  "message": "Hi {staff_firstname}<br /><br /><span style=\"font-size: 12pt;\">This is a reminder that the following contract will expire soon:</span><br /><br /><span style=\"font-size: 12pt;\"><strong>Subject:</strong> {contract_subject}</span><br /><span style=\"font-size: 12pt;\"><strong>Description:</strong> {contract_description}</span><br /><span style=\"font-size: 12pt;\"><strong>Date Start:</strong> {contract_datestart}</span><br /><span style=\"font-size: 12pt;\"><strong>Date End:</strong> {contract_dateend}</span><br /><br /><span style=\"font-size: 12pt;\">Kind Regards,</span><br /><span style=\"font-size: 12pt;\">{email_signature}</span>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "client",
+  "slug": "client-registration-confirmed",
+  "name": "Customer Registration Confirmed",
+  "subject": "Your registration is confirmed",
+  "message": "<p>Dear {contact_firstname} {contact_lastname}<br /><br />We just wanted to let you know that your registration at&nbsp;{companyname} is successfully confirmed and your account is now active.<br /><br />You can login at&nbsp;<a href=\"{crm_url}\">{crm_url}</a> with the email and password you provided during registration.<br /><br />Please contact us if you need any help.<br /><br />Kind Regards, <br />{email_signature}</p>\r\n<p><br />(This is an automated email, so please don't reply to this email address)</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": false
+ },
+ {
+  "type": "contract",
+  "slug": "contract-signed-to-staff",
+  "name": "Contract Signed (Sent to Staff)",
+  "subject": "Customer Signed a Contract",
+  "message": "Hi {staff_firstname}<br /><br />A contract with subject&nbsp;<strong>{contract_subject} </strong>has been successfully signed by the customer.<br /><br />You can view and reply to the comment on the following link: <a href=\"{contract_link}\">{contract_subject}</a>&nbsp;or from the admin area.<br /><br />{email_signature}",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ }
+]

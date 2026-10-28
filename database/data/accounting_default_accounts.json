@@ -1,0 +1,530 @@
+[
+    {
+        "key_name": "acc_accounts_receivable",
+        "name": "Accounts Receivable (A/R)",
+        "account_type_id": 1,
+        "account_detail_type_id": 1
+    },
+    {
+        "key_name": "acc_allowance_for_bad_debts",
+        "name": "Allowance for bad debts",
+        "account_type_id": 2,
+        "account_detail_type_id": 2
+    },
+    {
+        "key_name": "acc_available_for_sale_assets_short_term",
+        "name": "Available for sale assets (short-term)",
+        "account_type_id": 2,
+        "account_detail_type_id": 3
+    },
+    {
+        "key_name": "acc_deferred_tax_assets",
+        "name": "Deferred tax assets",
+        "account_type_id": 2,
+        "account_detail_type_id": 10
+    },
+    {
+        "key_name": "acc_inventory",
+        "name": "Inventory",
+        "account_type_id": 2,
+        "account_detail_type_id": 5
+    },
+    {
+        "key_name": "acc_inventory_asset",
+        "name": "Inventory Asset",
+        "account_type_id": 2,
+        "account_detail_type_id": 5
+    },
+    {
+        "key_name": "acc_prepaid_expenses",
+        "name": "Prepaid Expenses",
+        "account_type_id": 2,
+        "account_detail_type_id": 10
+    },
+    {
+        "key_name": "acc_uncategorised_asset",
+        "name": "Uncategorised Asset",
+        "account_type_id": 2,
+        "account_detail_type_id": 10
+    },
+    {
+        "key_name": "acc_undeposited_funds",
+        "name": "Undeposited Funds",
+        "account_type_id": 2,
+        "account_detail_type_id": 13
+    },
+    {
+        "key_name": "acc_cash_and_cash_equivalents",
+        "name": "Cash and cash equivalents",
+        "account_type_id": 3,
+        "account_detail_type_id": 15
+    },
+    {
+        "key_name": "acc_accumulated_depreciation_on_property_plant_and_equipment",
+        "name": "Accumulated Depreciation on Property, Plant and Equipment",
+        "account_type_id": 4,
+        "account_detail_type_id": 22
+    },
+    {
+        "key_name": "acc_property_plant_and_equipment",
+        "name": "Property, plant and equipment",
+        "account_type_id": 4,
+        "account_detail_type_id": 26
+    },
+    {
+        "key_name": "acc_assets_held_for_sale",
+        "name": "Assets held for sale",
+        "account_type_id": 5,
+        "account_detail_type_id": 32
+    },
+    {
+        "key_name": "acc_goodwill",
+        "name": "Goodwill",
+        "account_type_id": 5,
+        "account_detail_type_id": 34
+    },
+    {
+        "key_name": "acc_intangibles",
+        "name": "Intangibles",
+        "account_type_id": 5,
+        "account_detail_type_id": 35
+    },
+    {
+        "key_name": "acc_long_term_investments",
+        "name": "Long-term investments",
+        "account_type_id": 5,
+        "account_detail_type_id": 38
+    },
+    {
+        "key_name": "acc_accounts_payable",
+        "name": "Accounts Payable (A/P)",
+        "account_type_id": 6,
+        "account_detail_type_id": 42
+    },
+    {
+        "key_name": "acc_credit_card",
+        "name": "Credit Card",
+        "account_type_id": 7,
+        "account_detail_type_id": 43
+    },
+    {
+        "key_name": "acc_accrued_liabilities",
+        "name": "Accrued liabilities",
+        "account_type_id": 8,
+        "account_detail_type_id": 44
+    },
+    {
+        "key_name": "acc_dividends_payable",
+        "name": "Dividends payable",
+        "account_type_id": 8,
+        "account_detail_type_id": 48
+    },
+    {
+        "key_name": "acc_income_tax_payable",
+        "name": "Income tax payable",
+        "account_type_id": 8,
+        "account_detail_type_id": 50
+    },
+    {
+        "key_name": "acc_payroll_clearing",
+        "name": "Payroll Clearing",
+        "account_type_id": 8,
+        "account_detail_type_id": 55
+    },
+    {
+        "key_name": "acc_payroll_liabilities",
+        "name": "Payroll liabilities",
+        "account_type_id": 8,
+        "account_detail_type_id": 56
+    },
+    {
+        "key_name": "acc_short_term_debit",
+        "name": "Short-term debit",
+        "account_type_id": 8,
+        "account_detail_type_id": 54
+    },
+    {
+        "key_name": "acc_accrued_holiday_payable",
+        "name": "Accrued holiday payable",
+        "account_type_id": 9,
+        "account_detail_type_id": 61
+    },
+    {
+        "key_name": "acc_accrued_non_current_liabilities",
+        "name": "Accrued non-current liabilities",
+        "account_type_id": 9,
+        "account_detail_type_id": 62
+    },
+    {
+        "key_name": "acc_liabilities_related_to_assets_held_for_sale",
+        "name": "Liabilities related to assets held for sale",
+        "account_type_id": 9,
+        "account_detail_type_id": 63
+    },
+    {
+        "key_name": "acc_long_term_debt",
+        "name": "Long-term debt",
+        "account_type_id": 9,
+        "account_detail_type_id": 64
+    },
+    {
+        "key_name": "acc_dividend_disbursed",
+        "name": "Dividend disbursed",
+        "account_type_id": 10,
+        "account_detail_type_id": 69
+    },
+    {
+        "key_name": "acc_equity_in_earnings_of_subsidiaries",
+        "name": "Equity in earnings of subsidiaries",
+        "account_type_id": 10,
+        "account_detail_type_id": 70
+    },
+    {
+        "key_name": "acc_opening_balance_equity",
+        "name": "Opening Balance Equity",
+        "account_type_id": 10,
+        "account_detail_type_id": 71
+    },
+    {
+        "key_name": "acc_other_comprehensive_income",
+        "name": "Other comprehensive income",
+        "account_type_id": 10,
+        "account_detail_type_id": 73
+    },
+    {
+        "key_name": "acc_retained_earnings",
+        "name": "Retained Earnings",
+        "account_type_id": 10,
+        "account_detail_type_id": 80
+    },
+    {
+        "key_name": "acc_share_capital",
+        "name": "Share capital",
+        "account_type_id": 10,
+        "account_detail_type_id": 81
+    },
+    {
+        "key_name": "acc_billable_expense_income",
+        "name": "Billable Expense Income",
+        "account_type_id": 11,
+        "account_detail_type_id": 89
+    },
+    {
+        "key_name": "acc_revenue_general",
+        "name": "Revenue - General",
+        "account_type_id": 11,
+        "account_detail_type_id": 86
+    },
+    {
+        "key_name": "acc_sales",
+        "name": "Sales",
+        "account_type_id": 11,
+        "account_detail_type_id": 89
+    },
+    {
+        "key_name": "acc_sales_retail",
+        "name": "Sales - retail",
+        "account_type_id": 11,
+        "account_detail_type_id": 87
+    },
+    {
+        "key_name": "acc_sales_wholesale",
+        "name": "Sales - wholesale",
+        "account_type_id": 11,
+        "account_detail_type_id": 88
+    },
+    {
+        "key_name": "acc_sales_of_product_income",
+        "name": "Sales of Product Income",
+        "account_type_id": 11,
+        "account_detail_type_id": 89
+    },
+    {
+        "key_name": "acc_unapplied_cash_payment_income",
+        "name": "Unapplied Cash Payment Income",
+        "account_type_id": 11,
+        "account_detail_type_id": 91
+    },
+    {
+        "key_name": "acc_uncategorised_income",
+        "name": "Uncategorised Income",
+        "account_type_id": 11,
+        "account_detail_type_id": 89
+    },
+    {
+        "key_name": "acc_dividend_income",
+        "name": "Dividend income",
+        "account_type_id": 12,
+        "account_detail_type_id": 92
+    },
+    {
+        "key_name": "acc_interest_income",
+        "name": "Interest income",
+        "account_type_id": 12,
+        "account_detail_type_id": 93
+    },
+    {
+        "key_name": "acc_loss_on_disposal_of_assets",
+        "name": "Loss on disposal of assets",
+        "account_type_id": 12,
+        "account_detail_type_id": 94
+    },
+    {
+        "key_name": "acc_other_operating_income_expenses",
+        "name": "Other operating income (expenses)",
+        "account_type_id": 12,
+        "account_detail_type_id": 97
+    },
+    {
+        "key_name": "acc_unrealised_loss_on_securities_net_of_tax",
+        "name": "Unrealised loss on securities, net of tax",
+        "account_type_id": 12,
+        "account_detail_type_id": 99
+    },
+    {
+        "key_name": "acc_change_in_inventory_cos",
+        "name": "Change in inventory - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_cost_of_sales",
+        "name": "Cost of sales",
+        "account_type_id": 13,
+        "account_detail_type_id": 104
+    },
+    {
+        "key_name": "acc_direct_labour_cos",
+        "name": "Direct labour - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_discounts_given_cos",
+        "name": "Discounts given - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_freight_and_delivery_cos",
+        "name": "Freight and delivery - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_materials_cos",
+        "name": "Materials - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_other_cos",
+        "name": "Other - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_overhead_cos",
+        "name": "Overhead - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_subcontractors_cos",
+        "name": "Subcontractors - COS",
+        "account_type_id": 13,
+        "account_detail_type_id": 100
+    },
+    {
+        "key_name": "acc_amortisation_expense",
+        "name": "Amortisation expense",
+        "account_type_id": 14,
+        "account_detail_type_id": 106
+    },
+    {
+        "key_name": "acc_bad_debts",
+        "name": "Bad debts",
+        "account_type_id": 14,
+        "account_detail_type_id": 108
+    },
+    {
+        "key_name": "acc_bank_charges",
+        "name": "Bank charges",
+        "account_type_id": 14,
+        "account_detail_type_id": 109
+    },
+    {
+        "key_name": "acc_commissions_and_fees",
+        "name": "Commissions and fees",
+        "account_type_id": 14,
+        "account_detail_type_id": 111
+    },
+    {
+        "key_name": "acc_dues_and_subscriptions",
+        "name": "Dues and Subscriptions",
+        "account_type_id": 14,
+        "account_detail_type_id": 113
+    },
+    {
+        "key_name": "acc_equipment_rental",
+        "name": "Equipment rental",
+        "account_type_id": 14,
+        "account_detail_type_id": 114
+    },
+    {
+        "key_name": "acc_income_tax_expense",
+        "name": "Income tax expense",
+        "account_type_id": 14,
+        "account_detail_type_id": 116
+    },
+    {
+        "key_name": "acc_insurance_disability",
+        "name": "Insurance - Disability",
+        "account_type_id": 14,
+        "account_detail_type_id": 117
+    },
+    {
+        "key_name": "acc_insurance_general",
+        "name": "Insurance - General",
+        "account_type_id": 14,
+        "account_detail_type_id": 117
+    },
+    {
+        "key_name": "acc_insurance_liability",
+        "name": "Insurance - Liability",
+        "account_type_id": 14,
+        "account_detail_type_id": 117
+    },
+    {
+        "key_name": "acc_interest_expense",
+        "name": "Interest expense",
+        "account_type_id": 14,
+        "account_detail_type_id": 118
+    },
+    {
+        "key_name": "acc_legal_and_professional_fees",
+        "name": "Legal and professional fees",
+        "account_type_id": 14,
+        "account_detail_type_id": 119
+    },
+    {
+        "key_name": "acc_loss_on_discontinued_operations_net_of_tax",
+        "name": "Loss on discontinued operations, net of tax",
+        "account_type_id": 14,
+        "account_detail_type_id": 120
+    },
+    {
+        "key_name": "acc_management_compensation",
+        "name": "Management compensation",
+        "account_type_id": 14,
+        "account_detail_type_id": 121
+    },
+    {
+        "key_name": "acc_meals_and_entertainment",
+        "name": "Meals and entertainment",
+        "account_type_id": 14,
+        "account_detail_type_id": 122
+    },
+    {
+        "key_name": "acc_office_expenses",
+        "name": "Office expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 123
+    },
+    {
+        "key_name": "acc_other_type_of_expenses_advertising_expenses",
+        "name": "Other Types of Expenses-Advertising Expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 105
+    },
+    {
+        "key_name": "acc_other_general_and_administrative_expenses",
+        "name": "Other general and administrative expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 123
+    },
+    {
+        "key_name": "acc_other_selling_expenses",
+        "name": "Other selling expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 125
+    },
+    {
+        "key_name": "acc_payroll_expenses",
+        "name": "Payroll Expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 126
+    },
+    {
+        "key_name": "acc_purchases",
+        "name": "Purchases",
+        "account_type_id": 14,
+        "account_detail_type_id": 130
+    },
+    {
+        "key_name": "acc_rent_or_lease_payments",
+        "name": "Rent or lease payments",
+        "account_type_id": 14,
+        "account_detail_type_id": 127
+    },
+    {
+        "key_name": "acc_repair_and_maintenance",
+        "name": "Repair and maintenance",
+        "account_type_id": 14,
+        "account_detail_type_id": 128
+    },
+    {
+        "key_name": "acc_shipping_and_delivery_expense",
+        "name": "Shipping and delivery expense",
+        "account_type_id": 14,
+        "account_detail_type_id": 129
+    },
+    {
+        "key_name": "acc_stationery_and_printing",
+        "name": "Stationery and printing",
+        "account_type_id": 14,
+        "account_detail_type_id": 123
+    },
+    {
+        "key_name": "acc_supplies",
+        "name": "Supplies",
+        "account_type_id": 14,
+        "account_detail_type_id": 130
+    },
+    {
+        "key_name": "acc_travel_expenses_general_and_admin_expenses",
+        "name": "Travel expenses - general and admin expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 132
+    },
+    {
+        "key_name": "acc_travel_expenses_selling_expense",
+        "name": "Travel expenses - selling expense",
+        "account_type_id": 14,
+        "account_detail_type_id": 133
+    },
+    {
+        "key_name": "acc_uncategorised_expense",
+        "name": "Uncategorised Expense",
+        "account_type_id": 14,
+        "account_detail_type_id": 124
+    },
+    {
+        "key_name": "acc_utilities",
+        "name": "Utilities",
+        "account_type_id": 14,
+        "account_detail_type_id": 135
+    },
+    {
+        "key_name": "acc_wage_expenses",
+        "name": "Wage expenses",
+        "account_type_id": 14,
+        "account_detail_type_id": 126
+    },
+    {
+        "key_name": "acc_reconciliation_discrepancies",
+        "name": "Reconciliation Discrepancies",
+        "account_type_id": 15,
+        "account_detail_type_id": 139
+    }
+]
