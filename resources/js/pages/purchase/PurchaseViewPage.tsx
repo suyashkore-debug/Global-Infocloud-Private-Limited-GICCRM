@@ -207,7 +207,7 @@ export default function PurchaseViewPage({ type }: { type: DocType }) {
                             </div>
                             {typeof d.description === 'string' && d.description && <p className="whitespace-pre-wrap text-gray-700">{d.description}</p>}
                             <div className="-mx-4 overflow-x-auto">
-                                <table className="table-perfex">
+                                <table data-nosort className="table-perfex">
                                     <thead>
                                         <tr>
                                             <th>#</th>

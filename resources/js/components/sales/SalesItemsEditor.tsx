@@ -3,7 +3,7 @@ import { Check, ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { calculateTotals, emptyLine, money, SHOW_QUANTITY_AS, taxKey } from '../../lib/sales';
 import type { Item, LineTax, SalesLine, Tax } from '../../types';
-import { inputClass, Select } from '../ui';
+import { Input, inputClass, Select } from '../ui';
 
 export interface MoneyFields {
     discount_type: 'before_tax' | 'after_tax' | null;
@@ -91,7 +91,7 @@ export default function SalesItemsEditor({
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="table-perfex">
+                <table data-nosort className="table-perfex">
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="w-[34%]">Item</th>
@@ -135,31 +135,31 @@ export default function SalesItemsEditor({
                 </table>
             </div>
             {error && <p className="text-xs text-red-600">{error}</p>}
-            <button type="button" onClick={() => onLines([...lines, emptyLine()])} className="inline-flex items-center gap-1 text-[13.5px] font-medium text-blue-600 hover:underline">
+            <button type="button" onClick={() => onLines([...lines, emptyLine()])} className="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 px-3 py-2 text-[13px] font-semibold text-brand ring-1 ring-brand-100 transition hover:bg-brand-100">
                 <Plus className="h-4 w-4" /> Add new line
             </button>
 
             <div className="flex justify-end">
-                <table className="w-full max-w-md text-[13.5px]">
+                <table className="w-full max-w-lg overflow-hidden rounded-2xl bg-slate-50/80 text-[13.5px] ring-1 ring-slate-200/70">
                     <tbody>
                         <tr>
-                            <td className="py-1.5 text-right font-medium">Sub Total :</td>
-                            <td className="w-40 py-1.5 text-right">{money(totals.subtotal, currency)}</td>
+                            <td className="px-4 pb-1.5 pt-3.5 text-right font-medium text-slate-600">Sub Total</td>
+                            <td className="w-40 px-4 pb-1.5 pt-3.5 text-right font-semibold text-slate-800">{money(totals.subtotal, currency)}</td>
                         </tr>
                         <tr>
-                            <td className="py-1.5 text-right">
+                            <td className="px-4 py-1.5 text-right">
                                 <div className="flex flex-wrap items-center justify-end gap-2">
-                                    <span className="font-medium">Discount</span>
-                                    <select
+                                    <span className="font-medium text-slate-600">Discount</span>
+                                    <Select
                                         value={moneyFields.discount_type ?? ''}
                                         onChange={(e) => onMoney({ ...moneyFields, discount_type: (e.target.value || null) as MoneyFields['discount_type'] })}
-                                        className="rounded border border-gray-300 px-1.5 py-1 text-xs"
+                                        className="!w-36 !py-1.5 !text-[13px]"
                                     >
                                         <option value="">No discount</option>
                                         <option value="before_tax">Before Tax</option>
                                         <option value="after_tax">After Tax</option>
-                                    </select>
-                                    <input
+                                    </Select>
+                                    <Input
                                         type="number"
                                         min={0}
                                         step="any"
@@ -172,40 +172,50 @@ export default function SalesItemsEditor({
                                                     : { ...moneyFields, discount_total: Number(e.target.value), discount_percent: 0 },
                                             )
                                         }
-                                        className="w-20 rounded border border-gray-300 px-1.5 py-1 text-xs disabled:bg-gray-100"
+                                        className="!w-24 !py-1.5 text-right !text-[13px]"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setDiscountMode(discountMode === 'percent' ? 'fixed' : 'percent');
-                                            onMoney({ ...moneyFields, discount_percent: 0, discount_total: 0 });
-                                        }}
-                                        className="inline-flex items-center gap-0.5 rounded border border-gray-300 px-1.5 py-1 text-xs"
-                                    >
-                                        {discountMode === 'percent' ? '%' : 'Fixed'} <ChevronDown className="h-3 w-3" />
-                                    </button>
+                                    <span className="inline-flex rounded-xl bg-white p-0.5 ring-1 ring-slate-200" role="group" aria-label="Discount as">
+                                        {(['percent', 'fixed'] as const).map((mode) => (
+                                            <button
+                                                key={mode}
+                                                type="button"
+                                                aria-pressed={discountMode === mode}
+                                                onClick={() => {
+                                                    if (mode !== discountMode) {
+                                                        setDiscountMode(mode);
+                                                        onMoney({ ...moneyFields, discount_percent: 0, discount_total: 0 });
+                                                    }
+                                                }}
+                                                className={`rounded-lg px-2.5 py-1 text-[12px] font-bold transition ${discountMode === mode ? 'bg-brand text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                            >
+                                                {mode === 'percent' ? '%' : 'Fixed'}
+                                            </button>
+                                        ))}
+                                    </span>
                                 </div>
                             </td>
-                            <td className="py-1.5 text-right">-{money(totals.discount, currency)}</td>
+                            <td className="px-4 py-1.5 text-right font-semibold text-red-600">-{money(totals.discount, currency)}</td>
                         </tr>
                         {totals.taxes.map((tax) => (
                             <tr key={tax.key}>
-                                <td className="py-1.5 text-right font-medium">
+                                <td className="px-4 py-1.5 text-right font-medium text-slate-600">
                                     {tax.name} ({tax.rate}%)
                                 </td>
-                                <td className="py-1.5 text-right">{money(tax.amount, currency)}</td>
+                                <td className="px-4 py-1.5 text-right font-semibold text-slate-800">{money(tax.amount, currency)}</td>
                             </tr>
                         ))}
                         <tr>
-                            <td className="py-1.5 text-right">
-                                <span className="mr-2 font-medium">Adjustment</span>
-                                <input type="number" step="any" value={moneyFields.adjustment} onChange={(e) => onMoney({ ...moneyFields, adjustment: Number(e.target.value) })} className="w-24 rounded border border-gray-300 px-1.5 py-1 text-xs" />
+                            <td className="px-4 py-1.5 text-right">
+                                <span className="inline-flex items-center gap-2">
+                                    <span className="font-medium text-slate-600">Adjustment</span>
+                                    <Input type="number" step="any" value={moneyFields.adjustment} onChange={(e) => onMoney({ ...moneyFields, adjustment: Number(e.target.value) })} className="!w-28 !py-1.5 text-right !text-[13px]" />
+                                </span>
                             </td>
-                            <td className="py-1.5 text-right">{money(moneyFields.adjustment, currency)}</td>
+                            <td className="px-4 py-1.5 text-right font-semibold text-slate-800">{money(moneyFields.adjustment, currency)}</td>
                         </tr>
-                        <tr className="border-t border-gray-200 text-base">
-                            <td className="py-2 text-right font-semibold">Total :</td>
-                            <td className="py-2 text-right font-semibold">{money(totals.total, currency)}</td>
+                        <tr className="border-t border-slate-200 bg-white">
+                            <td className="px-4 py-3.5 text-right font-display text-[15px] font-bold text-slate-800">Total</td>
+                            <td className="px-4 py-3.5 text-right font-display text-[18px] font-extrabold text-brand">{money(totals.total, currency)}</td>
                         </tr>
                     </tbody>
                 </table>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Wallet } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { formatDate } from '../../lib/format';
 import { money } from '../../lib/sales';
@@ -22,7 +22,7 @@ export function PaymentsTable({ customerId }: { customerId?: number }) {
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No payments found" />
+                <EmptyState icon={Wallet} title="No payments found" text="Payments you record on invoices are listed here." />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

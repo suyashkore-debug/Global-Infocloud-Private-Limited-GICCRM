@@ -14,9 +14,12 @@ class Lead extends Model
 {
     use BelongsToCompany, HasTags;
 
+    /** Qualification criteria, in star order: a lead meeting n of them is rated n stars. */
+    public const QUALIFICATION = ['industry', 'company_size', 'business_need', 'decision_maker', 'timeline'];
+
     protected $fillable = [
         'company_id', 'name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state',
-        'zip', 'country', 'lead_status_id', 'lead_source_id', 'assigned_id', 'assigned_at', 'lead_value', 'is_public',
+        'zip', 'country', 'lead_status_id', 'lead_source_id', 'assigned_id', 'assigned_at', 'lead_value', 'qualification', 'is_public',
         'lost', 'junk', 'last_contact_at', 'last_status_change_at', 'customer_id', 'converted_at', 'lead_order', 'created_by',
     ];
 
@@ -25,6 +28,7 @@ class Lead extends Model
         return [
             'assigned_at' => 'date',
             'lead_value' => 'decimal:2',
+            'qualification' => 'array',
             'is_public' => 'boolean',
             'lost' => 'boolean',
             'junk' => 'boolean',
@@ -46,6 +50,14 @@ class Lead extends Model
             return;
         }
         $query->where(fn ($q) => $q->where('assigned_id', $user->id)->orWhere('created_by', $user->id)->orWhere('is_public', true));
+    }
+
+    /**
+     * The star rating: how many qualification criteria the lead meets.
+     */
+    public function rating(): int
+    {
+        return count(array_intersect(self::QUALIFICATION, (array) $this->qualification));
     }
 
     public function logActivity(string $description, bool $custom = false): void

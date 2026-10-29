@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type DragEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Columns3, List, Plus, Search } from 'lucide-react';
+import { Calculator, Columns3, List, Plus, Search } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { optionById } from '../../lib/constants';
 import { formatDate } from '../../lib/format';
@@ -106,7 +106,7 @@ export function EstimatesTable({ customerId, projectId }: { customerId?: number;
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No estimates found" />
+                <EmptyState icon={Calculator} title="No estimates found" text="Estimates turn into invoices with one click once the customer agrees." action={canCreate && <Button onClick={() => navigate(`/estimates/new${customerId ? `?customer_id=${customerId}` : ''}`)}><Plus className="h-4 w-4" /> Create an estimate</Button>} />
             ) : view === 'pipeline' ? (
                 <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
                     <div className="flex min-w-max gap-4">

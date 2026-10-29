@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Check, Globe, Mail, MapPin, Pencil, Phone, Plus, Star, Trash2, UserRound } from 'lucide-react';
+import { ArrowLeft, Building2, Check, Globe, Mail, MapPin, Pencil, Phone, Plus, Receipt, Star, Trash2, Truck, UserRound, Users } from 'lucide-react';
 import { formatDateTime } from '../../lib/format';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, Checkbox, ErrorNote, Field, IconButton, Input, Modal, Select, Spinner, StaffMultiSelect, Tabs, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, FormSection, IconButton, Input, Modal, Select, Spinner, StaffMultiSelect, Tabs, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../auth/AuthContext';
 import { NotesPanel, RemindersPanel } from '../../components/records/RecordPanels';
@@ -288,88 +288,103 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
             </div>
             <div className="panel-body">
                 {section === 'details' ? (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <Field label="Company" required error={errors.name}>
-                            <Input value={form.name} onChange={text('name')} autoFocus />
-                        </Field>
-                        <Field label="GST Number" error={errors.vat}>
-                            <Input value={form.vat} onChange={text('vat')} />
-                        </Field>
-                        <Field label="PAN" error={errors.company_pan}>
-                            <Input value={form.company_pan} onChange={text('company_pan')} />
-                        </Field>
-                        <Field label="GST Type" error={errors.gst_type}>
-                            <Select value={form.gst_type} onChange={text('gst_type')}>
-                                <option value="">—</option>
-                                <option value="regular">Regular</option>
-                                <option value="composition">Composition</option>
-                                <option value="unregistered">Unregistered</option>
-                                <option value="overseas">Overseas</option>
-                            </Select>
-                        </Field>
-                        <Field label="Phone" error={errors.phone}>
-                            <Input value={form.phone} onChange={text('phone')} />
-                        </Field>
-                        <Field label="Website" error={errors.website}>
-                            <Input value={form.website} onChange={text('website')} />
-                        </Field>
-                        <CustomFieldInputs cf={cf} className="sm:col-span-2" />
-                        <div>
-                            <span className="mb-1.5 block text-[13px] font-semibold text-slate-700">Groups</span>
-                            <div className="flex min-h-[42px] flex-wrap gap-1.5 rounded-lg border border-slate-300 bg-white p-2 shadow-sm">
-                                {groups.length === 0 && <span className="px-1 text-[13px] text-slate-400">No customer groups yet (Setup → Customers → Groups).</span>}
-                                {groups.map((g) => {
-                                    const on = form.groups.includes(g.id);
+                    <div className="space-y-4">
+                        <FormSection icon={Building2} title="Company" hint="Who the customer is and how you bill them.">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Company" required error={errors.name}>
+                                    <Input value={form.name} onChange={text('name')} autoFocus placeholder="Company name" />
+                                </Field>
+                                <Field label="Phone" error={errors.phone}>
+                                    <Input value={form.phone} onChange={text('phone')} placeholder="98765 43210" />
+                                </Field>
+                                <Field label="GST Number" error={errors.vat}>
+                                    <Input value={form.vat} onChange={text('vat')} placeholder="27ABCDE1234F1Z5" />
+                                </Field>
+                                <Field label="PAN" error={errors.company_pan}>
+                                    <Input value={form.company_pan} onChange={text('company_pan')} placeholder="ABCDE1234F" />
+                                </Field>
+                                <Field label="GST Type" error={errors.gst_type}>
+                                    <Select value={form.gst_type} onChange={text('gst_type')}>
+                                        <option value="">—</option>
+                                        <option value="regular">Regular</option>
+                                        <option value="composition">Composition</option>
+                                        <option value="unregistered">Unregistered</option>
+                                        <option value="overseas">Overseas</option>
+                                    </Select>
+                                </Field>
+                                <Field label="Website" error={errors.website}>
+                                    <Input value={form.website} onChange={text('website')} placeholder="www.example.com" />
+                                </Field>
+                                <Field label="Currency" hint="Used by default on this customer's invoices.">
+                                    <Select value={form.default_currency_id} onChange={text('default_currency_id')}>
+                                        <option value="">System default</option>
+                                        {currencies.map((c) => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.name} ({c.symbol})
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </Field>
+                                <div>
+                                    <span className="mb-1.5 block text-[12.5px] font-semibold text-slate-600">Groups</span>
+                                    <div className="flex min-h-[42px] flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-2 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                                        {groups.length === 0 && <span className="px-1 text-[13px] text-slate-400">No customer groups yet (Setup → Customers → Groups).</span>}
+                                        {groups.map((g) => {
+                                            const on = form.groups.includes(g.id);
 
-                                    return (
-                                        <button
-                                            key={g.id}
-                                            type="button"
-                                            aria-pressed={on}
-                                            onClick={(e) => (e.preventDefault(), set('groups', on ? form.groups.filter((x) => x !== g.id) : [...form.groups, g.id]))}
-                                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] font-semibold transition ${on ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                                        >
-                                            {on && <Check className="h-3.5 w-3.5" />}
-                                            {g.name}
-                                        </button>
-                                    );
-                                })}
+                                            return (
+                                                <button
+                                                    key={g.id}
+                                                    type="button"
+                                                    aria-pressed={on}
+                                                    onClick={(e) => (e.preventDefault(), set('groups', on ? form.groups.filter((x) => x !== g.id) : [...form.groups, g.id]))}
+                                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] font-semibold transition ${on ? 'bg-brand text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                                >
+                                                    {on && <Check className="h-3.5 w-3.5" />}
+                                                    {g.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <Field label="Currency" hint="Used by default on this customer's invoices.">
-                            <Select value={form.default_currency_id} onChange={text('default_currency_id')}>
-                                <option value="">System default</option>
-                                {currencies.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.name} ({c.symbol})
-                                    </option>
-                                ))}
-                            </Select>
-                        </Field>
-                        <Field label="Address" className="sm:col-span-2">
-                            <Textarea rows={2} value={form.address} onChange={text('address')} />
-                        </Field>
-                        <Field label="City">
-                            <Input value={form.city} onChange={text('city')} />
-                        </Field>
-                        <Field label="State">
-                            <Input value={form.state} onChange={text('state')} />
-                        </Field>
-                        <Field label="Zip Code">
-                            <Input value={form.zip} onChange={text('zip')} />
-                        </Field>
-                        <Field label="Country">
-                            <Input value={form.country} onChange={text('country')} />
-                        </Field>
-                        <Field label="Customer Admins" className="sm:col-span-2">
-                            <StaffMultiSelect staff={staff} value={form.admins} onChange={(ids) => set('admins', ids)} />
-                        </Field>
-                        <Checkbox label="Active" checked={form.is_active} onChange={(v) => set('is_active', v)} />
+                        </FormSection>
+
+                        <FormSection icon={MapPin} title="Address">
+                            <div className="grid gap-4 sm:grid-cols-4">
+                                <Field label="Address" className="sm:col-span-4">
+                                    <Textarea rows={2} value={form.address} onChange={text('address')} placeholder="Building, street, area" />
+                                </Field>
+                                <Field label="City">
+                                    <Input value={form.city} onChange={text('city')} />
+                                </Field>
+                                <Field label="State">
+                                    <Input value={form.state} onChange={text('state')} />
+                                </Field>
+                                <Field label="Zip Code">
+                                    <Input value={form.zip} onChange={text('zip')} />
+                                </Field>
+                                <Field label="Country">
+                                    <Input value={form.country} onChange={text('country')} />
+                                </Field>
+                            </div>
+                        </FormSection>
+
+                        <FormSection icon={Users} title="Team & status" hint="Staff who look after this customer.">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Customer Admins" className="sm:col-span-2">
+                                    <StaffMultiSelect staff={staff} value={form.admins} onChange={(ids) => set('admins', ids)} />
+                                </Field>
+                                <CustomFieldInputs cf={cf} className="sm:col-span-2" />
+                                <div className="sm:col-span-2">
+                                    <Checkbox label="Active: inactive customers are hidden from pickers" checked={form.is_active} onChange={(v) => set('is_active', v)} />
+                                </div>
+                            </div>
+                        </FormSection>
 
                         {!customer && (
-                            <div className="rounded-lg border border-gray-200 p-4 sm:col-span-2">
-                                <p className="mb-3 font-semibold text-gray-800">Primary Contact</p>
-                                <div className="grid gap-3 sm:grid-cols-2">
+                            <FormSection icon={UserRound} title="Primary contact" hint="The person you deal with. They can sign in to the customer area.">
+                                <div className="grid gap-4 sm:grid-cols-2">
                                     <Field label="First Name" error={errors['contact.first_name']}>
                                         <Input value={form.contact.first_name} onChange={(e) => set('contact', { ...form.contact, first_name: e.target.value })} />
                                     </Field>
@@ -377,27 +392,27 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
                                         <Input value={form.contact.last_name} onChange={(e) => set('contact', { ...form.contact, last_name: e.target.value })} />
                                     </Field>
                                     <Field label="Email" error={errors['contact.email']}>
-                                        <Input type="email" value={form.contact.email} onChange={(e) => set('contact', { ...form.contact, email: e.target.value })} />
+                                        <Input type="email" value={form.contact.email} onChange={(e) => set('contact', { ...form.contact, email: e.target.value })} placeholder="name@company.com" />
                                     </Field>
                                     <Field label="Phone">
                                         <Input value={form.contact.phone} onChange={(e) => set('contact', { ...form.contact, phone: e.target.value })} />
                                     </Field>
                                 </div>
-                            </div>
+                            </FormSection>
                         )}
                     </div>
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-2">
                         {(['billing', 'shipping'] as const).map((kind) => (
-                            <div key={kind} className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <p className="font-semibold capitalize text-gray-800">{kind} Address</p>
+                            <FormSection key={kind} icon={kind === 'billing' ? Receipt : Truck} title={kind === 'billing' ? 'Billing address' : 'Shipping address'}>
+                                <div className="space-y-3">
+                                <div className="flex justify-end">
                                     {kind === 'billing' ? (
-                                        <button type="button" onClick={copyBillingFromCustomer} className="text-xs text-blue-600 hover:underline">
+                                        <button type="button" onClick={copyBillingFromCustomer} className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand hover:bg-brand-100">
                                             Same as Customer Info
                                         </button>
                                     ) : (
-                                        <button type="button" onClick={() => set('shipping', { ...form.billing })} className="text-xs text-blue-600 hover:underline">
+                                        <button type="button" onClick={() => set('shipping', { ...form.billing })} className="rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand hover:bg-brand-100">
                                             Copy Billing Address
                                         </button>
                                     )}
@@ -411,13 +426,14 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
                                         )}
                                     </Field>
                                 ))}
-                            </div>
+                                </div>
+                            </FormSection>
                         ))}
                     </div>
                 )}
             </div>
             {canSave && (
-                <div className="flex justify-between gap-2 rounded-b-lg border-t border-gray-200 bg-gray-50 px-6 py-3">
+                <div className="flex justify-between gap-2 rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-6 py-3.5">
                     <div>
                         {customer && canDelete && (
                             <Button variant="ghost" onClick={remove} className="!text-red-600">
@@ -426,7 +442,8 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
                         )}
                     </div>
                     <Button onClick={save} loading={saving}>
-                        Save
+                        <Check className="h-4 w-4" />
+                        {customer ? 'Save changes' : 'Add customer'}
                     </Button>
                 </div>
             )}

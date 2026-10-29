@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { inputClass } from '../../components/ui';
 import { RichContent } from '../../components/editor/RichTextEditor';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, Download, XCircle } from 'lucide-react';
@@ -142,7 +143,7 @@ export default function PublicDocumentPage({ type }: { type: DocType }) {
                                 <div className="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-4">
                                     <label className="text-[13px]">
                                         <span className="mb-1 block font-medium text-gray-700">Your full name</span>
-                                        <input value={signer} onChange={(e) => setSigner(e.target.value)} className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                                        <input value={signer} onChange={(e) => setSigner(e.target.value)} placeholder="Type your full name" className={`${inputClass} !w-64`} />
                                     </label>
                                     <button type="button" disabled={busy || !signer.trim()} onClick={() => respond('sign')} className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white hover:bg-brand-light disabled:opacity-60">
                                         Sign

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Receipt, Search } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
 import { formatDate, isOverdue } from '../../lib/format';
@@ -88,7 +88,7 @@ export function InvoicesTable({ customerId, projectId }: { customerId?: number; 
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No invoices found" />
+                <EmptyState icon={Receipt} title="No invoices found" text="Bill your customers and record payments as they come in." action={canCreate && <Button onClick={() => navigate(newLink)}><Plus className="h-4 w-4" /> Create an invoice</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

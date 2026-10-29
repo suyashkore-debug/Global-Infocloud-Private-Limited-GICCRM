@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Building2, Plus, Search } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
 import { formatDate } from '../../lib/format';
@@ -54,7 +54,7 @@ export default function CustomersPage() {
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No customers found" />
+                <EmptyState icon={Building2} title="No customers found" text="Customers are the companies you work with. Convert a lead or add one directly." action={canCreate && <Button onClick={() => navigate('/customers/new')}><Plus className="h-4 w-4" /> Add a customer</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

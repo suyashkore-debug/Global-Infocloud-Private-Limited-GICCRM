@@ -73,7 +73,7 @@ export default function DocumentPreview({
                 {(document.items?.length ?? 0) > 0 && (
                     <>
                         <div className="overflow-x-auto">
-                            <table className="table-perfex">
+                            <table data-nosort className="table-perfex">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th>#</th>

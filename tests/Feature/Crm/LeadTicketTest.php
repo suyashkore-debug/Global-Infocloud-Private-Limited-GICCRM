@@ -128,3 +128,29 @@ it('hides closed tickets by default and refuses deleting built-in statuses', fun
     $this->getJson('/api/tickets')->assertJsonCount(0, 'data');
     $this->deleteJson('/api/setup/ticket-statuses/'.$statuses->first()['id'])->assertUnprocessable();
 });
+
+it('rates a lead by the qualification criteria it meets', function () {
+    signIn(companyAdmin());
+    $id = $this->postJson('/api/leads', leadPayload())->json('data.id');
+    $this->getJson("/api/leads/{$id}")->assertJsonPath('data.rating', 0)->assertJsonPath('data.qualification', []);
+
+    // Saved in star order, whatever order they are sent in.
+    $this->postJson("/api/leads/{$id}/qualification", ['criteria' => ['timeline', 'industry', 'business_need']])
+        ->assertOk()
+        ->assertJsonPath('data.rating', 3)
+        ->assertJsonPath('data.qualification', ['industry', 'business_need', 'timeline'])
+        ->assertJsonPath('data.activities.0.description', 'Rating changed to 3/5');
+    expect($this->getJson('/api/leads?per_page=10')->json('data.0.rating'))->toBe(3);
+
+    $this->postJson("/api/leads/{$id}/qualification", ['criteria' => ['budget']])->assertUnprocessable();
+    $this->postJson("/api/leads/{$id}/qualification", ['criteria' => []])->assertOk()->assertJsonPath('data.rating', 0);
+});
+
+it('does not let staff rate a lead they cannot edit', function () {
+    $company = Company::factory()->create();
+    signIn(staffMember($company));
+    $id = $this->postJson('/api/leads', leadPayload())->json('data.id');
+
+    signIn(staffMember($company));
+    $this->postJson("/api/leads/{$id}/qualification", ['criteria' => ['industry']])->assertForbidden();
+});

@@ -35,3 +35,23 @@ it('counts my open tasks per day for the coming week, overdue ones on today', fu
         ->and($week[$today->copy()->addDays(2)->toDateString()])->toBe(1)
         ->and($week->sum())->toBe(3);
 });
+
+it('lists hot leads (4-5 stars, not converted), the longest without contact first, and new leads per day', function () {
+    signIn(companyAdmin());
+    App\Services\DefaultLookups::ensureLeadLists();
+    $base = ['lead_status_id' => App\Models\LeadStatus::where('name', 'New Lead')->value('id'), 'lead_source_id' => App\Models\LeadSource::where('name', 'Google')->value('id')];
+    $make = fn (string $name, ?string $contact) => $this->postJson('/api/leads', [...$base, 'name' => $name, 'email' => strtolower($name).'@lead.test', 'last_contact_at' => $contact])->json('data.id');
+    $five = $make('Five', now()->subDay()->toDateTimeString());
+    $fourOld = $make('FourOld', now()->subDays(9)->toDateTimeString());
+    $three = $make('Three', null);
+    $this->postJson("/api/leads/{$five}/qualification", ['criteria' => App\Models\Lead::QUALIFICATION]);
+    $this->postJson("/api/leads/{$fourOld}/qualification", ['criteria' => array_slice(App\Models\Lead::QUALIFICATION, 0, 4)]);
+    $this->postJson("/api/leads/{$three}/qualification", ['criteria' => array_slice(App\Models\Lead::QUALIFICATION, 0, 3)]);
+
+    $leads = $this->getJson('/api/dashboard/insights')->json('data.leads');
+    expect(collect($leads['hot'])->pluck('name')->all())->toBe(['Five', 'FourOld'])
+        ->and($leads['hot'][0]['rating'])->toBe(5)
+        ->and($leads['daily'])->toHaveCount(14)
+        ->and(end($leads['daily']))->toBe(3)
+        ->and($leads)->toHaveKey('new_last_month');
+});

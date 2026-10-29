@@ -90,7 +90,7 @@ export function PurchaseLines({ lines, onLines, taxes, currency }: { lines: Line
                 </Select>
             )}
             <div className="-mx-4 overflow-x-auto px-4">
-                <table className="table-perfex min-w-[760px]">
+                <table data-nosort className="table-perfex min-w-[760px]">
                     <thead>
                         <tr>
                             <th>Item</th>

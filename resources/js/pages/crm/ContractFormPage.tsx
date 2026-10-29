@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { Building2, Check, FileSignature, NotebookPen } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { todayIso } from '../../lib/format';
-import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, FormSection, Input, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import RichTextEditor, { type RichTextEditorHandle } from '../../components/editor/RichTextEditor';
 import TemplatesPanel from '../../components/editor/TemplatesPanel';
@@ -114,68 +115,78 @@ export default function ContractFormPage() {
             </div>
             <ErrorNote message={error} />
             <div className="panel_s">
-                <div className="panel-body grid gap-4 sm:grid-cols-2">
-                    <div className="flex flex-wrap gap-5 sm:col-span-2">
-                        <Checkbox label="Trash" checked={!!form.trash} onChange={(v) => setForm({ ...form, trash: v })} />
-                        <Checkbox label="Hide from customer" checked={!!form.not_visible_to_client} onChange={(v) => setForm({ ...form, not_visible_to_client: v })} />
-                    </div>
-                    <Field label="Customer" required error={errors.customer_id}>
-                        <Select value={form.customer_id as string} onChange={(e) => setForm({ ...form, customer_id: e.target.value, project_id: '' })}>
-                            <option value="">Select</option>
-                            {customers.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Project">
-                        <Select value={form.project_id as string} onChange={set('project_id')} disabled={!form.customer_id}>
-                            <option value="">None</option>
-                            {projects.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Subject" required error={errors.subject} className="sm:col-span-2">
-                        <Input value={form.subject as string} onChange={set('subject')} />
-                    </Field>
-                    <Field label="Contract Value" error={errors.contract_value}>
-                        <Input type="number" step="any" value={form.contract_value as string} onChange={set('contract_value')} />
-                    </Field>
-                    <Field label="Contract Type">
-                        <Select value={form.contract_type_id as string} onChange={set('contract_type_id')}>
-                            <option value="">None</option>
-                            {types.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Start Date" required error={errors.start_date}>
-                        <Input type="date" value={form.start_date as string} onChange={set('start_date')} />
-                    </Field>
-                    <Field label="End Date" error={errors.end_date}>
-                        <Input type="date" value={form.end_date as string} onChange={set('end_date')} />
-                    </Field>
-                    <CustomFieldInputs cf={cf} className="sm:col-span-2" />
-                    <Field label="Description" className="sm:col-span-2">
-                        <Textarea rows={3} value={form.description as string} onChange={set('description')} />
-                    </Field>
-                    <div className="sm:col-span-2">
-                        <p className="mb-1.5 text-[13.5px] font-medium text-gray-700">Contract Content</p>
+                <div className="panel-body space-y-4">
+                    <FormSection icon={Building2} title="Customer" hint="Who the contract is with.">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Customer" required error={errors.customer_id}>
+                                <Select value={form.customer_id as string} onChange={(e) => setForm({ ...form, customer_id: e.target.value, project_id: '' })}>
+                                    <option value="">Select</option>
+                                    {customers.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Project">
+                                <Select value={form.project_id as string} onChange={set('project_id')} disabled={!form.customer_id}>
+                                    <option value="">None</option>
+                                    {projects.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <div className="flex flex-wrap gap-5 sm:col-span-2">
+                                <Checkbox label="Hide from customer" checked={!!form.not_visible_to_client} onChange={(v) => setForm({ ...form, not_visible_to_client: v })} />
+                                <Checkbox label="Trash" checked={!!form.trash} onChange={(v) => setForm({ ...form, trash: v })} />
+                            </div>
+                        </div>
+                    </FormSection>
+
+                    <FormSection icon={FileSignature} title="Contract details" hint="Value, type and the period it covers.">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Subject" required error={errors.subject} className="sm:col-span-2">
+                                <Input value={form.subject as string} onChange={set('subject')} placeholder="e.g. Annual maintenance contract" />
+                            </Field>
+                            <Field label="Contract Value" error={errors.contract_value}>
+                                <Input type="number" step="any" value={form.contract_value as string} onChange={set('contract_value')} placeholder="0.00" />
+                            </Field>
+                            <Field label="Contract Type">
+                                <Select value={form.contract_type_id as string} onChange={set('contract_type_id')}>
+                                    <option value="">None</option>
+                                    {types.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Start Date" required error={errors.start_date}>
+                                <Input type="date" value={form.start_date as string} onChange={set('start_date')} />
+                            </Field>
+                            <Field label="End Date" error={errors.end_date}>
+                                <Input type="date" value={form.end_date as string} onChange={set('end_date')} />
+                            </Field>
+                            <CustomFieldInputs cf={cf} className="sm:col-span-2" />
+                            <Field label="Description" className="sm:col-span-2">
+                                <Textarea rows={3} value={form.description as string} onChange={set('description')} placeholder="A short summary, shown in lists" />
+                            </Field>
+                        </div>
+                    </FormSection>
+
+                    <FormSection icon={NotebookPen} title="Contract content" hint="The full text the customer reads and signs. Insert a template from the right.">
                         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
                             <RichTextEditor ref={editor} value={(form.content as string) ?? ''} onChange={(html) => setForm((f) => ({ ...f, content: html }))} placeholder="The full contract text…" minHeight={360} />
                             <TemplatesPanel type="contracts" currentContent={(form.content as string) ?? ''} onInsert={(html) => editor.current?.insertHtml(html)} />
                         </div>
-                    </div>
+                    </FormSection>
                 </div>
-                <div className="flex justify-end rounded-b-lg border-t border-gray-200 bg-gray-50 px-6 py-3">
+                <div className="flex justify-end gap-2 rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-6 py-3.5">
                     <Button onClick={save} loading={saving}>
-                        Save
+                        <Check className="h-4 w-4" />
+                        {editing ? 'Save changes' : 'Create contract'}
                     </Button>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { FileSignature, Plus, Search } from 'lucide-react';
 import { optionById } from '../../lib/constants';
 import { formatDate } from '../../lib/format';
 import { money, PROPOSAL_STATUSES } from '../../lib/sales';
@@ -56,7 +56,7 @@ export function ProposalsTable({ customerId, projectId }: { customerId?: number;
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No proposals found" />
+                <EmptyState icon={FileSignature} title="No proposals found" text="Send a proposal to a lead or customer and track when they accept it." action={canCreate && <Button onClick={() => navigate(`/proposals/new${customerId ? `?customer_id=${customerId}${projectId ? `&project_id=${projectId}` : ''}` : ''}`)}><Plus className="h-4 w-4" /> Create a proposal</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

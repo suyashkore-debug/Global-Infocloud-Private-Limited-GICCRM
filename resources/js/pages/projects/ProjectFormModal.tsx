@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { FolderKanban, NotebookPen, Users, Wallet } from 'lucide-react';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { BILLING_TYPES, PROJECT_STATUSES } from '../../lib/constants';
 import { todayIso } from '../../lib/format';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, Checkbox, ErrorNote, Field, Input, Modal, Select, StaffMultiSelect, TagInput, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, Input, Modal, SectionHeading, Select, StaffMultiSelect, TagInput, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { Project } from '../../types';
 import { CustomFieldInputs, useCustomFields } from '../../components/customfields/CustomFields';
@@ -139,6 +140,7 @@ export default function ProjectFormModal({ open, project, onClose, onSaved }: { 
                 <div className="sm:col-span-2">
                     <ErrorNote message={error} />
                 </div>
+                <SectionHeading icon={FolderKanban} title="Project" hint="Name, customer and status." className="sm:col-span-2" />
                 <Field label="Project name" required error={errors.name} className="sm:col-span-2">
                     <Input value={form.name} onChange={(e) => update('name', e.target.value)} autoFocus />
                 </Field>
@@ -172,6 +174,7 @@ export default function ProjectFormModal({ open, project, onClose, onSaved }: { 
                     )}
                 </div>
 
+                <SectionHeading icon={Wallet} title="Billing" hint="How the customer pays for this project." className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
                 <Field label="Billing type" required error={errors.billing_type}>
                     <Select value={form.billing_type} onChange={(e) => update('billing_type', Number(e.target.value))}>
                         {BILLING_TYPES.map((b) => (
@@ -193,6 +196,7 @@ export default function ProjectFormModal({ open, project, onClose, onSaved }: { 
                 )}
                 {form.billing_type === 3 && <div className="hidden sm:block" />}
 
+                <SectionHeading icon={Users} title="Team & schedule" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
                 <Field label="Estimated hours" error={errors.estimated_hours}>
                     <Input type="number" min={0} step="0.25" value={form.estimated_hours} onChange={(e) => update('estimated_hours', e.target.value)} />
                 </Field>
@@ -205,6 +209,7 @@ export default function ProjectFormModal({ open, project, onClose, onSaved }: { 
                 <Field label="Deadline" error={errors.deadline}>
                     <Input type="date" value={form.deadline} min={form.start_date} onChange={(e) => update('deadline', e.target.value)} />
                 </Field>
+                <SectionHeading icon={NotebookPen} title="More details" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
                 <Field label="Tags" className="sm:col-span-2">
                     <TagInput value={form.tags} onChange={(tags) => update('tags', tags)} />
                 </Field>

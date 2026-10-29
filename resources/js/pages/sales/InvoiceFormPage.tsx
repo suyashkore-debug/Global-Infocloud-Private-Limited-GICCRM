@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Building2, ListOrdered, NotebookPen, SlidersHorizontal } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { RECURRING_TYPES } from '../../lib/constants';
 import { emptyLine } from '../../lib/sales';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner, TagInput, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, FormSection, Input, SectionHeading, Select, Spinner, TagInput, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import AddressBox from '../../components/sales/AddressBox';
 import SalesItemsEditor, { type MoneyFields } from '../../components/sales/SalesItemsEditor';
@@ -236,8 +237,8 @@ export default function InvoiceFormPage() {
             <ErrorNote message={error} />
 
             <div className="panel_s mt-3">
-                <div className="panel-body grid gap-6 lg:grid-cols-2">
-                    <div className="space-y-4">
+                <div className="panel-body grid gap-4 lg:grid-cols-2">
+                    <FormSection icon={Building2} title="Customer & dates" hint="Who it is for and when." bodyClassName="space-y-4">
                         <Field label="Customer" required error={errors.customer_id}>
                             <Select value={form.customer_id} onChange={(e) => pickCustomer(e.target.value)}>
                                 <option value="">Select and begin typing</option>
@@ -284,9 +285,9 @@ export default function InvoiceFormPage() {
                             </Field>
                         </div>
                         <Checkbox label="Prevent sending overdue reminders for this invoice" checked={form.cancel_overdue_reminders} onChange={(v) => set('cancel_overdue_reminders', v)} />
-                    </div>
+                    </FormSection>
 
-                    <div className="space-y-4">
+                    <FormSection icon={SlidersHorizontal} title="Settings" hint="Currency, people, tags and internal notes." bodyClassName="space-y-4">
                         <Field label="Tags">
                             <TagInput value={form.tags} onChange={(tags) => set('tags', tags)} />
                         </Field>
@@ -348,18 +349,20 @@ export default function InvoiceFormPage() {
                         <Field label="Admin Note">
                             <Textarea rows={3} value={form.admin_note} onChange={(e) => set('admin_note', e.target.value)} />
                         </Field>
-                    </div>
+                    </FormSection>
                 </div>
             </div>
 
             <div className="panel_s">
                 <div className="panel-body">
+                    <SectionHeading icon={ListOrdered} title="Items" hint="What you are billing, with quantities, rates and taxes." />
                     <SalesItemsEditor lines={lines} onLines={setLines} moneyFields={moneyFields} onMoney={setMoneyFields} currency={currency} error={errors.items} />
                 </div>
             </div>
 
             <div className="panel_s">
                 <div className="panel-body space-y-4">
+                    <SectionHeading icon={NotebookPen} title="Notes & terms" hint="Printed on the document the customer receives." className="" />
                     <Field label="Client Note">
                         <Textarea rows={4} value={form.client_note} onChange={(e) => set('client_note', e.target.value)} />
                     </Field>
@@ -369,7 +372,7 @@ export default function InvoiceFormPage() {
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 z-10 flex justify-end gap-2 border-t border-gray-200 bg-white px-6 py-3 shadow-[0_-2px_6px_rgba(0,0,0,0.05)] lg:left-[230px]">
+            <div className="form-actions-bar">
                 {(!editing || isDraft) && (
                     <Button variant="secondary" onClick={() => save(true)} loading={saving === 'draft'}>
                         Save as Draft

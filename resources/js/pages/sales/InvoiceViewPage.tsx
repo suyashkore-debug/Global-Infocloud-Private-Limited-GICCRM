@@ -11,6 +11,7 @@ import { Button, ErrorNote, Menu, MenuItem, Spinner, StatusBadge, Tabs } from '.
 import { useToast } from '../../components/ui/Toast';
 import type { Address, Invoice } from '../../types';
 import RecordPaymentModal from './RecordPaymentModal';
+import { useCelebrateWhen } from '../../lib/celebrate';
 import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
@@ -40,6 +41,7 @@ export default function InvoiceViewPage() {
     const [tab, setTab] = useState<'invoice' | 'payments'>('invoice');
     const [paymentOpen, setPaymentOpen] = useState(false);
     const invoice = data?.data;
+    useCelebrateWhen(invoice ? invoice.status === 2 : undefined, invoice?.id);
     usePageCrumb(invoice?.formatted_number);
 
     if (error) {
@@ -218,7 +220,7 @@ export default function InvoiceViewPage() {
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="table-perfex">
+                            <table data-nosort className="table-perfex">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th>#</th>

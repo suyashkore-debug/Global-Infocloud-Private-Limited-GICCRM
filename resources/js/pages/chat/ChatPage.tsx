@@ -124,7 +124,7 @@ export default function ChatPage() {
     const color = contacts?.me.color ?? DEFAULT_COLOR;
 
     return (
-        <div className="-mx-4 -mb-10 -mt-6 flex h-[calc(100vh-57px)] overflow-hidden bg-white sm:-mx-6">
+        <div className="-mx-4 -mb-10 -mt-5 flex h-[calc(100vh-64px)] overflow-hidden bg-white sm:-mx-6">
             {/* Left: me, search, colleagues, groups, customers */}
             <aside className={`${active ? 'hidden md:flex' : 'flex'} w-full shrink-0 flex-col border-r border-gray-200 md:w-80`}>
                 <div className="border-b border-gray-200 p-3">
@@ -161,13 +161,13 @@ export default function ChatPage() {
                         {contacts && (
                             <label className="ml-1 flex items-center gap-1 text-[13px] text-gray-600">
                                 <span className={`h-2.5 w-2.5 rounded-full ${STATUS_COLOR[contacts.me.status]}`} />
-                                <select value={contacts.me.status} onChange={(e) => save('/chat/status', { status: e.target.value })} className="rounded border-0 bg-transparent py-0 pl-0 pr-6 text-[13px] focus:ring-0" aria-label="My status">
+                                <Select value={contacts.me.status} onChange={(e) => save('/chat/status', { status: e.target.value })} className="!w-28 !py-1 !text-[13px]" aria-label="My status">
                                     {(['online', 'away', 'busy', 'offline'] as Status[]).map((s) => (
                                         <option key={s} value={s}>
                                             {s[0].toUpperCase() + s.slice(1)}
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
                             </label>
                         )}
                     </div>

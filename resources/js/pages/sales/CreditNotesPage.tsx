@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Receipt, Search } from 'lucide-react';
 import { optionById } from '../../lib/constants';
 import { formatDate } from '../../lib/format';
 import { CREDIT_NOTE_STATUSES, money } from '../../lib/sales';
@@ -35,7 +35,7 @@ export function CreditNotesTable({ customerId, projectId }: { customerId?: numbe
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No credit notes found" />
+                <EmptyState icon={Receipt} title="No credit notes found" text="Credit notes refund or offset what a customer owes." />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

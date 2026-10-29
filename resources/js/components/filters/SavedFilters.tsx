@@ -104,9 +104,9 @@ export default function SavedFilters({ identifier, current, onApply }: { identif
                     <div className="w-72 py-1">
                         {rows.length === 0 && <p className="px-3 py-2 text-[13px] text-gray-500">No saved filters yet.</p>}
                         {rows.map((f) => (
-                            <div key={f.id} className="group flex items-center gap-1 px-2 hover:bg-gray-50">
+                            <div key={f.id} className="group flex items-center gap-1 rounded-xl px-2 hover:bg-brand-50">
                                 <button type="button" onClick={() => (close(), apply(f))} className="flex min-w-0 flex-1 items-center gap-2 py-2 pl-1 text-left text-[13.5px]">
-                                    <Check className={`h-3.5 w-3.5 shrink-0 ${isActive && active?.id === f.id ? 'text-blue-600' : 'text-transparent'}`} />
+                                    <Check className={`h-3.5 w-3.5 shrink-0 ${isActive && active?.id === f.id ? 'text-accent' : 'text-transparent'}`} />
                                     <span className="min-w-0">
                                         <span className="block truncate">{f.name}</span>
                                         {!f.is_own && <span className="block truncate text-[11px] text-gray-400">shared by {f.author}</span>}
@@ -129,11 +129,11 @@ export default function SavedFilters({ identifier, current, onApply }: { identif
                             </div>
                         ))}
                         <div className="mt-1 border-t border-gray-100 pt-1">
-                            <button type="button" onClick={() => (close(), setForm({ name: '', is_shared: false, is_default: false, useCurrent: true }))} className="block w-full px-3 py-2 text-left text-[13.5px] font-medium text-blue-600 hover:bg-gray-50">
+                            <button type="button" onClick={() => (close(), setForm({ name: '', is_shared: false, is_default: false, useCurrent: true }))} className="block w-full px-3 py-2 text-left text-[13.5px] font-semibold text-brand rounded-xl hover:bg-brand-50">
                                 + Save current filters…
                             </button>
                             {active && !isActive && active.can_manage && (
-                                <button type="button" onClick={() => (close(), setForm({ id: active.id, name: active.name, is_shared: active.is_shared, is_default: active.is_default, useCurrent: true }))} className="block w-full px-3 py-2 text-left text-[13.5px] text-gray-700 hover:bg-gray-50">
+                                <button type="button" onClick={() => (close(), setForm({ id: active.id, name: active.name, is_shared: active.is_shared, is_default: active.is_default, useCurrent: true }))} className="block w-full px-3 py-2 text-left text-[13.5px] text-gray-700 rounded-xl hover:bg-brand-50">
                                     Update “{active.name}” with current filters
                                 </button>
                             )}

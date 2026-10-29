@@ -224,6 +224,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::post('/leads/move', [LeadController::class, 'move']);
     Route::apiResource('leads', LeadController::class);
     Route::post('/leads/{lead}/flag', [LeadController::class, 'flag']);
+    Route::post('/leads/{lead}/qualification', [LeadController::class, 'qualify']);
     Route::post('/leads/{lead}/convert', [LeadController::class, 'convert']);
     Route::get('/leads/{lead}/calls', [LeadCallController::class, 'index']);
     Route::post('/leads/{lead}/calls', [LeadCallController::class, 'store']);

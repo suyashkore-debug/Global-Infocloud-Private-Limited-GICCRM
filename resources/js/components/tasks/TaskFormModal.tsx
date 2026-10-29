@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { CalendarClock, ListChecks, NotebookPen, Users } from 'lucide-react';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { RECURRING_TYPES, TASK_PRIORITIES } from '../../lib/constants';
 import { todayIso } from '../../lib/format';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, Checkbox, ErrorNote, Field, Input, Modal, Select, StaffMultiSelect, TagInput, Textarea } from '../ui';
+import { Button, Checkbox, ErrorNote, Field, Input, Modal, SectionHeading, Select, StaffMultiSelect, TagInput, Textarea } from '../ui';
 import { useToast } from '../ui/Toast';
 import type { Milestone, Task } from '../../types';
 import { CustomFieldInputs, useCustomFields } from '../../components/customfields/CustomFields';
@@ -185,6 +186,7 @@ export default function TaskFormModal({
                     <Checkbox label="Billable" checked={form.billable} onChange={(v) => update('billable', v)} />
                     {form.project_id && <Checkbox label="Visible to customer" checked={form.visible_to_client} onChange={(v) => update('visible_to_client', v)} />}
                 </div>
+                <SectionHeading icon={ListChecks} title="Task" hint="What needs doing, and how urgent it is." className="sm:col-span-2" />
                 <Field label="Subject" required error={errors.name} className="sm:col-span-2">
                     <Input value={form.name} onChange={(e) => update('name', e.target.value)} autoFocus />
                 </Field>
@@ -200,6 +202,7 @@ export default function TaskFormModal({
                         ))}
                     </Select>
                 </Field>
+                <SectionHeading icon={CalendarClock} title="Schedule" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
                 <Field label="Start date" required error={errors.start_date}>
                     <Input type="date" value={form.start_date} onChange={(e) => update('start_date', e.target.value)} />
                 </Field>
@@ -230,6 +233,7 @@ export default function TaskFormModal({
                     <div className="hidden sm:block" />
                 )}
 
+                <SectionHeading icon={Users} title="Project & people" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
                 <Field label="Related to project" error={errors.project_id}>
                     <Select value={form.project_id} onChange={(e) => setForm((f) => ({ ...f, project_id: e.target.value, milestone_id: '' }))}>
                         <option value="">Not related to a project</option>
@@ -277,6 +281,7 @@ export default function TaskFormModal({
                     </Field>
                 )}
 
+                <SectionHeading icon={NotebookPen} title="Details" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
                 <Field label="Tags" className="sm:col-span-2">
                     <TagInput value={form.tags} onChange={(tags) => update('tags', tags)} />
                 </Field>

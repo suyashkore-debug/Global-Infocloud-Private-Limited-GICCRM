@@ -130,8 +130,47 @@ class DashboardController extends Controller
                 'value' => round((float) ($counts[$s->id]->value ?? 0), 2),
             ])->values(),
             'new_this_month' => (clone $leads)->where('created_at', '>=', self::today()->startOfMonth()->utc())->count(),
+            // The same stretch of last month (1st to today's date), for a fair comparison.
+            'new_last_month' => (clone $leads)->where('created_at', '>=', self::today()->subMonthNoOverflow()->startOfMonth()->utc())
+                ->where('created_at', '<', self::today()->subMonthNoOverflow()->addDay()->utc())->count(),
             'converted_this_month' => Lead::visibleTo($user)->where('converted_at', '>=', self::today()->startOfMonth()->utc())->count(),
+            'daily' => $this->newLeadsPerDay(clone $leads),
+            'hot' => $this->hotLeads(clone $leads),
         ];
+    }
+
+    /**
+     * New leads on each of the last 14 days, oldest first.
+     *
+     * @param  Builder<Lead>  $leads
+     * @return array<int, int>
+     */
+    private function newLeadsPerDay(Builder $leads): array
+    {
+        $from = self::today()->subDays(13);
+        $byDay = $leads->where('created_at', '>=', $from->copy()->utc())->pluck('created_at')
+            ->map(fn ($at) => Carbon::parse($at)->setTimezone('Asia/Kolkata')->toDateString())->countBy();
+
+        return collect(range(0, 13))->map(fn ($i) => (int) ($byDay[$from->copy()->addDays($i)->toDateString()] ?? 0))->all();
+    }
+
+    /**
+     * Leads worth a call today: open (not converted) leads rated 4-5 stars, the longest without
+     * contact first.
+     *
+     * @param  Builder<Lead>  $leads
+     * @return array<int, array<string, mixed>>
+     */
+    private function hotLeads(Builder $leads): array
+    {
+        return $leads->whereNull('customer_id')->whereNotNull('qualification')->with('status')->latest('id')->limit(500)->get()
+            ->filter(fn (Lead $l) => $l->rating() >= 4)
+            ->sortBy(fn (Lead $l) => [-$l->rating(), $l->last_contact_at?->timestamp ?? 0])
+            ->take(6)
+            ->map(fn (Lead $l) => [
+                'id' => $l->id, 'name' => $l->name, 'company' => $l->company, 'phone' => $l->phone, 'rating' => $l->rating(),
+                'last_contact_at' => $l->last_contact_at, 'status' => $l->status?->only(['name', 'color']),
+            ])->values()->all();
     }
 
     /** @return array<int, array{name: string, color: ?string, count: int}> */

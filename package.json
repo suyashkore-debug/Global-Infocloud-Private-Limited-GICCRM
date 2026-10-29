@@ -19,6 +19,8 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@types/canvas-confetti": "^1.9.0",
+        "canvas-confetti": "^1.9.3",
         "laravel-echo": "^2.3.7",
         "lucide-react": "^0.484.0",
         "pusher-js": "^8.5.0",

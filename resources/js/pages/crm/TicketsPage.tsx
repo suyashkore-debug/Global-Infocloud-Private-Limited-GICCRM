@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { LifeBuoy, Plus, Search } from 'lucide-react';
 import { formatDateTime, timeAgo } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { SummaryCard, Button, EmptyState, ErrorNote, Input, Pagination, Select, Spinner, StatusBadge, Tag } from '../../components/ui';
@@ -71,7 +71,7 @@ export function TicketsTable({ customerId, projectId }: { customerId?: number; p
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No tickets found" />
+                <EmptyState icon={LifeBuoy} title="No tickets found" text="Support requests from your customers show up here. All caught up!" action={<Button onClick={() => navigate(`/tickets/new${customerId ? `?customer_id=${customerId}` : ''}`)}><Plus className="h-4 w-4" /> Open a ticket</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

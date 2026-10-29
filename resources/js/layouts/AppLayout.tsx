@@ -61,6 +61,42 @@ interface MenuNode {
     children?: MenuNode[];
 }
 
+/** Each menu section's own colour (its icon chip), so sections are easy to tell apart at a glance. */
+const SECTION_COLORS: Record<string, string> = {
+    Dashboard: '#60a5fa',
+    Chat: '#34d399',
+    Customers: '#a78bfa',
+    Sales: '#4ade80',
+    Expenses: '#f472b6',
+    Contracts: '#facc15',
+    Projects: '#38bdf8',
+    Tasks: '#fb923c',
+    Support: '#22d3ee',
+    Leads: '#fa6010',
+    'Estimate Request': '#c084fc',
+    'Knowledge Base': '#fbbf24',
+    Purchase: '#2dd4bf',
+    Accounting: '#818cf8',
+    Utilities: '#94a3b8',
+    Reports: '#f87171',
+    Setup: '#cbd5e1',
+};
+
+/** A section's icon on a chip of its colour: tinted normally, filled when you are in that section. */
+function SectionIcon({ item, active, size = 'md' }: { item: MenuNode; active: boolean; size?: 'md' | 'lg' }) {
+    const Icon = item.icon ?? Gauge;
+    const color = SECTION_COLORS[item.label] ?? '#94a3b8';
+
+    return (
+        <span
+            className={`flex shrink-0 items-center justify-center rounded-lg transition duration-150 ${size === 'lg' ? 'h-9 w-9' : 'h-7 w-7'}`}
+            style={active ? { backgroundColor: color, color: '#fff', boxShadow: `0 6px 14px -6px ${color}` } : { backgroundColor: `${color}26`, color }}
+        >
+            <Icon className="h-4 w-4" />
+        </span>
+    );
+}
+
 /**
  * Perfex admin layout: white header across the top (logo, search, quick create, timers,
  * notifications, profile) and the light sidebar menu in Perfex's order.
@@ -128,6 +164,10 @@ function Shell() {
 
         return () => document.documentElement.classList.remove('dark');
     }, [dark]);
+    // Where the content column starts on desktop, for bars fixed to the page foot (.form-actions-bar).
+    useLayoutEffect(() => {
+        document.documentElement.style.setProperty('--content-left', collapsed ? '100px' : '268px');
+    }, [collapsed]);
     const toggleCollapsed = () =>
         setCollapsed((c) => {
             try {
@@ -329,33 +369,79 @@ function Shell() {
         </>
     );
 
+    // The signed-in company's HRMS logo on a white plate; the white GIC Folks CRM logo when it has none.
+    const companyLogo = user?.company?.logo_url && !logoFailed ? user.company.logo_url : null;
+    const logo = (compact: boolean) => (
+        <Link to="/" title={user?.company?.company_name ?? 'GIC Folks CRM'} className={`flex items-center ${compact ? 'justify-center' : 'px-1'}`}>
+            {compact ? (
+                <span className="btn-accent flex h-10 w-10 items-center justify-center rounded-xl text-[15px] font-extrabold text-white">{(user?.company?.company_name ?? 'G').charAt(0).toUpperCase()}</span>
+            ) : companyLogo ? (
+                <span className="flex h-11 w-full items-center justify-center rounded-xl bg-white px-3 shadow-sm">
+                    <img src={companyLogo} alt={user?.company?.company_name} className="max-h-8 max-w-full object-contain" onError={() => setLogoFailed(true)} />
+                </span>
+            ) : (
+                <BrandLogo size="sm" light />
+            )}
+        </Link>
+    );
+
+    // Quick create (header + button and the phone bar's + button).
+    const createItems = (close: () => void) => (
+        <>
+            {canCreateProject && (
+                <MenuItem onClick={() => (close(), navigate('/projects?new=1'))}>
+                    <FolderKanban className="h-4 w-4" /> Project
+                </MenuItem>
+            )}
+            {canCreateTask && (
+                <MenuItem onClick={() => (close(), newTask())}>
+                    <ListChecks className="h-4 w-4" /> Task
+                </MenuItem>
+            )}
+            {canCreateInvoice && (
+                <MenuItem onClick={() => (close(), navigate('/invoices/new'))}>
+                    <Receipt className="h-4 w-4" /> Invoice
+                </MenuItem>
+            )}
+            {canCreateEstimate && (
+                <MenuItem onClick={() => (close(), navigate('/estimates/new'))}>
+                    <Receipt className="h-4 w-4" /> Estimate
+                </MenuItem>
+            )}
+            {canCreateProposal && (
+                <MenuItem onClick={() => (close(), navigate('/proposals/new'))}>
+                    <FileSignature className="h-4 w-4" /> Proposal
+                </MenuItem>
+            )}
+            {canCreateExpense && (
+                <MenuItem onClick={() => (close(), navigate('/expenses/new'))}>
+                    <Wallet className="h-4 w-4" /> Expense
+                </MenuItem>
+            )}
+            {canCreateContract && (
+                <MenuItem onClick={() => (close(), navigate('/contracts/new'))}>
+                    <FileSignature className="h-4 w-4" /> Contract
+                </MenuItem>
+            )}
+            <MenuItem onClick={() => (close(), navigate('/leads'))}>
+                <Target className="h-4 w-4" /> Lead
+            </MenuItem>
+            <MenuItem onClick={() => (close(), navigate('/tickets/new'))}>
+                <LifeBuoy className="h-4 w-4" /> Ticket
+            </MenuItem>
+            {canCustomers && (
+                <MenuItem onClick={() => (close(), navigate('/customers/new'))}>
+                    <Building2 className="h-4 w-4" /> Customer
+                </MenuItem>
+            )}
+        </>
+    );
+
     const renderSidebar = (compact: boolean) => (
         <div className="flex h-full flex-col">
-            <div className={compact ? 'flex justify-center px-2 pt-4' : 'px-3 pt-4'}>
-                <Menu
-                    align="left"
-                    block
-                    trigger={(toggle) => (
-                        <button
-                            type="button"
-                            onClick={toggle}
-                            title={compact ? `${user?.full_name ?? ''} · ${user?.email ?? ''}` : (user?.email ?? undefined)}
-                            className={`flex items-center gap-3 rounded-xl bg-white/[0.06] text-left text-white ring-1 ring-white/10 transition hover:bg-white/10 ${compact ? 'p-1.5' : 'w-full px-2.5 py-2.5'}`}
-                        >
-                            <Avatar id={user?.id} name={user?.full_name} photo={user?.photo_url} />
-                            <span className={compact ? 'hidden' : 'min-w-0 flex-1'}>
-                                <span className="block truncate text-[13.5px] font-semibold">{user?.full_name}</span>
-                                <span className="block truncate text-[12px] text-blue-100/60">{user?.email}</span>
-                            </span>
-                            {!compact && <ChevronDown className="h-4 w-4 shrink-0 text-blue-100/50" />}
-                        </button>
-                    )}
-                >
-                    {(close) => profileItems(close)}
-                </Menu>
-            </div>
-            <nav className={`sidebar-scroll flex-1 overflow-y-auto pb-6 pt-4 ${compact ? 'px-2' : 'px-3'}`}>
-                {!compact && <p className="mb-2 px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-blue-100/40">Menu</p>}
+            <div className={compact ? 'px-2 pt-4' : 'px-4 pt-5'}>{logo(compact)}</div>
+            <nav className={`sidebar-scroll flex-1 overflow-y-auto pb-6 pt-5 ${compact ? 'px-2' : 'px-3'}`}>
+                {!compact && <p className="mb-2 px-3 text-[10.5px] font-bold uppercase tracking-[0.18em] text-blue-100/40">Menu</p>}
                 <ul className="space-y-0.5">
                     {menu
                         .filter((item) => item.show !== false)
@@ -392,12 +478,34 @@ function Shell() {
                     </div>
                 )}
             </nav>
-            <div className={`hidden border-t border-white/10 py-2 lg:block ${compact ? 'px-2' : 'px-3'}`}>
+            <div className={`space-y-1 border-t border-white/10 py-3 ${compact ? 'px-2' : 'px-3'}`}>
+                <Menu
+                    align="left"
+                    block
+                    up
+                    trigger={(toggle) => (
+                        <button
+                            type="button"
+                            onClick={toggle}
+                            title={compact ? `${user?.full_name ?? ''} · ${user?.email ?? ''}` : (user?.email ?? undefined)}
+                            className={`flex w-full items-center gap-3 rounded-2xl bg-white/[0.06] text-left text-white ring-1 ring-white/10 transition hover:bg-white/10 ${compact ? 'justify-center p-1.5' : 'px-2.5 py-2'}`}
+                        >
+                            <Avatar id={user?.id} name={user?.full_name} photo={user?.photo_url} />
+                            <span className={compact ? 'hidden' : 'min-w-0 flex-1'}>
+                                <span className="block truncate text-[13px] font-semibold">{user?.full_name}</span>
+                                <span className="block truncate text-[11.5px] text-blue-100/55">{user?.is_admin ? 'Administrator' : user?.email}</span>
+                            </span>
+                            {!compact && <ChevronDown className="h-4 w-4 shrink-0 text-blue-100/50" />}
+                        </button>
+                    )}
+                >
+                    {(close) => profileItems(close)}
+                </Menu>
                 <button
                     type="button"
                     onClick={toggleCollapsed}
                     title={compact ? 'Expand the menu' : 'Collapse the menu'}
-                    className={`flex w-full items-center gap-3 rounded-lg py-2 text-[13px] font-medium text-blue-100/60 transition hover:bg-white/[0.07] hover:text-white ${compact ? 'justify-center' : 'px-3'}`}
+                    className={`hidden w-full items-center gap-3 rounded-xl py-2 text-[12.5px] font-medium text-blue-100/55 transition hover:bg-white/[0.07] hover:text-white lg:flex ${compact ? 'justify-center' : 'px-3'}`}
                 >
                     {compact ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
                     {!compact && 'Collapse menu'}
@@ -408,107 +516,58 @@ function Shell() {
 
     return (
         <div className="min-h-screen">
-            <header className="fixed inset-x-0 top-0 z-30 flex h-[57px] items-center gap-2 border-b border-slate-200/80 bg-white/95 px-3 backdrop-blur sm:px-4">
-                <button type="button" onClick={() => setMobileOpen((open) => !open)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Menu">
+            <header
+                className={`fixed right-0 top-0 z-30 flex h-16 items-center gap-2 bg-page/75 px-3 backdrop-blur-xl transition-[left] duration-200 sm:px-5 left-0 ${collapsed ? 'lg:left-[100px]' : 'lg:left-[268px]'}`}
+            >
+                <button type="button" onClick={() => setMobileOpen((open) => !open)} className="rounded-xl p-2 text-slate-600 hover:bg-white lg:hidden" aria-label="Menu">
                     <MenuIcon className="h-5 w-5" />
                 </button>
-                <Link to="/" className="mr-2 hidden h-[57px] w-[226px] shrink-0 items-center sm:flex" title={user?.company?.company_name ?? 'GIC Folks CRM'}>
-                    {/* The signed-in company's HRMS logo; GIC Folks CRM when it has none. */}
-                    {user?.company?.logo_url && !logoFailed ? (
-                        <img src={user.company.logo_url} alt={user.company.company_name} className="logo-plate max-h-10 max-w-[210px] object-contain" onError={() => setLogoFailed(true)} />
-                    ) : (
-                        <BrandLogo size="sm" />
-                    )}
+                <Link to="/" className="mr-1 hidden shrink-0 items-center sm:flex lg:hidden" title={user?.company?.company_name ?? 'GIC Folks CRM'}>
+                    {companyLogo ? <img src={companyLogo} alt={user?.company?.company_name} className="logo-plate max-h-9 max-w-[160px] object-contain" onError={() => setLogoFailed(true)} /> : <BrandLogo size="sm" />}
                 </Link>
                 {user?.is_super_admin && <CompanySwitcher currentName={user.company?.company_name ?? 'Company'} acting={!!user.is_super_admin_acting} />}
                 <button
                     type="button"
                     onClick={() => setPaletteOpen(true)}
-                    className="group flex h-[38px] min-w-0 max-w-xl flex-1 items-center gap-2.5 rounded-full bg-slate-100 pl-3.5 pr-2 text-left text-[13.5px] text-slate-400 transition hover:bg-slate-200/70"
+                    className="group flex h-10 min-w-0 max-w-xl flex-1 items-center gap-2.5 rounded-2xl bg-white/90 pl-3.5 pr-2 text-left text-[13.5px] text-slate-400 shadow-[0_1px_2px_rgba(16,24,40,0.05)] ring-1 ring-slate-200/80 transition hover:ring-brand/30 hover:shadow-md"
                 >
-                    <Search className="h-4 w-4 shrink-0" />
+                    <Search className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:text-brand" />
                     <span className="min-w-0 flex-1 truncate">Search projects, tasks, customers…</span>
                     <span className="hidden items-center gap-0.5 sm:flex">
-                        <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-slate-500 shadow-sm">Ctrl</kbd>
-                        <kbd className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-slate-500 shadow-sm">K</kbd>
+                        <kbd className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-slate-500">Ctrl</kbd>
+                        <kbd className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-slate-500">K</kbd>
                     </span>
                 </button>
                 <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} links={paletteLinks} actions={paletteActions} />
-                <div className="ml-auto flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-2">
                     <Menu
                         trigger={(toggle) => (
-                            <button type="button" onClick={toggle} title="Quick create" className="mr-1 flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white shadow-sm shadow-brand/30 transition hover:bg-brand-light">
-                                <Plus className="h-5 w-5" />
+                            <button type="button" onClick={toggle} title="Quick create" className="btn-accent flex h-10 items-center gap-1.5 rounded-2xl px-3 text-[13px] font-bold text-white transition hover:-translate-y-px sm:px-3.5">
+                                <Plus className="h-[18px] w-[18px]" />
+                                <span className="hidden md:inline">Create</span>
                             </button>
                         )}
                     >
-                        {(close) => (
-                            <>
-                                {canCreateProject && (
-                                    <MenuItem onClick={() => (close(), navigate('/projects?new=1'))}>
-                                        <FolderKanban className="h-4 w-4" /> Project
-                                    </MenuItem>
-                                )}
-                                {canCreateTask && (
-                                    <MenuItem onClick={() => (close(), newTask())}>
-                                        <ListChecks className="h-4 w-4" /> Task
-                                    </MenuItem>
-                                )}
-                                {canCreateInvoice && (
-                                    <MenuItem onClick={() => (close(), navigate('/invoices/new'))}>
-                                        <Receipt className="h-4 w-4" /> Invoice
-                                    </MenuItem>
-                                )}
-                                {canCreateEstimate && (
-                                    <MenuItem onClick={() => (close(), navigate('/estimates/new'))}>
-                                        <Receipt className="h-4 w-4" /> Estimate
-                                    </MenuItem>
-                                )}
-                                {canCreateProposal && (
-                                    <MenuItem onClick={() => (close(), navigate('/proposals/new'))}>
-                                        <FileSignature className="h-4 w-4" /> Proposal
-                                    </MenuItem>
-                                )}
-                                {canCreateExpense && (
-                                    <MenuItem onClick={() => (close(), navigate('/expenses/new'))}>
-                                        <Wallet className="h-4 w-4" /> Expense
-                                    </MenuItem>
-                                )}
-                                {canCreateContract && (
-                                    <MenuItem onClick={() => (close(), navigate('/contracts/new'))}>
-                                        <FileSignature className="h-4 w-4" /> Contract
-                                    </MenuItem>
-                                )}
-                                <MenuItem onClick={() => (close(), navigate('/leads'))}>
-                                    <Target className="h-4 w-4" /> Lead
-                                </MenuItem>
-                                <MenuItem onClick={() => (close(), navigate('/tickets/new'))}>
-                                    <LifeBuoy className="h-4 w-4" /> Ticket
-                                </MenuItem>
-                                {canCustomers && (
-                                    <MenuItem onClick={() => (close(), navigate('/customers/new'))}>
-                                        <Building2 className="h-4 w-4" /> Customer
-                                    </MenuItem>
-                                )}
-                            </>
-                        )}
+                        {(close) => createItems(close)}
                     </Menu>
-                    <button
-                        type="button"
-                        onClick={() => setDark((d) => !d)}
-                        title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-                        aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-                        className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-                    >
-                        {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-                    </button>
-                    <NewsfeedIcon />
-                    <TodosIcon />
-                    <ChatIcon />
-                    <NotificationsBell />
+                    <div className="flex items-center gap-0.5 rounded-2xl bg-white/90 p-1 shadow-[0_1px_2px_rgba(16,24,40,0.05)] ring-1 ring-slate-200/80">
+                        <button
+                            type="button"
+                            onClick={() => setDark((d) => !d)}
+                            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+                            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+                            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                        >
+                            {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+                        </button>
+                        <NewsfeedIcon />
+                        <TodosIcon />
+                        <ChatIcon />
+                        <NotificationsBell />
+                    </div>
                     <Menu
                         trigger={(toggle) => (
-                            <button type="button" onClick={toggle} className="ml-1 flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition hover:bg-slate-100">
+                            <button type="button" onClick={toggle} className="flex items-center gap-2 rounded-2xl bg-white/90 py-1 pl-1 pr-2 shadow-[0_1px_2px_rgba(16,24,40,0.05)] ring-1 ring-slate-200/80 transition hover:shadow-md">
                                 <Avatar id={user?.id} name={user?.full_name} photo={user?.photo_url} />
                                 <span className="hidden max-w-[9rem] truncate text-[13px] font-semibold text-slate-700 xl:block">{user?.first_name || user?.full_name}</span>
                                 <ChevronDown className="hidden h-4 w-4 text-slate-400 xl:block" />
@@ -528,33 +587,77 @@ function Shell() {
                 </div>
             </header>
 
-            <aside className={`sidebar-brand fixed bottom-0 left-0 top-[57px] z-20 hidden transition-[width] duration-200 lg:block ${collapsed ? 'w-[72px]' : 'w-[230px]'}`}>{renderSidebar(collapsed)}</aside>
+            {/* Desktop: a floating navy panel inset from the window edges. */}
+            <aside className={`sidebar-brand fixed bottom-3 left-3 top-3 z-40 hidden overflow-hidden rounded-[24px] transition-[width] duration-200 lg:block ${collapsed ? 'w-[76px]' : 'w-[244px]'}`}>
+                {renderSidebar(collapsed)}
+            </aside>
             {mobileOpen && (
-                <div className="fixed inset-0 top-[57px] z-40 lg:hidden">
-                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[1px]" onClick={() => setMobileOpen(false)} />
-                    <aside className="sidebar-brand absolute inset-y-0 left-0 w-[260px] shadow-2xl">{renderSidebar(false)}</aside>
+                <div className="fixed inset-0 z-50 lg:hidden">
+                    <div className="fade-in absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+                    <aside className="sidebar-brand pop-in absolute bottom-3 left-3 top-3 w-[264px] overflow-hidden rounded-[24px]">{renderSidebar(false)}</aside>
                 </div>
             )}
 
-            <main className={`px-4 pb-10 pt-[81px] transition-[margin] duration-200 sm:px-6 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-[230px]'}`}>
+            <main className={`px-4 pb-28 pt-[84px] lg:pb-10 transition-[margin] duration-200 sm:px-6 ${collapsed ? 'lg:ml-[100px]' : 'lg:ml-[268px]'}`}>
                 {/* Every page shares one content column (same left edge, capped on wide screens); chat uses the whole area. */}
                 {location.pathname.startsWith('/chat') ? (
                     <Outlet />
                 ) : (
-                    <div className="mx-auto w-full max-w-[1440px]">
+                    <div key={location.pathname} className="page-enter mx-auto w-full max-w-[1440px]">
                         <Breadcrumbs links={paletteLinks} pathname={location.pathname} />
                         <Outlet />
                     </div>
                 )}
             </main>
+
+            {/* Phones and tablets: a floating bar with the everyday pages and quick create (not on chat, which needs the whole screen). */}
+            {!location.pathname.startsWith('/chat') && (
+                <nav aria-label="Quick navigation" className="mobile-nav fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 items-end rounded-[22px] px-1.5 pb-1.5 pt-1 lg:hidden">
+                    <MobileTab to="/" icon={Gauge} label="Home" end />
+                    <MobileTab to="/leads" icon={Target} label="Leads" />
+                    <div className="flex justify-center">
+                        <Menu
+                            up
+                            align="right"
+                            trigger={(toggle) => (
+                                <button type="button" onClick={toggle} aria-label="Quick create" className="btn-accent -mt-6 flex h-14 w-14 items-center justify-center rounded-2xl text-white ring-4 ring-page transition active:scale-95">
+                                    <Plus className="h-6 w-6" />
+                                </button>
+                            )}
+                        >
+                            {(close) => createItems(close)}
+                        </Menu>
+                    </div>
+                    <MobileTab to="/tasks" icon={ListChecks} label="Tasks" />
+                    <button type="button" onClick={() => setMobileOpen(true)} className="flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10.5px] font-semibold text-blue-100/70">
+                        <MenuIcon className="h-5 w-5" />
+                        Menu
+                    </button>
+                </nav>
+            )}
         </div>
+    );
+}
+
+/** One tab of the phone bar: icon and label, orange with a dot when it is the page you are on. */
+function MobileTab({ to, icon: Icon, label, end }: { to: string; icon: LucideIcon; label: string; end?: boolean }) {
+    return (
+        <NavLink to={to} end={end} className={({ isActive }) => `relative flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10.5px] font-semibold transition ${isActive ? 'text-accent' : 'text-blue-100/70'}`}>
+            {({ isActive }) => (
+                <>
+                    <Icon className="h-5 w-5" />
+                    {label}
+                    {isActive && <span className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-accent" />}
+                </>
+            )}
+        </NavLink>
     );
 }
 
 function SidebarItem({ item, pathname, compact = false, open, onToggle }: { item: MenuNode; pathname: string; compact?: boolean; open: boolean; onToggle: () => void }) {
     const childActive = item.children?.some((child) => child.to && pathname.startsWith(child.to)) ?? false;
     const Icon = item.icon;
-    const base = 'relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition';
+    const base = 'relative flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-[13.5px] font-medium transition duration-150';
 
     if (compact) {
         return <CompactSidebarItem item={item} pathname={pathname} childActive={childActive} />;
@@ -563,17 +666,22 @@ function SidebarItem({ item, pathname, compact = false, open, onToggle }: { item
     if (item.children) {
         return (
             <li>
-                <button type="button" onClick={onToggle} aria-expanded={open} className={`${base} ${childActive ? 'text-white' : 'text-blue-100/75 hover:bg-white/[0.07] hover:text-white'}`}>
-                    {Icon && <Icon className={`h-[18px] w-[18px] ${childActive ? 'text-accent' : 'text-blue-100/50'}`} />}
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    aria-expanded={open}
+                    className={`${base} ${childActive ? 'bg-white/[0.08] text-white' : 'text-blue-100/75 hover:bg-white/[0.07] hover:text-white'}`}
+                >
+                    <SectionIcon item={item} active={childActive} />
                     <span className="flex-1 text-left">{item.label}</span>
-                    <ChevronRight className={`h-4 w-4 text-blue-100/40 transition-transform ${open ? 'rotate-90' : ''}`} />
+                    <ChevronRight className={`h-4 w-4 text-blue-100/40 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
                 </button>
                 {open && (
-                    <ul className="mb-1 ml-[21px] mt-0.5 border-l border-white/10">
+                    <ul className="fade-in mb-1 ml-[22px] mt-1 space-y-0.5 border-l border-white/10 pl-2">
                         {item.children.filter((child) => child.show !== false).map((child) => (
                             <li key={child.label}>
                                 {child.soon ? (
-                                    <span className="flex cursor-not-allowed items-center py-1.5 pl-4 pr-3 text-[13px] text-blue-100/35">
+                                    <span className="flex cursor-not-allowed items-center rounded-lg px-3 py-1.5 text-[13px] text-blue-100/35">
                                         {child.label}
                                         <SoonBadge />
                                     </span>
@@ -581,10 +689,15 @@ function SidebarItem({ item, pathname, compact = false, open, onToggle }: { item
                                     <NavLink
                                         to={child.to!}
                                         className={({ isActive }) =>
-                                            `-ml-px block border-l-2 py-1.5 pl-4 pr-3 text-[13px] transition ${isActive ? 'border-accent font-semibold text-white' : 'border-transparent text-blue-100/65 hover:border-white/30 hover:text-white'}`
+                                            `flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] transition ${isActive ? 'nav-active font-semibold' : 'text-blue-100/65 hover:bg-white/[0.07] hover:text-white'}`
                                         }
                                     >
-                                        {child.label}
+                                        {({ isActive }) => (
+                                            <>
+                                                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isActive ? 'bg-accent' : 'bg-blue-100/25'}`} />
+                                                {child.label}
+                                            </>
+                                        )}
                                     </NavLink>
                                 )}
                             </li>
@@ -612,14 +725,11 @@ function SidebarItem({ item, pathname, compact = false, open, onToggle }: { item
             <NavLink
                 to={item.to!}
                 end={item.to === '/'}
-                className={({ isActive }) =>
-                    `${base} ${isActive ? 'bg-white/[0.12] text-white shadow-sm ring-1 ring-white/10' : 'text-blue-100/75 hover:bg-white/[0.07] hover:text-white'}`
-                }
+                className={({ isActive }) => `${base} ${isActive ? 'nav-active font-semibold' : 'text-blue-100/75 hover:bg-white/[0.07] hover:text-white'}`}
             >
                 {({ isActive }) => (
                     <>
-                        {isActive && <span className="absolute -left-3 top-1.5 bottom-1.5 w-1 rounded-r-full bg-accent" />}
-                        {Icon && <Icon className={`h-[18px] w-[18px] ${isActive ? 'text-accent' : 'text-blue-100/50'}`} />}
+                        <SectionIcon item={item} active={isActive} />
                         {item.label}
                     </>
                 )}
@@ -648,7 +758,7 @@ function CompactSidebarItem({ item, pathname, childActive }: { item: MenuNode; p
     useEffect(() => setFlyout(null), [pathname]);
 
     const iconClass = (active: boolean) =>
-        `relative mx-auto flex h-10 w-10 items-center justify-center rounded-lg transition ${active ? 'bg-white/[0.12] text-accent ring-1 ring-white/10' : 'text-blue-100/60 hover:bg-white/[0.07] hover:text-white'}`;
+        `relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition ${active ? 'bg-white/[0.1] ring-1 ring-white/10' : 'hover:bg-white/[0.07]'}`;
 
     if (item.soon) {
         return (
@@ -664,12 +774,7 @@ function CompactSidebarItem({ item, pathname, childActive }: { item: MenuNode; p
         return (
             <li>
                 <NavLink to={item.to!} end={item.to === '/'} title={item.label} aria-label={item.label} className={({ isActive }) => iconClass(isActive)}>
-                    {({ isActive }) => (
-                        <>
-                            {isActive && <span className="absolute -left-2 top-2 bottom-2 w-1 rounded-r-full bg-accent" />}
-                            <Icon className="h-[18px] w-[18px]" />
-                        </>
-                    )}
+                    {({ isActive }) => <SectionIcon item={item} active={isActive} size="lg" />}
                 </NavLink>
             </li>
         );
@@ -678,8 +783,7 @@ function CompactSidebarItem({ item, pathname, childActive }: { item: MenuNode; p
     return (
         <li onMouseEnter={(e) => show(e.currentTarget)} onMouseLeave={leave}>
             <button type="button" aria-label={item.label} aria-haspopup="menu" onClick={(e) => (flyout ? setFlyout(null) : show(e.currentTarget.parentElement!))} className={iconClass(childActive)}>
-                {childActive && <span className="absolute -left-2 top-2 bottom-2 w-1 rounded-r-full bg-accent" />}
-                <Icon className="h-[18px] w-[18px]" />
+                <SectionIcon item={item} active={childActive} size="lg" />
             </button>
             {flyout && (
                 <div

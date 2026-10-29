@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ListOrdered, NotebookPen, Package } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { todayIso } from '../../lib/format';
 import { money } from '../../lib/sales';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, ErrorNote, Field, Input, Select, Spinner, Textarea } from '../../components/ui';
+import { Button, ErrorNote, Field, Input, SectionHeading, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { Currency, Tax } from '../../types';
 import { emptyLine, lineTotals, PurchaseLines, TITLES, type DocType, type Line } from './shared';
@@ -128,7 +128,8 @@ export default function PurchaseFormPage({ type }: { type: DocType }) {
             </div>
             <ErrorNote message={error} />
             <div className="panel_s">
-                <div className="panel-body grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="panel-body grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <SectionHeading icon={Package} title="Details" hint="Vendor, dates and who it is for." className="sm:col-span-2 lg:col-span-3" />
                     {type !== 'invoices' && (
                         <Field label={type === 'requests' ? 'Purchase Request Name' : 'Order Name'} required error={errors.name}>
                             <Input value={form.name} onChange={set('name')} />
@@ -230,6 +231,7 @@ export default function PurchaseFormPage({ type }: { type: DocType }) {
 
             <div className="panel_s">
                 <div className="panel-body space-y-4">
+                    <SectionHeading icon={ListOrdered} title="Items" hint="What you are buying, with quantities, rates and taxes." className="" />
                     <PurchaseLines lines={lines} onLines={setLines} taxes={taxes} currency={currency} />
                     {errors.items && <p className="text-xs text-red-600">{errors.items}</p>}
                     <div className="ml-auto max-w-sm space-y-1.5 text-[13.5px]">
@@ -262,7 +264,8 @@ export default function PurchaseFormPage({ type }: { type: DocType }) {
 
             {type !== 'requests' && (
                 <div className="panel_s">
-                    <div className="panel-body grid gap-3 sm:grid-cols-2">
+                    <div className="panel-body grid gap-4 sm:grid-cols-2">
+                        <SectionHeading icon={NotebookPen} title="Notes & terms" className="sm:col-span-2" />
                         <Field label="Vendor Note">
                             <Textarea rows={3} value={form.vendor_note} onChange={set('vendor_note')} />
                         </Field>

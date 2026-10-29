@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Building2, Check, NotebookPen, Percent, Wallet } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { RECURRING_TYPES } from '../../lib/constants';
 import { todayIso } from '../../lib/format';
-import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, FormSection, Input, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { Currency, Expense, PaymentMode, Tax } from '../../types';
 import { CustomFieldInputs, useCustomFields } from '../../components/customfields/CustomFields';
@@ -145,102 +146,122 @@ export default function ExpenseFormPage() {
             </div>
             <ErrorNote message={error} />
             <div className="panel_s">
-                <div className="panel-body grid gap-4 sm:grid-cols-2">
-                    <Field label="Name" error={errors.name}>
-                        <Input value={form.name as string} onChange={set('name')} />
-                    </Field>
-                    <Field label="Expense Category" required error={errors.expense_category_id} hint={lists.categories.length ? undefined : 'Add categories in Setup → Expense Categories.'}>
-                        <Select value={form.expense_category_id as string} onChange={set('expense_category_id')}>
-                            <option value="">Select</option>
-                            {lists.categories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Expense Date" required error={errors.date}>
-                        <Input type="date" value={form.date as string} onChange={set('date')} />
-                    </Field>
-                    <Field label="Amount" required error={errors.amount}>
-                        <Input type="number" step="any" value={form.amount as string} onChange={set('amount')} />
-                    </Field>
-                    <Field label="Customer" error={errors.customer_id}>
-                        <Select value={form.customer_id as string} onChange={(e) => setForm({ ...form, customer_id: e.target.value, project_id: '', billable: e.target.value ? form.billable : false })}>
-                            <option value="">None</option>
-                            {lists.customers.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Project" error={errors.project_id}>
-                        <Select value={form.project_id as string} onChange={set('project_id')} disabled={!form.customer_id}>
-                            <option value="">None</option>
-                            {projects.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <div className="sm:col-span-2">
-                        <Checkbox label="Billable" checked={!!form.billable} disabled={!form.customer_id} onChange={(v) => setForm({ ...form, billable: v })} />
-                    </div>
-                    <Field label="Currency">
-                        <Select value={form.currency_id as string} onChange={set('currency_id')}>
-                            {lists.currencies.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.name} ({c.symbol})
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Payment Mode">
-                        <Select value={form.payment_mode_id as string} onChange={set('payment_mode_id')}>
-                            <option value="">—</option>
-                            {lists.modes.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                    <Field label="Tax 1">
-                        <Select value={form.tax_id as string} onChange={set('tax_id')}>
-                            {taxOptions}
-                        </Select>
-                    </Field>
-                    <Field label="Tax 2">
-                        <Select value={form.tax2_id as string} onChange={set('tax2_id')}>
-                            {taxOptions}
-                        </Select>
-                    </Field>
-                    <Field label="Reference #">
-                        <Input value={form.reference_no as string} onChange={set('reference_no')} />
-                    </Field>
-                    <Field label="Repeat every" error={errors.repeat_every}>
-                        <div className="flex gap-2">
-                            <Input type="number" min={1} placeholder="No" value={form.repeat_every as string} onChange={set('repeat_every')} className="w-20" />
-                            <Select value={form.recurring_type as string} onChange={set('recurring_type')} disabled={!form.repeat_every}>
-                                {RECURRING_TYPES.map((r) => (
-                                    <option key={r.id} value={r.id}>
-                                        {r.name}
-                                    </option>
-                                ))}
-                            </Select>
-                            <Input type="number" min={0} placeholder="Cycles (0 = ∞)" value={form.cycles as string} onChange={set('cycles')} disabled={!form.repeat_every} />
+                <div className="panel-body space-y-4">
+                    <FormSection icon={Wallet} title="Expense" hint="What you spent, when and how you paid.">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Name" error={errors.name}>
+                                <Input value={form.name as string} onChange={set('name')} placeholder="e.g. Office internet" />
+                            </Field>
+                            <Field label="Expense Category" required error={errors.expense_category_id} hint={lists.categories.length ? undefined : 'Add categories in Setup → Expense Categories.'}>
+                                <Select value={form.expense_category_id as string} onChange={set('expense_category_id')}>
+                                    <option value="">Select</option>
+                                    {lists.categories.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Expense Date" required error={errors.date}>
+                                <Input type="date" value={form.date as string} onChange={set('date')} />
+                            </Field>
+                            <Field label="Amount" required error={errors.amount}>
+                                <Input type="number" step="any" value={form.amount as string} onChange={set('amount')} placeholder="0.00" />
+                            </Field>
+                            <Field label="Currency">
+                                <Select value={form.currency_id as string} onChange={set('currency_id')}>
+                                    {lists.currencies.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name} ({c.symbol})
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Payment Mode">
+                                <Select value={form.payment_mode_id as string} onChange={set('payment_mode_id')}>
+                                    <option value="">—</option>
+                                    {lists.modes.map((m) => (
+                                        <option key={m.id} value={m.id}>
+                                            {m.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Reference #">
+                                <Input value={form.reference_no as string} onChange={set('reference_no')} placeholder="Bill or receipt number" />
+                            </Field>
                         </div>
-                    </Field>
-                    <CustomFieldInputs cf={cf} className="sm:col-span-2" />
-                    <Field label="Note" className="sm:col-span-2">
-                        <Textarea rows={4} value={form.note as string} onChange={set('note')} />
-                    </Field>
+                    </FormSection>
+
+                    <FormSection icon={Building2} title="Customer & billing" hint="Link the expense to a customer to bill it to them.">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Customer" error={errors.customer_id}>
+                                <Select value={form.customer_id as string} onChange={(e) => setForm({ ...form, customer_id: e.target.value, project_id: '', billable: e.target.value ? form.billable : false })}>
+                                    <option value="">None</option>
+                                    {lists.customers.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <Field label="Project" error={errors.project_id}>
+                                <Select value={form.project_id as string} onChange={set('project_id')} disabled={!form.customer_id}>
+                                    <option value="">None</option>
+                                    {projects.map((p) => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                            <div className="sm:col-span-2">
+                                <Checkbox label="Billable: add it to the customer's next invoice" checked={!!form.billable} disabled={!form.customer_id} onChange={(v) => setForm({ ...form, billable: v })} />
+                            </div>
+                        </div>
+                    </FormSection>
+
+                    <FormSection icon={Percent} title="Tax & repeat">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Tax 1">
+                                <Select value={form.tax_id as string} onChange={set('tax_id')}>
+                                    {taxOptions}
+                                </Select>
+                            </Field>
+                            <Field label="Tax 2">
+                                <Select value={form.tax2_id as string} onChange={set('tax2_id')}>
+                                    {taxOptions}
+                                </Select>
+                            </Field>
+                            <Field label="Repeat every" error={errors.repeat_every} className="sm:col-span-2">
+                                <div className="flex gap-2">
+                                    <Input type="number" min={1} placeholder="No" value={form.repeat_every as string} onChange={set('repeat_every')} className="w-20" />
+                                    <Select value={form.recurring_type as string} onChange={set('recurring_type')} disabled={!form.repeat_every}>
+                                        {RECURRING_TYPES.map((r) => (
+                                            <option key={r.id} value={r.id}>
+                                                {r.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                    <Input type="number" min={0} placeholder="Cycles (0 = ∞)" value={form.cycles as string} onChange={set('cycles')} disabled={!form.repeat_every} />
+                                </div>
+                            </Field>
+                        </div>
+                    </FormSection>
+
+                    <FormSection icon={NotebookPen} title="Notes">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <CustomFieldInputs cf={cf} className="sm:col-span-2" />
+                            <Field label="Note" className="sm:col-span-2">
+                                <Textarea rows={4} value={form.note as string} onChange={set('note')} placeholder="Anything worth remembering about this expense…" />
+                            </Field>
+                        </div>
+                    </FormSection>
                 </div>
-                <div className="flex justify-end rounded-b-lg border-t border-gray-200 bg-gray-50 px-6 py-3">
+                <div className="flex justify-end gap-2 rounded-b-2xl border-t border-slate-100 bg-slate-50/70 px-6 py-3.5">
                     <Button onClick={save} loading={saving}>
-                        Save
+                        <Check className="h-4 w-4" />
+                        {editing ? 'Save changes' : 'Record expense'}
                     </Button>
                 </div>
             </div>

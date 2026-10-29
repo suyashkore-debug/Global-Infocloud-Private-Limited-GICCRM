@@ -441,10 +441,11 @@ function Checklist({ task, canWork, staff, act, done }: { task: TaskDetail; canW
                         </div>
                         {canWork && (
                             <>
-                                <select
+                                <span className="hidden group-hover:block">
+                                <Select
                                     value={item.assigned_to?.id ?? ''}
                                     onChange={(e) => act(() => api.put(`/checklist-items/${item.id}`, { assigned_to: e.target.value ? Number(e.target.value) : null }))}
-                                    className="hidden max-w-[8rem] rounded border border-gray-200 bg-white px-1 py-0.5 text-xs group-hover:block"
+                                    className="!w-36 !py-1 !text-xs"
                                     title="Assign"
                                 >
                                     <option value="">Assign…</option>
@@ -453,7 +454,8 @@ function Checklist({ task, canWork, staff, act, done }: { task: TaskDetail; canW
                                             {s.full_name}
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
+                                </span>
                                 <button type="button" onClick={() => act(() => api.delete(`/checklist-items/${item.id}`))} className="hidden text-gray-400 hover:text-red-600 group-hover:block" title="Delete">
                                     <X className="h-4 w-4" />
                                 </button>
@@ -760,14 +762,14 @@ function People({
             {canAdd && available.length > 0 && (
                 <div className="mt-2 flex items-center gap-1.5">
                     <UserPlus className="h-4 w-4 text-gray-400" />
-                    <select value="" onChange={(e) => e.target.value && onAdd(Number(e.target.value))} className="w-full rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs">
+                    <Select value="" onChange={(e) => e.target.value && onAdd(Number(e.target.value))} className="!py-1.5 !text-xs">
                         <option value="">Add {title.toLowerCase().replace(/s$/, '')}…</option>
                         {available.map((s) => (
                             <option key={s.id} value={s.id}>
                                 {s.full_name}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
             )}
         </div>

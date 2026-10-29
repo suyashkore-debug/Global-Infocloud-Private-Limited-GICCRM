@@ -126,6 +126,26 @@ class LeadController extends Controller
         return new LeadResource($this->loadForView($lead->refresh()));
     }
 
+    /**
+     * Qualification checklist / star rating: the criteria the lead meets.
+     */
+    public function qualify(Request $request, Lead $lead): LeadResource
+    {
+        $this->authorize('update', $lead);
+        $data = $request->validate([
+            'criteria' => ['present', 'array'],
+            'criteria.*' => [Rule::in(Lead::QUALIFICATION)],
+        ]);
+
+        $before = $lead->rating();
+        $lead->update(['qualification' => array_values(array_intersect(Lead::QUALIFICATION, $data['criteria']))]);
+        if ($lead->rating() !== $before) {
+            $lead->logActivity("Rating changed to {$lead->rating()}/5");
+        }
+
+        return new LeadResource($this->loadForView($lead->refresh()));
+    }
+
     public function convert(Request $request, Lead $lead): CustomerResource
     {
         $this->authorize('update', $lead);

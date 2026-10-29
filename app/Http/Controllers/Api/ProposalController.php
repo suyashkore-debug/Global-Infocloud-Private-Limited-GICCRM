@@ -70,6 +70,7 @@ class ProposalController extends Controller
         $this->authorize('create', Proposal::class);
         $proposal = $this->proposals->create($request->validated());
         EstimateRequests::completeWith($request->validated('estimate_request_id'), $proposal);
+        $proposal->lead?->logActivity('Created proposal '.$proposal->formattedNumber());
 
         return new ProposalResource($this->loadForView($proposal));
     }

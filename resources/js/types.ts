@@ -545,6 +545,8 @@ export interface Lead {
     zip: string | null;
     country: string | null;
     lead_value: string | null;
+    qualification: string[];
+    rating: number;
     is_public: boolean;
     lost: boolean;
     junk: boolean;

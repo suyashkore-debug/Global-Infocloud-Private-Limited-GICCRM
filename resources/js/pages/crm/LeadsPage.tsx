@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Clock, Columns3, List, Plus, Search } from 'lucide-react';
+import { Clock, Columns3, List, Plus, Search, Target } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { money } from '../../lib/sales';
@@ -10,17 +10,19 @@ import { Avatar, Button, EmptyState, ErrorNote, Input, Pagination, Select, Spinn
 import { useToast } from '../../components/ui/Toast';
 import type { Lead, LeadStatus, Paginated } from '../../types';
 import LeadModal from './LeadModal';
+import { LeadRatingCell } from './LeadRating';
+import { celebrate } from '../../lib/celebrate';
 import { useCustomFieldColumns } from '../../components/customfields/CustomFields';
 import SavedFilters, { savedIds, savedText } from '../../components/filters/SavedFilters';
 
 type LeadList = Paginated<Lead> & { meta: { summary: LeadStatus[] } };
 
-/** Perfex Leads: kanban by status (default) or table, with filters and the lead modal. */
+/** Perfex Leads: table (default) or kanban by status, with filters and the lead modal. */
 export default function LeadsPage() {
     const toast = useToast();
     const staff = useStaff();
     const [params, setParams] = useSearchParams();
-    const [view, setView] = useState<'kanban' | 'list'>('kanban');
+    const [view, setView] = useState<'kanban' | 'list'>('list');
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('');
     const [assigned, setAssigned] = useState('');
@@ -50,6 +52,8 @@ export default function LeadsPage() {
             return next;
         });
 
+    const replaceLead = (updated: Lead) => data && setData({ ...data, data: data.data.map((l) => (l.id === updated.id ? updated : l)) });
+
     async function drop(e: DragEvent, statusId: number) {
         e.preventDefault();
         if (!dragging || !data) {
@@ -59,6 +63,10 @@ export default function LeadsPage() {
         const column = data.data.filter((l) => l.status?.id === statusId && l.id !== dragging);
         if (moved) {
             const status = data.meta.summary.find((s) => s.id === statusId);
+            // Dropped into the won (Customer) column.
+            if (status?.is_default && !moved.status?.is_default) {
+                celebrate();
+            }
             setData({ ...data, data: data.data.map((l) => (l.id === dragging ? { ...l, status: status ?? l.status } : l)) });
         }
         setDragging(null);
@@ -159,11 +167,17 @@ export default function LeadsPage() {
                                                 onDragStart={() => setDragging(lead.id)}
                                                 onDragEnd={() => (setDragging(null), setOverColumn(null))}
                                                 onClick={() => openLead(lead.id)}
-                                                className={`group cursor-pointer rounded-lg border border-slate-200/80 bg-white p-3 text-[13px] shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-md active:cursor-grabbing ${dragging === lead.id ? 'opacity-50' : ''}`}
+                                                className={`group cursor-pointer rounded-xl border bg-white p-3 text-[13px] transition hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${lead.rating === 5 ? 'lead-hot' : 'border-slate-200/80 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:border-brand/30'} ${dragging === lead.id ? 'opacity-50' : ''}`}
                                             >
                                                 <p className="text-[11px] font-semibold text-slate-400">#{lead.id}</p>
-                                                <p className="font-semibold leading-snug text-slate-800 group-hover:text-brand">{lead.name}</p>
+                                                <p className="flex items-start justify-between gap-2 font-semibold leading-snug text-slate-800 group-hover:text-brand">
+                                                    <span>{lead.name}</span>
+                                                    {lead.rating === 5 && <HotBadge />}
+                                                </p>
                                                 {lead.company && <p className="truncate text-[12.5px] text-slate-500">{lead.company}</p>}
+                                                <div className="mt-1.5">
+                                                    <LeadRatingCell lead={lead} onChanged={replaceLead} />
+                                                </div>
                                                 {(lead.tags?.length ?? 0) > 0 && (
                                                     <div className="mt-2 flex flex-wrap gap-1">
                                                         {lead.tags?.map((t) => (
@@ -193,7 +207,7 @@ export default function LeadsPage() {
                     </div>
                 </div>
             ) : data.data.length === 0 ? (
-                <EmptyState title="No leads found" />
+                <EmptyState icon={Target} title="No leads found" text="Leads you add, or that come in from your forms and calls, show up here. Try another filter, or add your first lead." action={<Button onClick={() => setNewOpen({})}><Plus className="h-4 w-4" /> Add a lead</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">
@@ -210,6 +224,7 @@ export default function LeadsPage() {
                                     <th>Assigned</th>
                                     <th>Status</th>
                                     <th>Source</th>
+                                    <th>Rating</th>
                                     <th>Last Contact</th>
                                     <th>Created</th>
                                     {cfCols.columns.map((cfc) => (
@@ -219,9 +234,14 @@ export default function LeadsPage() {
                             </thead>
                             <tbody>
                                 {data.data.map((lead) => (
-                                    <tr key={lead.id} className="cursor-pointer" onClick={() => openLead(lead.id)}>
+                                    <tr key={lead.id} className={`cursor-pointer ${lead.rating === 5 ? 'lead-hot-row' : ''}`} onClick={() => openLead(lead.id)}>
                                         <td>{lead.id}</td>
-                                        <td className="font-semibold text-brand">{lead.name}</td>
+                                        <td className="font-semibold text-brand">
+                                            <span className="inline-flex items-center gap-2">
+                                                {lead.name}
+                                                {lead.rating === 5 && <HotBadge />}
+                                            </span>
+                                        </td>
                                         <td>{lead.company}</td>
                                         <td>{lead.email}</td>
                                         <td>{lead.phone}</td>
@@ -232,6 +252,9 @@ export default function LeadsPage() {
                                         <td>{lead.assigned?.full_name}</td>
                                         <td>{lead.status && <StatusBadge option={{ id: lead.status.id, name: lead.status.name, color: lead.status.color }} />}</td>
                                         <td>{lead.source?.name}</td>
+                                        <td className="whitespace-nowrap" data-sort-value={lead.rating}>
+                                            <LeadRatingCell lead={lead} onChanged={replaceLead} />
+                                        </td>
                                         <td className="whitespace-nowrap">{lead.last_contact_at ? timeAgo(lead.last_contact_at) : ''}</td>
                                         <td className="whitespace-nowrap">{formatDate(lead.created_at)}</td>
                                         {cfCols.columns.map((cfc) => (
@@ -260,5 +283,14 @@ export default function LeadsPage() {
                 }}
             />
         </div>
+    );
+}
+
+/** 5-star leads: a small flame badge. */
+function HotBadge() {
+    return (
+        <span title="Hot lead: 5 of 5 qualification criteria met" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-[linear-gradient(135deg,#ff8a3d,#fa6010)] px-1.5 py-[1px] text-[10.5px] font-bold uppercase tracking-wide text-white shadow-[0_4px_10px_-4px_rgba(250,96,16,0.8)]">
+            🔥 Hot
+        </span>
     );
 }

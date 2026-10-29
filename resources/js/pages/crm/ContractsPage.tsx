@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { FileSignature, Plus, Search } from 'lucide-react';
 import { formatDate } from '../../lib/format';
 import { money } from '../../lib/sales';
 import { useApi } from '../../hooks/useApi';
@@ -55,7 +55,7 @@ export function ContractsTable({ customerId, projectId }: { customerId?: number;
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No contracts found" />
+                <EmptyState icon={FileSignature} title="No contracts found" text="Keep your customer contracts here and get reminded before they expire." action={canCreate && <Button onClick={() => navigate(`/contracts/new${customerId ? `?customer_id=${customerId}${projectId ? `&project_id=${projectId}` : ''}` : ''}`)}><Plus className="h-4 w-4" /> Add a contract</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">

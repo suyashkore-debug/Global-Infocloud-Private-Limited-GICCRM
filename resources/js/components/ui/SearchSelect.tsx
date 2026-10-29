@@ -43,13 +43,14 @@ export function readOptions(children: ReactNode, group?: string): SelectItem[] |
     return items;
 }
 
-type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> & { items: SelectItem[] };
+type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> & { items: SelectItem[]; searchable?: boolean };
 
 /**
- * A select with a search box, for long lists (customers, projects, staff, countries…). It stands in
- * for <select>, so callers keep reading `e.target.value`.
+ * The app's dropdown in place of the browser's: a styled list (with a search box for long lists:
+ * customers, projects, staff, countries…). It stands in for <select>, so callers keep reading
+ * `e.target.value`.
  */
-export default function SearchSelect({ items, value, onChange, disabled, className = '', id, title }: Props) {
+export default function SearchSelect({ items, value, onChange, disabled, className = '', id, title, searchable = true }: Props) {
     const current = value === undefined || value === null ? '' : String(value);
     const selected = items.find((i) => i.value === current);
     const [open, setOpen] = useState(false);
@@ -75,7 +76,7 @@ export default function SearchSelect({ items, value, onChange, disabled, classNa
         }
         const place = () => {
             const r = button.current!.getBoundingClientRect();
-            const width = Math.max(r.width, 240);
+            const width = Math.max(r.width, searchable ? 240 : 160);
             const spaceBelow = window.innerHeight - r.bottom - 12;
             const below = spaceBelow >= 260 || spaceBelow >= r.top - 12;
             const maxHeight = Math.min(360, below ? spaceBelow : r.top - 12);
@@ -100,13 +101,14 @@ export default function SearchSelect({ items, value, onChange, disabled, classNa
         const esc = (e: KeyboardEvent) => e.key === 'Escape' && (e.stopPropagation(), setOpen(false), button.current?.focus());
         document.addEventListener('mousedown', away);
         document.addEventListener('keydown', esc, true);
-        setTimeout(() => search.current?.focus(), 0);
+        // Keys go to the search box, or to the list itself when there is none.
+        setTimeout(() => (searchable ? search.current : pop.current)?.focus(), 0);
 
         return () => {
             document.removeEventListener('mousedown', away);
             document.removeEventListener('keydown', esc, true);
         };
-    }, [open]);
+    }, [open, searchable]);
 
     useEffect(() => {
         list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' });
@@ -193,11 +195,13 @@ export default function SearchSelect({ items, value, onChange, disabled, classNa
                     <div
                         ref={pop}
                         data-floating
+                        tabIndex={-1}
                         onKeyDown={onListKey}
                         onClick={(e) => e.stopPropagation()}
                         style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: pos?.width, maxHeight: pos?.maxHeight }}
-                        className="fixed z-[200] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+                        className="pop-in fixed z-[200] flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_44px_-16px_rgba(8,33,63,0.4)] outline-none"
                     >
+                        {searchable && (
                         <div className="relative border-b border-slate-100 p-2">
                             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
@@ -211,7 +215,8 @@ export default function SearchSelect({ items, value, onChange, disabled, classNa
                                 aria-autocomplete="list"
                             />
                         </div>
-                        <div ref={list} role="listbox" className="min-h-0 flex-1 overflow-y-auto p-1">
+                        )}
+                        <div ref={list} role="listbox" className="min-h-0 flex-1 overflow-y-auto p-1.5">
                             {shown.length === 0 && <p className="px-3 py-2.5 text-[13px] text-slate-500">No matches</p>}
                             {shown.map((item, i) => {
                                 const heading = item.group && item.group !== lastGroup ? item.group : null;
@@ -229,10 +234,10 @@ export default function SearchSelect({ items, value, onChange, disabled, classNa
                                             disabled={item.disabled}
                                             onMouseMove={() => i !== active && setActive(i)}
                                             onClick={() => pick(item)}
-                                            className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13.5px] ${item.disabled ? 'cursor-not-allowed text-slate-300' : i === active ? 'bg-brand-50 text-brand' : 'text-slate-700'} ${isSelected ? 'font-semibold' : ''}`}
+                                            className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-[13.5px] transition-colors ${item.disabled ? 'cursor-not-allowed text-slate-300' : i === active ? 'bg-brand-50 text-brand' : 'text-slate-700'} ${isSelected ? 'font-semibold text-brand' : ''}`}
                                         >
                                             <span className={`min-w-0 flex-1 truncate ${item.value === '' ? 'text-slate-500' : ''}`}>{item.label || ' '}</span>
-                                            {isSelected && <Check className="h-4 w-4 shrink-0 text-brand" />}
+                                            {isSelected && <Check className="h-4 w-4 shrink-0 text-accent" strokeWidth={3} />}
                                         </button>
                                     </Fragment>
                                 );

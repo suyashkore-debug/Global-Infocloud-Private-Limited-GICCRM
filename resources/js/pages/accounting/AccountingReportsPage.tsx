@@ -69,7 +69,7 @@ function ReportBody({ tab, data }: { tab: Report; data: unknown }) {
     if (tab === 'profit-and-loss') {
         const d = data as Record<string, Section | number>;
         return (
-            <table className="table-perfex">
+            <table data-nosort className="table-perfex">
                 <tbody>
                     <SectionRows title="Income" section={d.income as Section} />
                     <SectionRows title="Cost of Sales" section={d.cost_of_sales as Section} />
@@ -86,7 +86,7 @@ function ReportBody({ tab, data }: { tab: Report; data: unknown }) {
     if (tab === 'balance-sheet') {
         const d = data as Record<string, Section | number>;
         return (
-            <table className="table-perfex">
+            <table data-nosort className="table-perfex">
                 <tbody>
                     <SectionRows title="Assets" section={d.assets as Section} />
                     <SectionRows title="Liabilities" section={d.liabilities as Section} />
@@ -102,7 +102,7 @@ function ReportBody({ tab, data }: { tab: Report; data: unknown }) {
     if (tab === 'trial-balance') {
         const d = data as { rows: { id: number; number: string | null; name: string; type: string; debit: number; credit: number }[]; debit: number; credit: number };
         return (
-            <table className="table-perfex">
+            <table data-nosort className="table-perfex">
                 <thead>
                     <tr>
                         <th>Account</th>
@@ -140,7 +140,7 @@ function ReportBody({ tab, data }: { tab: Report; data: unknown }) {
             return <p className="text-gray-500">No transactions in this period.</p>;
         }
         return (
-            <table className="table-perfex">
+            <table data-nosort className="table-perfex">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -177,7 +177,7 @@ function ReportBody({ tab, data }: { tab: Report; data: unknown }) {
         return <p className="text-gray-500">No journal entries in this period.</p>;
     }
     return (
-        <table className="table-perfex">
+        <table data-nosort className="table-perfex">
             <thead>
                 <tr>
                     <th>Date</th>

@@ -6,7 +6,7 @@ import { CHAT_CHANGED, TODOS_CHANGED } from '../lib/events';
 import { timeAgo } from '../lib/format';
 import { useApi } from '../hooks/useApi';
 import { useEvent } from '../hooks/useEvent';
-import { Avatar, Menu } from '../components/ui';
+import { Avatar, Input, Menu } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
 import { useRealtimeEvent } from '../lib/realtime';
 import { disablePush, enablePush, usePushState } from '../lib/pwa';
@@ -224,7 +224,7 @@ export function CompanySwitcher({ currentName, acting }: { currentName: string; 
                 <div className="w-72">
                     <p className="border-b border-gray-100 px-3 py-2 text-xs font-semibold uppercase text-gray-500">Switch company</p>
                     <div className="p-2">
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company..." className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-500" autoFocus />
+                        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search company..." className="!py-1.5 !text-[13px]" autoFocus />
                     </div>
                     <ul className="max-h-80 overflow-y-auto pb-1">
                         {acting && (

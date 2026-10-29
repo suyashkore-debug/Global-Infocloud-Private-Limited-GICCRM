@@ -31,6 +31,8 @@ class LeadResource extends JsonResource
             'zip' => $this->zip,
             'country' => $this->country,
             'lead_value' => $this->lead_value,
+            'qualification' => array_values(array_intersect(Lead::QUALIFICATION, (array) $this->qualification)),
+            'rating' => $this->rating(),
             'is_public' => $this->is_public,
             'lost' => $this->lost,
             'junk' => $this->junk,

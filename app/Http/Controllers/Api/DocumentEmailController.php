@@ -81,6 +81,9 @@ class DocumentEmailController extends Controller
             $cc = []; // CC only once
         }
         $this->markSent($document);
+        if ($document instanceof Proposal) {
+            $document->lead?->logActivity('Emailed proposal '.$document->formattedNumber().' to '.implode(', ', array_unique($data['recipients'])));
+        }
 
         return response()->json(['message' => 'E-mail sent to '.count(array_unique($data['recipients'])).' recipient(s).']);
     }

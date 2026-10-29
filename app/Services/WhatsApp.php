@@ -161,6 +161,9 @@ class WhatsApp
             if ($response->successful() && $id) {
                 $message->update(['status' => 'sent', 'wamid' => $id]);
                 $lead->update(['last_contact_at' => now()]);
+                if ($kind === 'template') {
+                    $lead->logActivity('Sent WhatsApp opening message');
+                }
             } else {
                 $message->update(['status' => 'failed', 'error' => $error ?? "WhatsApp returned HTTP {$response->status()}."]);
             }
@@ -296,6 +299,10 @@ class WhatsApp
         }
 
         $lead = $this->leadFor($companyId, $waId);
+        // A message that (re)opens the 24-hour window starts a conversation worth noting on the lead.
+        if ($lead && ! self::windowEndsAt($waId, $companyId)) {
+            $lead->logActivity('Received a WhatsApp message');
+        }
 
         WhatsappMessage::create([
             'company_id' => $companyId,

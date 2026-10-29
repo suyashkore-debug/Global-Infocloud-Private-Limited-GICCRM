@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // The acting company must be set before route model binding looks records up.
         $middleware->prependToPriorityList(SubstituteBindings::class, EnsureUserCanUseApp::class);
+        // Behind a proxy / tunnel the app must see the public https URL, or Bird webhook signatures won't match.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*') || $request->expectsJson());

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { FileSignature, ListOrdered, NotebookPen, Send } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { PROPOSAL_STATUSES } from '../../lib/sales';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner, TagInput, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, FormSection, Input, SectionHeading, Select, Spinner, TagInput, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import RichTextEditor, { type RichTextEditorHandle } from '../../components/editor/RichTextEditor';
 import TemplatesPanel from '../../components/editor/TemplatesPanel';
@@ -182,8 +183,8 @@ export default function ProposalFormPage() {
             <ErrorNote message={error} />
 
             <div className="panel_s mt-3">
-                <div className="panel-body grid gap-6 lg:grid-cols-2">
-                    <div className="space-y-4">
+                <div className="panel-body grid gap-4 lg:grid-cols-2">
+                    <FormSection icon={FileSignature} title="Proposal details" hint="What you are proposing, to whom and until when." bodyClassName="space-y-4">
                         <Field label="Subject" required error={errors.subject}>
                             <Input value={str('subject')} onChange={(e) => set('subject', e.target.value)} autoFocus />
                         </Field>
@@ -250,8 +251,8 @@ export default function ProposalFormPage() {
                             <TagInput value={form.tags as string[]} onChange={(tags) => set('tags', tags)} />
                         </Field>
                         <Checkbox label="Allow Comments" checked={!!form.allow_comments} onChange={(v) => set('allow_comments', v)} />
-                    </div>
-                    <div className="grid content-start gap-4 sm:grid-cols-2">
+                    </FormSection>
+                    <FormSection icon={Send} title="Send to" hint="The recipient's details printed on the proposal." bodyClassName="grid content-start gap-4 sm:grid-cols-2">
                         {form.lead_id && !form.customer_id && <p className="text-[13px] text-gray-600 sm:col-span-2">Related to lead #{str('lead_id')} (details are filled from the lead when left empty).</p>}
                         <Field label="To" required={!form.customer_id && !form.lead_id} error={errors.proposal_to} className="sm:col-span-2">
                             <Input value={str('proposal_to')} onChange={(e) => set('proposal_to', e.target.value)} />
@@ -277,13 +278,13 @@ export default function ProposalFormPage() {
                         <Field label="Phone">
                             <Input value={str('phone')} onChange={(e) => set('phone', e.target.value)} />
                         </Field>
-                    </div>
+                    </FormSection>
                 </div>
             </div>
 
             <div className="panel_s">
                 <div className="panel-body">
-                    <p className="mb-1.5 text-[13.5px] font-medium text-gray-700">Proposal Content</p>
+                    <SectionHeading icon={NotebookPen} title="Proposal content" hint="Introduction, scope and timelines. Insert a template from the right." />
                     <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
                         <RichTextEditor ref={editor} value={str('content')} onChange={(html) => set('content', html)} placeholder="Introduction, scope of work, timelines…" />
                         <TemplatesPanel type="proposals" currentContent={str('content')} onInsert={(html) => editor.current?.insertHtml(html)} />
@@ -293,11 +294,12 @@ export default function ProposalFormPage() {
 
             <div className="panel_s">
                 <div className="panel-body">
+                    <SectionHeading icon={ListOrdered} title="Items" hint="What you are offering, with quantities, rates and taxes." />
                     <SalesItemsEditor lines={lines.length ? lines : []} onLines={setLines} moneyFields={moneyFields} onMoney={setMoneyFields} currency={currency} error={errors.items} />
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 z-10 flex justify-end gap-2 border-t border-gray-200 bg-white px-6 py-3 shadow-[0_-2px_6px_rgba(0,0,0,0.05)] lg:left-[230px]">
+            <div className="form-actions-bar">
                 <Button onClick={save} loading={saving}>
                     Save
                 </Button>

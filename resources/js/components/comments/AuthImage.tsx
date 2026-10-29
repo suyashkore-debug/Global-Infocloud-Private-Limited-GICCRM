@@ -25,5 +25,5 @@ export function AuthImage({ url, alt, className, onClick }: { url: string; alt: 
         };
     }, [url]);
 
-    return src ? <img src={src} alt={alt} className={className} onClick={onClick} /> : <div className={`animate-pulse bg-gray-100 ${className ?? ''}`} />;
+    return src ? <img src={src} alt={alt} className={className} onClick={onClick} /> : <div className={`skeleton ${className ?? ''}`} />;
 }

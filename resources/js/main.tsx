@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerServiceWorker } from './lib/pwa';
+import { enableTableSorting } from './lib/tableSort';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import RequireAuth from './auth/RequireAuth';
@@ -83,6 +84,7 @@ import ProjectViewPage from './pages/projects/ProjectViewPage';
 import TasksPage from './pages/TasksPage';
 
 registerServiceWorker();
+enableTableSorting();
 
 createRoot(document.getElementById('app')!).render(
     <StrictMode>

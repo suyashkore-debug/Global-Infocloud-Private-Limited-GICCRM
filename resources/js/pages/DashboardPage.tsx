@@ -15,6 +15,7 @@ import { Card, Spinner, StatusBadge } from '../components/ui';
 import { useTaskModals } from '../components/tasks/TaskModalHost';
 import { TodoModal, type TodoItem } from './todos/TodosPage';
 import type { Task } from '../types';
+import { Funnel, HotLeads, LeadsKpi, type LeadInsights } from './dashboard/LeadWidgets';
 
 interface Dashboard {
     projects_by_status: Record<string, number>;
@@ -36,7 +37,7 @@ interface Insights {
     deadlines: { id: number; name: string; customer: string | null; deadline: string; days_left: number; progress: number }[];
     finance?: { months: string[]; income: number[]; expenses: number[]; outstanding: number; overdue: number; overdue_count: number };
     team_hours?: { name: string; seconds: number }[];
-    leads?: { statuses: { name: string; color: string | null; count: number; value: number }[]; new_this_month: number; converted_this_month: number };
+    leads?: LeadInsights;
     tickets?: { name: string; color: string | null; count: number; closed: boolean }[];
 }
 
@@ -62,7 +63,7 @@ export default function DashboardPage() {
                 <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
                     <div>
                         <p className="text-[13px] font-medium text-blue-100/70">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                        <h1 className="mt-1 text-[26px] font-bold leading-tight">
+                        <h1 className="mt-1 font-display text-[26px] font-extrabold leading-tight">
                             {greeting()}, {user?.first_name ?? user?.full_name} 👋
                         </h1>
                         <p className="mt-1 text-[14px] text-blue-100/80">
@@ -102,13 +103,21 @@ export default function DashboardPage() {
 
             {!stats ? (
                 <div className="space-y-5">
-                    <div className="grid animate-pulse grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                         {[0, 1, 2, 3].map((i) => (
-                            <div key={i} className="h-[92px] rounded-xl border border-slate-200/80 bg-white p-5">
-                                <span className="block h-2.5 w-1/2 rounded-full bg-slate-200" />
-                                <span className="mt-3 block h-5 w-1/4 rounded-full bg-slate-200" />
+                            <div key={i} className="flex h-[92px] items-center gap-4 rounded-2xl border border-slate-200/70 bg-white p-5">
+                                <span className="skeleton h-12 w-12 shrink-0 rounded-2xl" />
+                                <span className="flex-1 space-y-2.5">
+                                    <span className="skeleton block h-2.5 w-2/3 rounded-full" />
+                                    <span className="skeleton block h-5 w-1/3 rounded-full" />
+                                </span>
                             </div>
                         ))}
+                    </div>
+                    <div className="grid gap-5 lg:grid-cols-3">
+                        <span className="skeleton block h-56 rounded-2xl" />
+                        <span className="skeleton block h-56 rounded-2xl" />
+                        <span className="skeleton block h-56 rounded-2xl" />
                     </div>
                     <Card className="p-5">
                         <Spinner />
@@ -122,6 +131,14 @@ export default function DashboardPage() {
                         <StatCard icon={AlertTriangle} label="Overdue" value={stats.my_tasks_overdue} to="/tasks" tone={stats.my_tasks_overdue > 0 ? 'critical' : undefined} />
                         <StatCard icon={Clock} label="Logged this week" value={`${formatDuration(stats.logged_this_week_seconds)} h`} to="/timesheets" />
                     </div>
+
+                    {more?.leads && (
+                        <div className="grid gap-5 lg:grid-cols-3">
+                            <LeadsKpi leads={more.leads} />
+                            <Funnel statuses={more.leads.statuses} />
+                            <HotLeads rows={more.leads.hot} />
+                        </div>
+                    )}
 
                     {more?.finance && <BusinessPulse finance={more.finance} />}
 
@@ -164,17 +181,8 @@ export default function DashboardPage() {
                         <Deadlines rows={more?.deadlines ?? []} />
                     </div>
 
-                    {(more?.leads || more?.tickets || more?.team_hours) && (
-                        <div className="grid gap-5 lg:grid-cols-3">
-                            {more.leads && (
-                                <Card className="p-5">
-                                    <CardHead title="Lead pipeline" link="/leads" />
-                                    <p className="-mt-2 mb-4 text-xs text-slate-500">
-                                        <b className="text-slate-700">{more.leads.new_this_month}</b> new · <b className="text-slate-700">{more.leads.converted_this_month}</b> converted this month
-                                    </p>
-                                    <BarList rows={more.leads.statuses.map((s) => ({ label: s.name, value: s.count, color: s.color, hint: s.value ? rupees(s.value) : undefined }))} unit="leads" />
-                                </Card>
-                            )}
+                    {(more?.tickets || more?.team_hours) && (
+                        <div className="grid gap-5 lg:grid-cols-2">
                             {more.tickets && (
                                 <Card className="p-5">
                                     <CardHead title="Support" link="/tickets" />
@@ -293,7 +301,7 @@ function BusinessPulse({ finance }: { finance: NonNullable<Insights['finance']> 
                 <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="rounded-xl bg-brand-50 p-4">
                         <p className="text-[12.5px] font-semibold text-slate-500">Income this month</p>
-                        <p className="mt-0.5 text-[26px] font-bold leading-tight text-slate-800">{rupees(thisMonth)}</p>
+                        <p className="mt-0.5 font-display text-[26px] font-extrabold leading-tight text-slate-800">{rupees(thisMonth)}</p>
                         {delta !== null && (
                             <p className={`mt-1 inline-flex items-center gap-1 text-[12px] font-semibold ${delta >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                 {delta >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
@@ -414,22 +422,23 @@ function Announcements() {
 }
 
 const TONES = {
-    neutral: { icon: 'bg-brand-50 text-brand', value: 'text-slate-800' },
-    warning: { icon: 'bg-amber-50 text-amber-600', value: 'text-amber-700' },
-    critical: { icon: 'bg-red-50 text-red-600', value: 'text-red-600' },
+    neutral: { icon: 'bg-[linear-gradient(135deg,var(--color-brand),var(--color-brand-light))] text-white shadow-[0_8px_16px_-8px_rgba(11,44,86,0.8)]', value: 'text-slate-800', disc: 'bg-brand' },
+    warning: { icon: 'bg-[linear-gradient(135deg,#f59e0b,#d97706)] text-white shadow-[0_8px_16px_-8px_rgba(217,119,6,0.8)]', value: 'text-amber-700', disc: 'bg-amber-500' },
+    critical: { icon: 'bg-[linear-gradient(135deg,#ef4444,#dc2626)] text-white shadow-[0_8px_16px_-8px_rgba(220,38,38,0.8)]', value: 'text-red-600', disc: 'bg-red-500' },
 };
 
 /** A stat tile: icon, value, label (status tones only for "due today" / "overdue"). */
 function StatCard({ icon: Icon, label, value, to, tone }: { icon: typeof Clock; label: string; value: number | string; to?: string; tone?: 'warning' | 'critical' }) {
     const t = TONES[tone ?? 'neutral'];
     const body = (
-        <Card className="group flex flex-col gap-3 p-4 transition hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:gap-4 sm:p-5">
-            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${t.icon}`}>
+        <Card className="group relative flex flex-col gap-3 overflow-hidden p-4 transition hover:-translate-y-0.5 hover:shadow-lg sm:flex-row sm:items-center sm:gap-4 sm:p-5">
+            <span className={`pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-[0.06] ${t.disc}`} />
+            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl sm:h-12 sm:w-12 ${t.icon}`}>
                 <Icon className="h-[22px] w-[22px]" />
             </span>
             <div className="min-w-0">
                 <p className="text-[13px] font-medium text-slate-500">{label}</p>
-                <p className={`text-[26px] font-bold leading-tight ${t.value}`}>{value}</p>
+                <p className={`font-display text-[26px] font-extrabold leading-tight ${t.value}`}>{value}</p>
             </div>
             {to && <ChevronRight className="ml-auto hidden h-5 w-5 text-slate-300 transition group-hover:text-brand sm:block" />}
         </Card>

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { BriefcaseBusiness, Building2, Check, ChevronDown, Globe, IndianRupee, Mail, MapPin, NotebookPen, Phone, Target, UserRound } from 'lucide-react';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { optionById } from '../../lib/constants';
 import { formatDate, formatDateTime, timeAgo } from '../../lib/format';
 import { money, PROPOSAL_STATUSES } from '../../lib/sales';
 import { usePermission } from '../../hooks/usePermission';
 import { useStaff } from '../../hooks/useStaff';
-import { Button, Checkbox, ErrorNote, Field, Input, Menu, MenuItem, Modal, Select, Spinner, StatusBadge, Tabs, TagInput, Textarea } from '../../components/ui';
+import { Button, Checkbox, ErrorNote, Field, FormSection, IconInput, Input, Menu, MenuItem, Modal, Select, Spinner, StatusBadge, Tabs, TagInput, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { FilesPanel, NotesPanel, RemindersPanel } from '../../components/records/RecordPanels';
 import type { Lead, LeadStatus } from '../../types';
@@ -15,6 +15,9 @@ import { CustomFieldInputs, useCustomFields } from '../../components/customfield
 import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import LeadCalls from './LeadCalls';
 import LeadWhatsApp from './LeadWhatsApp';
+import { QualificationCard } from './LeadRating';
+import LeadTimeline from './LeadTimeline';
+import { celebrate } from '../../lib/celebrate';
 const appOptionsLoad = () => api.get<{ data: Record<string, string> }>('/app-options').then((r) => r.data.data).catch(() => ({}) as Record<string, string>);
 
 type Tab = 'profile' | 'proposals' | 'attachments' | 'reminders' | 'notes' | 'activity' | 'whatsapp' | 'calls';
@@ -128,6 +131,10 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
             setLead(data.data);
             setEditing(false);
             toast(lead ? 'Lead updated.' : 'Lead added.');
+            // Moved to the won (Customer) status.
+            if (data.data.status?.is_default && !lead?.status?.is_default) {
+                celebrate();
+            }
             onChanged();
         } catch (e) {
             setErrors(fieldErrors(e));
@@ -241,94 +248,117 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                         )}
 
                         {editing ? (
-                            <div className="grid gap-4 sm:grid-cols-3">
-                                <Field label="Status" required error={errors.lead_status_id}>
-                                    <Select value={form.lead_status_id} onChange={set('lead_status_id')}>
-                                        {statuses.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.name}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                </Field>
-                                <Field label="Source" required error={errors.lead_source_id}>
-                                    <Select value={form.lead_source_id} onChange={set('lead_source_id')}>
-                                        {sources.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.name}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                </Field>
-                                <Field label="Assigned">
-                                    <Select value={form.assigned_id} onChange={set('assigned_id')}>
-                                        <option value="">Nobody</option>
-                                        {staff.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.full_name}
-                                            </option>
-                                        ))}
-                                    </Select>
-                                </Field>
-                                <Field label="Tags" className="sm:col-span-3">
-                                    <TagInput value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
-                                </Field>
-                                <Field label="Name" required error={errors.name}>
-                                    <Input value={form.name} onChange={set('name')} autoFocus />
-                                </Field>
-                                <Field label="Position">
-                                    <Input value={form.title} onChange={set('title')} />
-                                </Field>
-                                <Field label="Email Address" error={errors.email}>
-                                    <Input type="email" value={form.email} onChange={set('email')} />
-                                </Field>
-                                <Field label="Website">
-                                    <Input value={form.website} onChange={set('website')} />
-                                </Field>
-                                <Field label="Phone">
-                                    <Input value={form.phone} onChange={set('phone')} />
-                                </Field>
-                                <Field label="Lead Value" error={errors.lead_value}>
-                                    <Input type="number" step="any" value={form.lead_value} onChange={set('lead_value')} />
-                                </Field>
-                                <Field label="Company">
-                                    <Input value={form.company} onChange={set('company')} />
-                                </Field>
-                                <Field label="Address" className="sm:col-span-2">
-                                    <Input value={form.address} onChange={set('address')} />
-                                </Field>
-                                <Field label="City">
-                                    <Input value={form.city} onChange={set('city')} />
-                                </Field>
-                                <Field label="State">
-                                    <Input value={form.state} onChange={set('state')} />
-                                </Field>
-                                <Field label="Country">
-                                    <Input value={form.country} onChange={set('country')} />
-                                </Field>
-                                <Field label="Zip Code">
-                                    <Input value={form.zip} onChange={set('zip')} />
-                                </Field>
-                                <Field label="Description" className="sm:col-span-3">
-                                    <Textarea rows={3} value={form.description} onChange={set('description')} />
-                                </Field>
-                                <CustomFieldInputs cf={cf} className="sm:col-span-3" />
-                                <Checkbox label="Public" checked={form.is_public} onChange={(v) => setForm({ ...form, is_public: v })} />
-                                <div className="flex justify-end gap-2 sm:col-span-3">
+                            <div className="space-y-4">
+                                <FormSection icon={Target} title="Lead details" hint="Where the lead is in your pipeline and who looks after it.">
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <Field label="Status" required error={errors.lead_status_id}>
+                                            <Select value={form.lead_status_id} onChange={set('lead_status_id')}>
+                                                {statuses.map((s) => (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.name}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </Field>
+                                        <Field label="Source" required error={errors.lead_source_id}>
+                                            <Select value={form.lead_source_id} onChange={set('lead_source_id')}>
+                                                {sources.map((s) => (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.name}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </Field>
+                                        <Field label="Assigned">
+                                            <Select value={form.assigned_id} onChange={set('assigned_id')}>
+                                                <option value="">Nobody</option>
+                                                {staff.map((s) => (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.full_name}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </Field>
+                                        <Field label="Lead Value" error={errors.lead_value}>
+                                            <IconInput icon={IndianRupee} type="number" step="any" value={form.lead_value} onChange={set('lead_value')} placeholder="0.00" />
+                                        </Field>
+                                        <Field label="Tags" className="sm:col-span-2">
+                                            <TagInput value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
+                                        </Field>
+                                    </div>
+                                </FormSection>
+
+                                <FormSection icon={UserRound} title="Contact" hint="The person you are talking to.">
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <Field label="Name" required error={errors.name}>
+                                            <IconInput icon={UserRound} value={form.name} onChange={set('name')} placeholder="Full name" autoFocus />
+                                        </Field>
+                                        <Field label="Position">
+                                            <IconInput icon={BriefcaseBusiness} value={form.title} onChange={set('title')} placeholder="e.g. Purchase Manager" />
+                                        </Field>
+                                        <Field label="Company">
+                                            <IconInput icon={Building2} value={form.company} onChange={set('company')} placeholder="Company name" />
+                                        </Field>
+                                        <Field label="Email Address" error={errors.email}>
+                                            <IconInput icon={Mail} type="email" value={form.email} onChange={set('email')} placeholder="name@company.com" />
+                                        </Field>
+                                        <Field label="Phone" error={errors.phone}>
+                                            <IconInput icon={Phone} value={form.phone} onChange={set('phone')} placeholder="98765 43210" />
+                                        </Field>
+                                        <Field label="Website" error={errors.website}>
+                                            <IconInput icon={Globe} value={form.website} onChange={set('website')} placeholder="www.example.com" />
+                                        </Field>
+                                    </div>
+                                </FormSection>
+
+                                <FormSection icon={MapPin} title="Address">
+                                    <div className="grid gap-4 sm:grid-cols-4">
+                                        <Field label="Street address" className="sm:col-span-4">
+                                            <IconInput icon={MapPin} value={form.address} onChange={set('address')} placeholder="Building, street, area" />
+                                        </Field>
+                                        <Field label="City">
+                                            <Input value={form.city} onChange={set('city')} />
+                                        </Field>
+                                        <Field label="State">
+                                            <Input value={form.state} onChange={set('state')} />
+                                        </Field>
+                                        <Field label="Country">
+                                            <Input value={form.country} onChange={set('country')} />
+                                        </Field>
+                                        <Field label="Zip Code">
+                                            <Input value={form.zip} onChange={set('zip')} />
+                                        </Field>
+                                    </div>
+                                </FormSection>
+
+                                <FormSection icon={NotebookPen} title="Notes">
+                                    <div className="grid gap-4 sm:grid-cols-3">
+                                        <Field label="Description" className="sm:col-span-3">
+                                            <Textarea rows={3} value={form.description} onChange={set('description')} placeholder="What does the lead need? Anything the team should know…" />
+                                        </Field>
+                                        <CustomFieldInputs cf={cf} className="sm:col-span-3" />
+                                        <div className="sm:col-span-3">
+                                            <Checkbox label="Public: everyone in the team can see this lead" checked={form.is_public} onChange={(v) => setForm({ ...form, is_public: v })} />
+                                        </div>
+                                    </div>
+                                </FormSection>
+
+                                <div className="sticky bottom-0 -mx-6 -mb-5 flex justify-end gap-2 border-t border-slate-100 bg-white/90 px-6 py-3.5 backdrop-blur">
                                     {lead && (
                                         <Button variant="secondary" onClick={() => setEditing(false)}>
                                             Cancel
                                         </Button>
                                     )}
                                     <Button onClick={save} loading={saving}>
-                                        Save
+                                        <Check className="h-4 w-4" />
+                                        {lead ? 'Save changes' : 'Add lead'}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
                             lead && (
                                 <div>
-                                    {tab === 'profile' && <LeadProfile lead={lead} />}
+                                    {tab === 'profile' && <LeadProfile lead={lead} onChanged={(l) => (setLead(l), onChanged())} />}
                                     {tab === 'profile' && <CustomFieldsView to="leads" id={lead.id} className="mt-4 border-t border-gray-100 pt-4" />}
                                     {tab === 'proposals' && (
                                         <table className="table-perfex">
@@ -370,18 +400,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                     {tab === 'notes' && <NotesPanel type="lead" id={lead.id} withContacted onChange={() => (load(lead.id), onChanged())} />}
                                     {tab === 'whatsapp' && <LeadWhatsApp leadId={lead.id} onSent={onChanged} />}
                                     {tab === 'calls' && <LeadCalls leadId={lead.id} onLogged={() => (load(lead.id), onChanged())} />}
-                                    {tab === 'activity' && (
-                                        <ul className="space-y-2.5">
-                                            {lead.activities?.map((a) => (
-                                                <li key={a.id} className="text-[13.5px]">
-                                                    <span className="font-semibold">{a.user ?? 'System'}</span> - {a.description}
-                                                    <span className="ml-2 text-xs text-gray-400" title={formatDateTime(a.created_at)}>
-                                                        {timeAgo(a.created_at)}
-                                                    </span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
+                                    {tab === 'activity' && <LeadTimeline activities={lead.activities ?? []} />}
                                 </div>
                             )
                         )}
@@ -394,6 +413,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                     lead={lead}
                     onClose={() => setConvertOpen(false)}
                     onDone={(customerId) => {
+                        celebrate();
                         setConvertOpen(false);
                         onChanged();
                         onClose();
@@ -405,7 +425,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
     );
 }
 
-function LeadProfile({ lead }: { lead: Lead }) {
+function LeadProfile({ lead, onChanged }: { lead: Lead; onChanged: (lead: Lead) => void }) {
     const rows: [string, React.ReactNode][] = [
         ['Name', lead.name],
         ['Position', lead.title],
@@ -430,6 +450,7 @@ function LeadProfile({ lead }: { lead: Lead }) {
 
     return (
         <div className="space-y-4">
+            <QualificationCard lead={lead} onChanged={onChanged} />
             <dl className="grid gap-x-6 gap-y-3 text-[13.5px] sm:grid-cols-3">
                 {rows.map(([label, value]) => (
                     <div key={label}>

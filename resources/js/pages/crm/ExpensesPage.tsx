@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Wallet } from 'lucide-react';
 import { formatDate } from '../../lib/format';
 import { money } from '../../lib/sales';
 import { useApi } from '../../hooks/useApi';
@@ -66,7 +66,7 @@ export function ExpensesTable({ customerId, projectId }: { customerId?: number; 
             {loading && !data ? (
                 <Spinner />
             ) : !data || data.data.length === 0 ? (
-                <EmptyState title="No expenses found" />
+                <EmptyState icon={Wallet} title="No expenses found" text="Record what you spend, and bill it to a customer when it is billable." action={canCreate && <Button onClick={() => navigate(`/expenses/new${customerId ? `?customer_id=${customerId}` : ''}${projectId ? `${customerId ? '&' : '?'}project_id=${projectId}` : ''}`)}><Plus className="h-4 w-4" /> Record an expense</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
                     <div className="table-scroll overflow-x-auto">
