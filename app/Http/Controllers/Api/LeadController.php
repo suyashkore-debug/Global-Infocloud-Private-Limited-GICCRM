@@ -8,6 +8,7 @@ use App\Http\Resources\LeadResource;
 use App\Models\Lead;
 use App\Models\LeadStatus;
 use App\Services\DefaultLookups;
+use App\Services\LeadFilterRules;
 use App\Services\LeadService;
 use App\Services\Options;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,7 +32,6 @@ class LeadController extends Controller
 
         $base = Lead::query()
             ->visibleTo($user)
-            ->when($request->has('status'), fn (Builder $q) => $q->whereIn('lead_status_id', array_map('intval', (array) $request->input('status'))))
             ->when($request->integer('source_id'), fn (Builder $q, int $id) => $q->where('lead_source_id', $id))
             ->when($request->integer('assigned_id'), fn (Builder $q, int $id) => $q->where('assigned_id', $id))
             ->when($request->boolean('my_leads'), fn (Builder $q) => $q->where('assigned_id', $user->id))
@@ -46,15 +46,26 @@ class LeadController extends Controller
                 ->orWhere('phone', 'like', "%{$s}%")
                 ->orWhereHas('tags', fn (Builder $t) => $t->where('name', 'like', "%{$s}%"))));
 
-        // Lost and junk leads are hidden unless asked for, as in Perfex.
-        $request->boolean('lost') ? $base->where('lost', true) : ($request->boolean('junk') ? $base->where('junk', true) : $base->where('lost', false)->where('junk', false));
+        // Perfex "Filters": rules of field, operator and value.
+        $rules = LeadFilterRules::parse($request->input('rules'));
+        LeadFilterRules::apply($base, $rules);
+
+        // Lost and junk leads are hidden unless asked for (here or in the rules), as in Perfex.
+        if ($request->boolean('lost')) {
+            $base->where('lost', true);
+        } elseif ($request->boolean('junk')) {
+            $base->where('junk', true);
+        } elseif (! LeadFilterRules::touchesFlags($rules)) {
+            $base->where('lost', false)->where('junk', false);
+        }
 
         $summary = (clone $base)->selectRaw('lead_status_id, count(*) as total, sum(lead_value) as value')->groupBy('lead_status_id')->get()->keyBy('lead_status_id');
 
-        $query = $base->with(['status', 'source', 'assigned', 'tags', 'customer:id,name'])
-            ->orderBy($request->boolean('kanban') ? 'lead_order' : 'id', $request->boolean('kanban') ? 'asc' : 'desc');
+        // Picked status chips filter the rows; the chips keep counting every status.
+        $base->when($request->has('status'), fn (Builder $q) => $q->whereIn('lead_status_id', array_map('intval', (array) $request->input('status'))));
+        $base->with(['status', 'source', 'assigned', 'tags', 'customer:id,name'])->withCount(['notes', 'attachments']);
 
-        $leads = $request->boolean('kanban') ? $query->limit(2000)->get() : $query->paginate($request->integer('per_page', 25));
+        $leads = $request->boolean('kanban') ? $this->kanbanColumns($base, $request) : (clone $base)->orderBy('id', 'desc')->paginate($request->integer('per_page', 25));
 
         return LeadResource::collection($leads)->additional(['meta' => [
             'summary' => LeadStatus::orderBy('status_order')->get()->map(fn (LeadStatus $s) => [
@@ -63,6 +74,31 @@ class LeadController extends Controller
                 'value' => round((float) ($summary[$s->id]->value ?? 0), 2),
             ]),
         ]]);
+    }
+
+    /**
+     * Kanban: each status column's leads in Setup → Leads order (kanban order, date created or last
+     * contact; ascending or descending), at most "Limit leads kanban rows per status" per column.
+     *
+     * The kanban's "Sort by" (kanban_sort, kanban_dir) overrides the setting; "Load more" asks for
+     * more rows of one column (more[<status id>] = how many extra).
+     *
+     * @param  Builder<Lead>  $base
+     * @return \Illuminate\Support\Collection<int, Lead>
+     */
+    private function kanbanColumns(Builder $base, Request $request)
+    {
+        $columns = ['dateadded' => 'created_at', 'lastcontact' => 'last_contact_at', 'leadorder' => 'lead_order'];
+        $sort = $request->input('kanban_sort', Options::get('default_leads_kanban_sort'));
+        $column = $columns[$sort] ?? 'lead_order';
+        $direction = $request->input('kanban_dir', Options::get('default_leads_kanban_sort_type')) === 'desc' ? 'desc' : 'asc';
+        $limit = max(1, min(500, (int) Options::get('leads_kanban_limit') ?: 50));
+        $more = array_map('intval', (array) $request->input('more', []));
+
+        return LeadStatus::orderBy('status_order')->pluck('id')->flatMap(fn ($statusId) => (clone $base)
+            ->where('lead_status_id', $statusId)
+            ->orderBy($column, $direction)->orderBy('id', $direction)
+            ->limit(min(2000, $limit + max(0, $more[$statusId] ?? 0)))->get());
     }
 
     public function store(Request $request): LeadResource
@@ -82,19 +118,87 @@ class LeadController extends Controller
     public function update(Request $request, Lead $lead): LeadResource
     {
         $this->authorize('update', $lead);
+        $oldEmail = $lead->email;
+        $lead = $this->leads->update($lead, $this->validated($request, $lead));
+        // Perfex: when the e-mail changes, the user may choose to move the lead's proposals to it too.
+        if ($request->boolean('update_proposal_emails') && $lead->email !== $oldEmail) {
+            $lead->proposals()->update(['email' => $lead->email]);
+        }
 
-        return new LeadResource($this->loadForView($this->leads->update($lead, $this->validated($request, $lead))));
+        return new LeadResource($this->loadForView($lead));
     }
 
     public function destroy(Lead $lead): JsonResponse
     {
         $this->authorize('delete', $lead);
+        $this->deleteLead($lead);
+
+        return response()->json(['message' => 'Lead deleted.']);
+    }
+
+    /**
+     * Perfex bulk actions on the selected leads: mass delete, or any of move to status / source,
+     * last contact, assign, tags, public or private, and mark as lost. Leads the user may not change
+     * (or delete) are skipped.
+     */
+    public function bulk(Request $request): JsonResponse
+    {
+        $company = $request->user()->company_id;
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:1000'],
+            'ids.*' => ['integer'],
+            'mass_delete' => ['boolean'],
+            'lead_status_id' => ['nullable', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
+            'lead_source_id' => ['nullable', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
+            'assigned_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
+            'last_contact_at' => ['nullable', 'date'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:100'],
+            'visibility' => ['nullable', Rule::in(['public', 'private'])],
+            'lost' => ['boolean'],
+        ]);
+
+        $done = 0;
+        foreach (Lead::whereIn('id', $data['ids'])->get() as $lead) {
+            if (! empty($data['mass_delete'])) {
+                if ($request->user()->can('delete', $lead)) {
+                    $this->deleteLead($lead);
+                    $done++;
+                }
+
+                continue;
+            }
+            if (! $request->user()->can('update', $lead)) {
+                continue;
+            }
+            $changes = array_filter([
+                'lead_status_id' => $data['lead_status_id'] ?? null,
+                'lead_source_id' => $data['lead_source_id'] ?? null,
+                'assigned_id' => $data['assigned_id'] ?? null,
+                'last_contact_at' => $data['last_contact_at'] ?? null,
+                'is_public' => isset($data['visibility']) ? $data['visibility'] === 'public' : null,
+            ], fn ($v) => $v !== null);
+            if (! empty($data['tags'])) {
+                $changes['tags'] = $data['tags'];
+            }
+            if ($changes) {
+                $this->leads->update($lead, $changes);
+            }
+            if (! empty($data['lost']) && ! $lead->lost) {
+                $this->leads->setFlag($lead, 'lost', true);
+            }
+            $done++;
+        }
+
+        return response()->json(['message' => ! empty($data['mass_delete']) ? "Total leads deleted: {$done}" : "{$done} lead".($done === 1 ? '' : 's').' updated.', 'count' => $done]);
+    }
+
+    private function deleteLead(Lead $lead): void
+    {
         $lead->attachments()->get()->each->delete();
         $lead->notes()->delete();
         $lead->reminders()->delete();
         $lead->delete();
-
-        return response()->json(['message' => 'Lead deleted.']);
     }
 
     /**
@@ -122,6 +226,18 @@ class LeadController extends Controller
         ]);
 
         $this->leads->setFlag($lead, $data['flag'], (bool) $data['value']);
+
+        return new LeadResource($this->loadForView($lead->refresh()));
+    }
+
+    /**
+     * Perfex "Enter activity": a line the user writes on the lead's activity log.
+     */
+    public function addActivity(Request $request, Lead $lead): LeadResource
+    {
+        $this->authorize('view', $lead);
+        $data = $request->validate(['description' => ['required', 'string', 'max:2000']]);
+        $lead->logActivity(trim($data['description']), true);
 
         return new LeadResource($this->loadForView($lead->refresh()));
     }
@@ -158,6 +274,10 @@ class LeadController extends Controller
             'email' => ['required', 'email', 'max:191'],
             'phone' => ['nullable', 'string', 'max:100'],
             'title' => ['nullable', 'string', 'max:200'],
+            'password' => ['nullable', 'string', 'min:8', 'max:191'],
+            'send_set_password_email' => ['boolean'],
+            'transfer_notes' => ['boolean'],
+            'copy_custom_fields' => ['boolean'],
         ]);
 
         return new CustomerResource($this->leads->convertToCustomer($lead, $data)->load('primaryContact'));
@@ -178,7 +298,7 @@ class LeadController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:300'],
             'title' => ['nullable', 'string', 'max:100'],
-            'company' => ['nullable', 'string', 'max:300'],
+            'company' => ['nullable', 'string', 'max:300', ...$unique('company')],
             'description' => ['nullable', 'string', 'max:65000'],
             'email' => ['nullable', 'email', 'max:150', ...$unique('email')],
             'phone' => ['nullable', 'string', 'max:50', ...$unique('phone')],
@@ -188,6 +308,7 @@ class LeadController extends Controller
             'state' => ['nullable', 'string', 'max:100'],
             'zip' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:100'],
+            'default_language' => ['nullable', 'string', 'max:40'],
             'lead_status_id' => ['required', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'lead_source_id' => ['required', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
             'assigned_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
@@ -201,6 +322,6 @@ class LeadController extends Controller
 
     private function loadForView(Lead $lead): Lead
     {
-        return $lead->load(['status', 'source', 'assigned', 'tags', 'customer:id,name', 'activities.user', 'notes.creator', 'reminders.user', 'attachments.user', 'proposals']);
+        return $lead->loadCount('tasks')->load(['status', 'source', 'leadForm:id,name', 'assigned', 'tags', 'customer:id,name', 'activities.user', 'notes.creator', 'reminders.user', 'attachments.user', 'proposals']);
     }
 }

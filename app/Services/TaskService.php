@@ -380,7 +380,7 @@ class TaskService
     private function taskFields(array $data): array
     {
         $fields = Arr::only($data, [
-            'project_id', 'milestone_id', 'name', 'description', 'priority', 'status', 'start_date', 'due_date',
+            'project_id', 'lead_id', 'milestone_id', 'name', 'description', 'priority', 'status', 'start_date', 'due_date',
             'is_public', 'visible_to_client', 'billable', 'hourly_rate', 'repeat_every', 'recurring_type', 'cycles',
         ]);
 

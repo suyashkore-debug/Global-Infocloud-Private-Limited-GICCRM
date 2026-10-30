@@ -13,11 +13,14 @@ export interface TaskDefaults {
     project_id?: number | null;
     milestone_id?: number | null;
     status?: number;
+    /** A task created from a lead is related to it (Perfex "related to: lead"). */
+    lead?: { id: number; name: string } | null;
 }
 
 interface FormState {
     name: string;
     project_id: string;
+    lead: { id: number; name: string } | null;
     milestone_id: string;
     priority: number;
     start_date: string;
@@ -41,6 +44,7 @@ function initial(task: Task | null, defaults: TaskDefaults): FormState {
     return {
         name: task?.name ?? '',
         project_id: String(task?.project?.id ?? defaults.project_id ?? ''),
+        lead: task ? (task.lead ?? null) : (defaults.lead ?? null),
         milestone_id: String(task?.milestone?.id ?? defaults.milestone_id ?? ''),
         priority: task?.priority ?? 2,
         start_date: task?.start_date ?? todayIso(),
@@ -124,6 +128,7 @@ export default function TaskFormModal({
         const payload: Record<string, unknown> = {
             name: form.name,
             project_id: form.project_id ? Number(form.project_id) : null,
+            lead_id: form.lead?.id ?? null,
             milestone_id: form.project_id && form.milestone_id ? Number(form.milestone_id) : null,
             priority: form.priority,
             start_date: form.start_date,
@@ -234,6 +239,17 @@ export default function TaskFormModal({
                 )}
 
                 <SectionHeading icon={Users} title="Project & people" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
+                {form.lead && (
+                    <div className="flex items-center gap-2 rounded-xl bg-accent-50 px-3 py-2 text-[13px] ring-1 ring-accent/20 sm:col-span-2">
+                        <span className="font-semibold text-slate-600">Related to lead:</span>
+                        <span className="font-semibold text-brand">
+                            #{form.lead.id} {form.lead.name}
+                        </span>
+                        <button type="button" onClick={() => setForm((f) => ({ ...f, lead: null }))} className="ml-auto text-[12px] font-semibold text-slate-500 hover:text-red-600">
+                            Remove
+                        </button>
+                    </div>
+                )}
                 <Field label="Related to project" error={errors.project_id}>
                     <Select value={form.project_id} onChange={(e) => setForm((f) => ({ ...f, project_id: e.target.value, milestone_id: '' }))}>
                         <option value="">Not related to a project</option>

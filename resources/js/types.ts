@@ -95,6 +95,7 @@ export interface Task {
     cycles: number;
     total_cycles: number;
     project?: { id: number; name: string; customer_name?: string | null } | null;
+    lead?: { id: number; name: string } | null;
     milestone?: { id: number; name: string; color: string | null } | null;
     assignees?: Staff[];
     followers?: Staff[];
@@ -544,6 +545,12 @@ export interface Lead {
     state: string | null;
     zip: string | null;
     country: string | null;
+    default_language: string | null;
+    /** The web to lead form the lead came in from. */
+    web_form?: string | null;
+    notes_count?: number;
+    attachments_count?: number;
+    tasks_count?: number;
     lead_value: string | null;
     qualification: string[];
     rating: number;

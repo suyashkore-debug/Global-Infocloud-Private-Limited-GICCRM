@@ -154,3 +154,144 @@ it('does not let staff rate a lead they cannot edit', function () {
     signIn(staffMember($company));
     $this->postJson("/api/leads/{$id}/qualification", ['criteria' => ['industry']])->assertForbidden();
 });
+
+it('limits and orders each kanban column as Setup → Leads says', function () {
+    $admin = signIn(companyAdmin());
+    $ids = collect(['A', 'B', 'C'])->map(fn ($n) => $this->postJson('/api/leads', leadPayload(['name' => $n, 'email' => strtolower($n).'@k.test']))->json('data.id'));
+    App\Services\Options::set('leads_kanban_limit', '2', $admin->company_id);
+    App\Services\Options::set('default_leads_kanban_sort', 'dateadded', $admin->company_id);
+    App\Services\Options::set('default_leads_kanban_sort_type', 'desc', $admin->company_id);
+
+    $response = $this->getJson('/api/leads?kanban=1')->assertOk();
+    $newLead = LeadStatus::where('name', 'New Lead')->value('id');
+    expect(collect($response->json('data'))->pluck('name')->all())->toBe(['C', 'B'])
+        ->and(collect($response->json('meta.summary'))->firstWhere('id', $newLead)['count'])->toBe(3);
+});
+
+it('can refuse a second lead from the same company', function () {
+    $admin = signIn(companyAdmin());
+    App\Services\Options::set('lead_unique_validation', 'company', $admin->company_id);
+    $this->postJson('/api/leads', leadPayload(['company' => 'Patil Traders']))->assertCreated();
+    $this->postJson('/api/leads', leadPayload(['company' => 'Patil Traders', 'email' => 'other@patil.test']))->assertUnprocessable()->assertJsonValidationErrors('company');
+});
+
+it('applies bulk actions to the selected leads and mass deletes them', function () {
+    $admin = signIn(companyAdmin());
+    $sales = staffMember($admin->company);
+    $a = $this->postJson('/api/leads', leadPayload(['name' => 'A', 'email' => 'a@b.test']))->json('data.id');
+    $b = $this->postJson('/api/leads', leadPayload(['name' => 'B', 'email' => 'b@b.test']))->json('data.id');
+    $demo = LeadStatus::where('name', 'Demo Done')->value('id');
+
+    $this->postJson('/api/leads/bulk', ['ids' => [$a, $b], 'lead_status_id' => $demo, 'assigned_id' => $sales->id, 'tags' => ['erp'], 'visibility' => 'public', 'lost' => true])
+        ->assertOk()->assertJsonPath('count', 2);
+    $lead = App\Models\Lead::find($a);
+    expect($lead->lead_status_id)->toBe($demo)
+        ->and($lead->assigned_id)->toBe($sales->id)
+        ->and($lead->is_public)->toBeTrue()
+        ->and($lead->lost)->toBeTrue()
+        ->and($lead->tags->pluck('name')->all())->toBe(['erp']);
+
+    $this->postJson('/api/leads/bulk', ['ids' => [$a, $b], 'mass_delete' => true])->assertOk()->assertJsonPath('message', 'Total leads deleted: 2');
+    expect(App\Models\Lead::count())->toBe(0);
+});
+
+it('filters the list by the picked statuses while the summary still counts every status', function () {
+    signIn(companyAdmin());
+    $this->postJson('/api/leads', leadPayload(['name' => 'New one', 'email' => 'n@s.test']));
+    $demo = LeadStatus::where('name', 'Demo Done')->value('id');
+    $this->postJson('/api/leads', leadPayload(['name' => 'Demo one', 'email' => 'd@s.test', 'lead_status_id' => $demo]));
+
+    $response = $this->getJson("/api/leads?status[]={$demo}")->assertOk();
+    expect(collect($response->json('data'))->pluck('name')->all())->toBe(['Demo one'])
+        ->and(collect($response->json('meta.summary'))->sum('count'))->toBe(2);
+});
+
+it('logs a written activity, keeps the contacted date, moves proposals to a new e-mail and zips the files', function () {
+    $admin = signIn(companyAdmin());
+    $id = $this->postJson('/api/leads', leadPayload(['last_contact_at' => '2026-10-01 10:30:00']))->json('data.id');
+    expect(App\Models\Lead::find($id)->last_contact_at->toDateString())->toBe('2026-10-01');
+
+    $this->postJson("/api/leads/{$id}/activities", ['description' => 'Called, will visit Monday'])
+        ->assertOk()->assertJsonPath('data.activities.0.description', 'Called, will visit Monday')->assertJsonPath('data.activities.0.custom', true);
+
+    $proposal = Proposal::create(['company_id' => $admin->company_id, 'subject' => 'Offer', 'lead_id' => $id, 'proposal_to' => 'Ravi', 'email' => 'ravi@patil.test', 'date' => today(), 'hash' => str_repeat('b', 32), 'created_by' => $admin->id]);
+    $this->putJson("/api/leads/{$id}", leadPayload(['email' => 'new@patil.test', 'update_proposal_emails' => true]))->assertOk();
+    expect($proposal->refresh()->email)->toBe('new@patil.test');
+
+    Illuminate\Support\Facades\Storage::fake('local');
+    $this->post("/api/records/lead/{$id}/files", ['files' => [Illuminate\Http\UploadedFile::fake()->create('a.pdf', 5), Illuminate\Http\UploadedFile::fake()->create('a.pdf', 5)]], ['Accept' => 'application/json'])->assertCreated();
+    $zip = $this->get("/api/records/lead/{$id}/files/zip")->assertOk()->assertHeader('Content-Type', 'application/zip');
+    $archive = new ZipArchive;
+    $archive->open($zip->baseResponse->getFile()->getPathname());
+    expect([$archive->getNameIndex(0), $archive->getNameIndex(1)])->toBe(['a.pdf', 'a (2).pdf']);
+});
+
+it('keeps the default language and lets the last contact be edited', function () {
+    signIn(companyAdmin());
+    $id = $this->postJson('/api/leads', leadPayload(['default_language' => 'Marathi', 'country' => 'India']))->assertCreated()->assertJsonPath('data.default_language', 'Marathi')->json('data.id');
+    $this->putJson("/api/leads/{$id}", leadPayload(['default_language' => 'Hindi', 'last_contact_at' => '2026-10-20T05:30:00.000Z']))
+        ->assertOk()->assertJsonPath('data.default_language', 'Hindi');
+    expect(App\Models\Lead::find($id)->last_contact_at->toIso8601String())->toStartWith('2026-10-20T05:30:00');
+});
+
+it('relates tasks to a lead and lists them on the lead', function () {
+    signIn(companyAdmin());
+    $id = $this->postJson('/api/leads', leadPayload())->json('data.id');
+    $taskId = $this->postJson('/api/tasks', ['name' => 'Call back', 'start_date' => today()->toDateString(), 'priority' => 2, 'lead_id' => $id])->assertCreated()->json('data.id');
+    $this->postJson('/api/tasks', ['name' => 'Other', 'start_date' => today()->toDateString(), 'priority' => 2])->assertCreated();
+
+    expect(collect($this->getJson("/api/tasks?lead_id={$id}")->json('data'))->pluck('name')->all())->toBe(['Call back']);
+    $this->getJson("/api/tasks/{$taskId}")->assertJsonPath('data.lead', ['id' => $id, 'name' => 'Ravi Patil']);
+});
+
+it('converts with a portal password or a set-password e-mail, moving notes and copying same-named custom fields', function () {
+    $admin = signIn(companyAdmin());
+    $id = $this->postJson('/api/leads', leadPayload())->json('data.id');
+    $leadField = App\Models\CustomField::create(['company_id' => $admin->company_id, 'field_to' => 'leads', 'name' => 'Industry', 'slug' => 'leads_industry', 'type' => 'input']);
+    $customerField = App\Models\CustomField::create(['company_id' => $admin->company_id, 'field_to' => 'customers', 'name' => 'industry', 'slug' => 'customers_industry', 'type' => 'input']);
+    App\Models\CustomFieldValue::create(['custom_field_id' => $leadField->id, 'rel_id' => $id, 'value' => 'Packaging']);
+    $this->postJson("/api/records/lead/{$id}/notes", ['description' => 'Met at expo'])->assertSuccessful();
+
+    $customerId = $this->postJson("/api/leads/{$id}/convert", [
+        'contact_first_name' => 'Ravi', 'email' => 'ravi@patil.test', 'password' => 'secret-pass-1', 'transfer_notes' => true, 'copy_custom_fields' => true,
+    ])->assertSuccessful()->json('data.id');
+
+    $customer = Customer::find($customerId);
+    expect($customer->contacts()->first()->has_password)->toBeTrue()
+        ->and(App\Models\Note::where('notable_type', Customer::class)->where('notable_id', $customerId)->value('description'))->toBe('Met at expo')
+        ->and(App\Models\CustomFieldValue::where('custom_field_id', $customerField->id)->where('rel_id', $customerId)->value('value'))->toBe('Packaging');
+
+    $second = $this->postJson('/api/leads', leadPayload(['name' => 'Asha', 'email' => 'asha@lead.test']))->json('data.id');
+    $this->postJson("/api/leads/{$second}/convert", ['contact_first_name' => 'Asha', 'email' => 'asha@lead.test', 'send_set_password_email' => true])->assertSuccessful();
+    expect(Illuminate\Support\Facades\DB::table('contact_password_resets')->count())->toBe(1);
+});
+
+it('filters leads by Perfex filter rules', function () {
+    signIn(companyAdmin());
+    $this->postJson('/api/leads', leadPayload(['name' => 'Pune big', 'email' => 'a@r.test', 'city' => 'Pune', 'lead_value' => 90000]));
+    $this->postJson('/api/leads', leadPayload(['name' => 'Pune small', 'email' => 'b@r.test', 'city' => 'Pune', 'lead_value' => 1000]));
+    $mumbai = $this->postJson('/api/leads', leadPayload(['name' => 'Mumbai', 'email' => 'c@r.test', 'city' => 'Mumbai']))->json('data.id');
+    $this->postJson("/api/leads/{$mumbai}/flag", ['flag' => 'lost', 'value' => true]);
+
+    $names = fn (array $rules) => collect($this->getJson('/api/leads?'.http_build_query(['rules' => json_encode($rules)]))->json('data'))->pluck('name')->sort()->values()->all();
+    expect($names([['field' => 'city', 'op' => 'equals', 'value' => 'Pune'], ['field' => 'lead_value', 'op' => '>', 'value' => 5000]]))->toBe(['Pune big'])
+        ->and($names([['field' => 'created_at', 'op' => 'on', 'value' => now('Asia/Kolkata')->toDateString()]]))->toBe(['Pune big', 'Pune small'])
+        ->and($names([['field' => 'lost', 'op' => 'is', 'value' => '1']]))->toBe(['Mumbai'])
+        ->and($names([['field' => 'city', 'op' => 'not_contains', 'value' => 'pun']]))->toBe([]);
+});
+
+it('sorts the kanban as asked, loads more of one column and counts notes and files', function () {
+    $admin = signIn(companyAdmin());
+    App\Services\Options::set('leads_kanban_limit', '1', $admin->company_id);
+    $first = $this->postJson('/api/leads', leadPayload(['name' => 'First', 'email' => 'f@k.test']))->json('data.id');
+    $this->postJson('/api/leads', leadPayload(['name' => 'Second', 'email' => 's@k.test']));
+    $this->postJson("/api/records/lead/{$first}/notes", ['description' => 'Hello']);
+    $status = LeadStatus::where('name', 'New Lead')->value('id');
+
+    $names = fn (string $query) => collect($this->getJson("/api/leads?kanban=1&{$query}")->json('data'))->pluck('name')->all();
+    expect($names('kanban_sort=dateadded&kanban_dir=asc'))->toBe(['First'])
+        ->and($names('kanban_sort=dateadded&kanban_dir=desc'))->toBe(['Second'])
+        ->and($names("kanban_sort=dateadded&kanban_dir=asc&more[{$status}]=1"))->toBe(['First', 'Second'])
+        ->and(collect($this->getJson('/api/leads?kanban=1&kanban_sort=dateadded&kanban_dir=asc')->json('data'))->first()['notes_count'])->toBe(1);
+    $this->getJson("/api/leads/{$first}")->assertJsonPath('data.tasks_count', 0);
+});

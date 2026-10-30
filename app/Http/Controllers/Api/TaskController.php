@@ -44,7 +44,7 @@ class TaskController extends Controller
         $sort = in_array($request->input('sort'), self::SORTABLE, true) ? $request->input('sort') : 'id';
         $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
 
-        $query->with(['project:id,name,customer_id', 'project.customer:id,name', 'milestone:id,name,color', 'assignees.user', 'followers', 'tags', 'timers'])
+        $query->with(['project:id,name,customer_id', 'project.customer:id,name', 'lead:id,name', 'milestone:id,name,color', 'assignees.user', 'followers', 'tags', 'timers'])
             ->withCount(['checklistItems', 'finishedChecklistItems', 'comments', 'attachments'])
             ->orderBy($sort, $direction);
 
@@ -69,7 +69,9 @@ class TaskController extends Controller
     private function summary(Request $request): array
     {
         $user = $request->user();
-        $base = Task::query()->visibleTo($user)->when($request->integer('project_id'), fn (Builder $q, int $id) => $q->where('project_id', $id));
+        $base = Task::query()->visibleTo($user)
+            ->when($request->integer('project_id'), fn (Builder $q, int $id) => $q->where('project_id', $id))
+            ->when($request->integer('lead_id'), fn (Builder $q, int $id) => $q->where('lead_id', $id));
         $total = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $mine = (clone $base)->whereHas('assignees', fn (Builder $a) => $a->where('user_id', $user->id))
             ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
@@ -324,6 +326,7 @@ class TaskController extends Controller
         return Task::query()
             ->visibleTo($user)
             ->when($request->integer('project_id'), fn (Builder $q, int $id) => $q->where('project_id', $id))
+            ->when($request->integer('lead_id'), fn (Builder $q, int $id) => $q->where('lead_id', $id))
             ->when($request->has('milestone_id'), fn (Builder $q) => $request->input('milestone_id') === 'none'
                 ? $q->whereNull('milestone_id')
                 : $q->where('milestone_id', $request->integer('milestone_id')))
@@ -348,6 +351,7 @@ class TaskController extends Controller
     {
         $task->load([
             'project:id,name,billing_type',
+            'lead:id,name',
             'milestone:id,name,color',
             'assignees.user',
             'followers.user',

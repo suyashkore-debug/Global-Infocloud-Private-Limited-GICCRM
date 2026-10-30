@@ -19,7 +19,7 @@ class Lead extends Model
 
     protected $fillable = [
         'company_id', 'name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state',
-        'zip', 'country', 'lead_status_id', 'lead_source_id', 'assigned_id', 'assigned_at', 'lead_value', 'qualification', 'is_public',
+        'zip', 'country', 'default_language', 'lead_status_id', 'lead_source_id', 'lead_form_id', 'assigned_id', 'assigned_at', 'lead_value', 'qualification', 'is_public',
         'lost', 'junk', 'last_contact_at', 'last_status_change_at', 'customer_id', 'converted_at', 'lead_order', 'created_by',
     ];
 
@@ -82,6 +82,16 @@ class Lead extends Model
     }
 
     /**
+     * The web to lead form the lead came in from.
+     *
+     * @return BelongsTo<LeadForm, $this>
+     */
+    public function leadForm(): BelongsTo
+    {
+        return $this->belongsTo(LeadForm::class);
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function assigned(): BelongsTo
@@ -111,6 +121,16 @@ class Lead extends Model
     public function calls(): HasMany
     {
         return $this->hasMany(LeadCall::class)->latest('called_at')->latest('id');
+    }
+
+    /**
+     * Tasks related to the lead (its Tasks tab).
+     *
+     * @return HasMany<Task, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
     }
 
     /**

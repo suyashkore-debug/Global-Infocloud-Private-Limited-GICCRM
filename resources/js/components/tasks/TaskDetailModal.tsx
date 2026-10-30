@@ -316,6 +316,14 @@ export default function TaskDetailModal({ taskId, onClose, onOpenTask }: { taskI
                                     Every {task.repeat_every} {task.recurring_type}(s) · {task.cycles ? `${task.total_cycles}/${task.cycles} cycles` : 'infinite'}
                                 </Info>
                             )}
+                            {task.lead && (
+                                <p className="text-[13px] text-slate-500">
+                                    Related to lead:{' '}
+                                    <Link to={`/leads?lead=${task.lead.id}`} onClick={onClose} className="font-medium text-blue-700 hover:underline">
+                                        #{task.lead.id} {task.lead.name}
+                                    </Link>
+                                </p>
+                            )}
                             {task.project && (
                                 <Info label="Project">
                                     <Link to={`/projects/${task.project.id}`} onClick={onClose} className="font-medium text-blue-700 hover:underline">

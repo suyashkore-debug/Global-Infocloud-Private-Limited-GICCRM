@@ -27,6 +27,7 @@ class TaskRequest extends FormRequest
             'name' => ['required', 'string', 'max:500'],
             'description' => ['nullable', 'string', 'max:65000'],
             'project_id' => ['nullable', 'integer', $this->existsInCompany('projects')],
+            'lead_id' => ['nullable', 'integer', $this->existsInCompany('leads')],
             'milestone_id' => ['nullable', 'integer', Rule::exists('milestones', 'id')->where('project_id', $this->input('project_id'))],
             'priority' => ['required', Rule::enum(TaskPriority::class)],
             'status' => ['nullable', Rule::enum(TaskStatus::class)],

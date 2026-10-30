@@ -40,6 +40,7 @@ class TaskResource extends JsonResource
             'recurring_type' => $this->recurring_type,
             'cycles' => $this->cycles,
             'total_cycles' => $this->total_cycles,
+            'lead' => $this->whenLoaded('lead', fn () => $this->lead?->only(['id', 'name'])),
             'project' => $this->whenLoaded('project', fn () => $this->project ? [
                 'id' => $this->project->id,
                 'name' => $this->project->name,

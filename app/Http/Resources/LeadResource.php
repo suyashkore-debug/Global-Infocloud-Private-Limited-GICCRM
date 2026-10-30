@@ -30,6 +30,7 @@ class LeadResource extends JsonResource
             'state' => $this->state,
             'zip' => $this->zip,
             'country' => $this->country,
+            'default_language' => $this->default_language,
             'lead_value' => $this->lead_value,
             'qualification' => array_values(array_intersect(Lead::QUALIFICATION, (array) $this->qualification)),
             'rating' => $this->rating(),
@@ -42,6 +43,7 @@ class LeadResource extends JsonResource
             'assigned_at' => $this->assigned_at?->toDateString(),
             'converted_at' => $this->converted_at,
             'status' => $this->whenLoaded('status', fn () => $this->status?->only(['id', 'name', 'color', 'is_default'])),
+            'web_form' => $this->whenLoaded('leadForm', fn () => $this->leadForm?->name),
             'source' => $this->whenLoaded('source', fn () => $this->source?->only(['id', 'name'])),
             'assigned' => $this->whenLoaded('assigned', fn () => $this->assigned ? new StaffResource($this->assigned) : null),
             'customer' => $this->whenLoaded('customer', fn () => $this->customer?->only(['id', 'name'])),
@@ -63,6 +65,10 @@ class LeadResource extends JsonResource
                 'total' => $p->total,
                 'status' => $p->status->value,
             ])),
+            // Kanban card and tab counts.
+            'notes_count' => $this->whenCounted('notes'),
+            'attachments_count' => $this->whenCounted('attachments'),
+            'tasks_count' => $this->whenCounted('tasks'),
             'created_at' => $this->created_at,
             'can' => [
                 'update' => $request->user()->can('update', $this->resource),

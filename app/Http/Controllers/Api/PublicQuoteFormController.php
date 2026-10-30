@@ -8,10 +8,10 @@ use App\Models\EstimateRequestForm;
 use App\Models\EstimateRequestStatus;
 use App\Services\DefaultLookups;
 use App\Services\Notifier;
+use App\Support\PublicFormFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 /**
  * The public estimate request web form (Perfex forms/quote/{key}): no login, found by its key.
@@ -32,23 +32,7 @@ class PublicQuoteFormController extends Controller
     public function submit(Request $request, string $key, Notifier $notifier): JsonResponse
     {
         $form = $this->form($key);
-        $rules = [];
-        foreach ($form->fields as $field) {
-            $name = $field['name'];
-            $base = [($field['required'] ?? false) ? 'required' : 'nullable'];
-            $options = $field['options'] ?? [];
-            $rules = match ($field['type']) {
-                'email' => [...$rules, $name => [...$base, 'email', 'max:191']],
-                'number' => [...$rules, $name => [...$base, 'numeric']],
-                'date' => [...$rules, $name => [...$base, 'date']],
-                'textarea' => [...$rules, $name => [...$base, 'string', 'max:10000']],
-                'select', 'radio' => [...$rules, $name => [...$base, 'string', Rule::in($options)]],
-                'checkbox' => [...$rules, $name => [...$base, 'array'], "{$name}.*" => ['string', Rule::in($options)]],
-                'file' => [...$rules, $name => [...$base, 'array', 'max:5'], "{$name}.*" => ['file', 'max:10240']],
-                default => [...$rules, $name => [...$base, 'string', 'max:1000']],
-            };
-        }
-        $data = $request->validate($rules);
+        $data = $request->validate(PublicFormFields::rules($form->fields));
 
         $submission = collect($form->fields)->reject(fn ($f) => $f['type'] === 'file')->map(fn ($f) => [
             'label' => $f['label'],

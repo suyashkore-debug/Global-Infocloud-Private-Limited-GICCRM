@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
+use App\Http\Controllers\Portal\PortalAuthController;
 use App\Models\Customer;
+use App\Models\CustomField;
+use App\Models\CustomFieldValue;
 use App\Models\Lead;
 use App\Models\LeadStatus;
+use App\Models\Note;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +22,7 @@ use Illuminate\Validation\ValidationException;
 class LeadService
 {
     private const FIELDS = [
-        'name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip', 'country',
+        'name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip', 'country', 'default_language',
         'lead_status_id', 'lead_source_id', 'assigned_id', 'lead_value', 'is_public', 'last_contact_at',
     ];
 
@@ -105,7 +109,11 @@ class LeadService
      * Perfex convert to customer: the customer (with the lead's details), its primary contact, the
      * lead's proposals moved over, and the lead set to the "Customer" status.
      *
-     * @param  array{name?: string|null, contact_first_name: string, contact_last_name?: string|null, email: string, phone?: string|null, title?: string|null}  $data
+     * Perfex's options: a portal password for the contact or a "set password" e-mail, the lead's notes
+     * moved to the customer, and the lead's custom field values copied to the customer's custom fields
+     * with the same name.
+     *
+     * @param  array{name?: string|null, contact_first_name: string, contact_last_name?: string|null, email: string, phone?: string|null, title?: string|null, password?: string|null, send_set_password_email?: bool, transfer_notes?: bool, copy_custom_fields?: bool}  $data
      */
     public function convertToCustomer(Lead $lead, array $data): Customer
     {
@@ -113,7 +121,7 @@ class LeadService
             throw ValidationException::withMessages(['lead' => 'This lead is already a customer.']);
         }
 
-        return DB::transaction(function () use ($lead, $data) {
+        $customer = DB::transaction(function () use ($lead, $data) {
             $customer = Customer::create([
                 'name' => ($data['name'] ?? null) ?: ($lead->company ?: $lead->name),
                 'phone' => $lead->phone,
@@ -138,7 +146,15 @@ class LeadService
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? $lead->phone,
                 'title' => $data['title'] ?? $lead->title,
+                ...(! empty($data['password']) ? ['password' => $data['password'], 'last_password_change_at' => now()] : []),
             ]);
+
+            if (! empty($data['transfer_notes'])) {
+                Note::where('notable_type', Lead::class)->where('notable_id', $lead->id)->update(['notable_type' => Customer::class, 'notable_id' => $customer->id]);
+            }
+            if (! empty($data['copy_custom_fields'])) {
+                $this->copyCustomFields($lead, $customer);
+            }
 
             // Settings → Leads: the lead's assigned staff member looks after the new customer.
             if ($lead->assigned_id && Options::get('auto_assign_customer_admin_after_lead_convert') === '1') {
@@ -156,6 +172,30 @@ class LeadService
 
             return $customer;
         });
+
+        $contact = $customer->contacts()->where('is_primary', true)->first();
+        if (! empty($data['send_set_password_email']) && empty($data['password']) && $contact) {
+            PortalAuthController::sendPasswordLink($contact, 'contact-set-password');
+        }
+
+        return $customer;
+    }
+
+    /**
+     * The lead's custom field values onto the customer's custom fields of the same name (any case).
+     */
+    private function copyCustomFields(Lead $lead, Customer $customer): void
+    {
+        $leadFields = CustomField::where('field_to', 'leads')->pluck('name', 'id');
+        $customerFields = CustomField::where('field_to', 'customers')->get()->keyBy(fn (CustomField $f) => mb_strtolower(trim($f->name)));
+
+        CustomFieldValue::whereIn('custom_field_id', $leadFields->keys())->where('rel_id', $lead->id)->get()
+            ->each(function (CustomFieldValue $value) use ($leadFields, $customerFields, $customer) {
+                $target = $customerFields->get(mb_strtolower(trim($leadFields[$value->custom_field_id])));
+                if ($target && (string) $value->value !== '') {
+                    CustomFieldValue::updateOrCreate(['custom_field_id' => $target->id, 'rel_id' => $customer->id], ['value' => $value->value]);
+                }
+            });
     }
 
     /**

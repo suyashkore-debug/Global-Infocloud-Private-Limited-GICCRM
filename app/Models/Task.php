@@ -21,7 +21,7 @@ class Task extends Model
     use BelongsToCompany, HasFactory, HasTags;
 
     protected $fillable = [
-        'company_id', 'project_id', 'milestone_id', 'name', 'description', 'priority', 'status',
+        'company_id', 'project_id', 'lead_id', 'milestone_id', 'name', 'description', 'priority', 'status',
         'start_date', 'due_date', 'date_finished', 'is_public', 'visible_to_client', 'billable', 'invoice_id', 'hourly_rate',
         'kanban_order', 'milestone_order', 'repeat_every', 'recurring_type', 'cycles',
         'total_cycles', 'last_recurring_date', 'recurring_from_id', 'created_by',
@@ -83,6 +83,14 @@ class Task extends Model
     {
         // Perfex rounds the task's total, not each timer (Settings → Tasks "Round off task timer").
         return TimerRounding::round((int) $this->timers->sum(fn (TaskTimer $timer) => $timer->durationSeconds()), $this->company_id ? (int) $this->company_id : null);
+    }
+
+    /**
+     * @return BelongsTo<Lead, $this>
+     */
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(Lead::class);
     }
 
     /**

@@ -18,7 +18,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 /**
  * Notes, reminders and file attachments on any record (lead, customer, contract, ticket, expense),
@@ -134,6 +137,34 @@ class RecordExtrasController extends Controller
         }
 
         return AttachmentResource::collection($saved->each->load('user'))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Perfex "Download all": every file on the record in one .zip (same-named files get a number).
+     */
+    public function downloadAll(string $type, int $id): BinaryFileResponse
+    {
+        $record = $this->record($type, $id, 'view');
+        $files = $record->attachments()->get()->filter(fn ($a) => $a->disk_path && Storage::disk('local')->exists($a->disk_path));
+        abort_if($files->isEmpty(), 404, 'There are no files to download.');
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'files');
+        $zip = new ZipArchive;
+        $zip->open($zipPath, ZipArchive::OVERWRITE);
+        $used = [];
+        foreach ($files as $file) {
+            $name = $file->original_name ?: basename($file->disk_path);
+            $base = pathinfo($name, PATHINFO_FILENAME);
+            $ext = pathinfo($name, PATHINFO_EXTENSION);
+            for ($n = 2; isset($used[strtolower($name)]); $n++) {
+                $name = $base." ({$n})".($ext !== '' ? ".{$ext}" : '');
+            }
+            $used[strtolower($name)] = true;
+            $zip->addFile(Storage::disk('local')->path($file->disk_path), $name);
+        }
+        $zip->close();
+
+        return response()->download($zipPath, "{$type}-{$record->id}-files.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
     private function record(string $type, int $id, string $ability): Model

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, CalendarCheck, CalendarClock, ChevronRight, Clock, FolderKanban, ListChecks, Megaphone, MessageCircle, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CalendarCheck, CalendarClock, ChevronRight, Clock, FolderKanban, LayoutGrid, ListChecks, Megaphone, MessageCircle, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../lib/api';
 import { PROJECT_STATUSES, TASK_PRIORITIES, TASK_STATUSES, optionById } from '../lib/constants';
@@ -16,6 +16,8 @@ import { useTaskModals } from '../components/tasks/TaskModalHost';
 import { TodoModal, type TodoItem } from './todos/TodosPage';
 import type { Task } from '../types';
 import { Funnel, HotLeads, LeadsKpi, type LeadInsights } from './dashboard/LeadWidgets';
+import { CalendarWidget, ContractsExpiring, FinanceOverview, PaymentRecords, ProjectActivity, QuickStats, TicketsByDepartment, TicketsReport, UpcomingEvents, UserWidget, type Widgets } from './dashboard/PerfexWidgets';
+import { CustomizeDashboard, WidgetGrid, useDashboardLayout, type DashWidget } from './dashboard/DashboardLayout';
 
 interface Dashboard {
     projects_by_status: Record<string, number>;
@@ -49,10 +51,151 @@ export default function DashboardPage() {
     const navigate = useNavigate();
     const { data, reload } = useApi<{ data: Dashboard }>('/dashboard');
     const insights = useApi<{ data: Insights }>('/dashboard/insights');
-    useEvent([TASKS_CHANGED, TIMERS_CHANGED], () => (reload(), insights.reload()));
+    const widgets = useApi<{ data: Widgets }>('/dashboard/widgets');
+    useEvent([TASKS_CHANGED, TIMERS_CHANGED], () => (reload(), insights.reload(), widgets.reload()));
+    const w = widgets.data?.data;
+    const { layout, save: saveLayout } = useDashboardLayout(user?.id);
+    const [customizing, setCustomizing] = useState(false);
     const stats = data?.data;
     const more = insights.data?.data;
     const totalProjects = stats ? Object.values(stats.projects_by_status).reduce((a, b) => a + b, 0) : 0;
+    const myTasks = stats && (
+        <>
+            {stats.upcoming_tasks.length === 0 ? (
+                <div className="flex flex-col items-center py-8 text-center">
+                    <span className="text-3xl">🎉</span>
+                    <p className="mt-2 text-sm text-slate-500">No open tasks assigned to you.</p>
+                </div>
+            ) : (
+                <ul className="-mx-2 divide-y divide-slate-100">
+                    {stats.upcoming_tasks.map((task) => {
+                        const priority = optionById(TASK_PRIORITIES, task.priority);
+                        const late = isOverdue(task.due_date, task.status);
+
+                        return (
+                            <li key={task.id}>
+                                <button type="button" onClick={() => openTask(task.id)} className="flex w-full flex-wrap items-center gap-3 rounded-lg px-2 py-3 text-left transition hover:bg-slate-50">
+                                    <span className="h-9 w-1 shrink-0 rounded-full" style={{ backgroundColor: priority?.color }} title={`${priority?.name} priority`} />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-[14px] font-semibold text-slate-800">{task.name}</p>
+                                        <p className="truncate text-xs text-slate-500">
+                                            {task.project?.name ?? 'No project'} · {priority?.name} priority
+                                        </p>
+                                    </div>
+                                    <StatusBadge option={optionById(TASK_STATUSES, task.status)} />
+                                    <span className={`inline-flex w-28 items-center justify-end gap-1 text-xs ${late ? 'font-semibold text-red-600' : 'text-slate-500'}`}>
+                                        {late && <AlertTriangle className="h-3.5 w-3.5" />}
+                                        {task.due_date ? formatDate(task.due_date) : 'No due date'}
+                                    </span>
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </>
+    );
+    const projectsCard = stats && (
+        <Card className="p-5">
+            <CardHead title="Projects" link="/projects" />
+            <p className="-mt-2 mb-4 text-xs text-slate-500">{totalProjects} projects you can see, by status</p>
+            <ul className="space-y-3.5">
+                {PROJECT_STATUSES.map((status) => {
+                    const count = stats.projects_by_status[status.id] ?? 0;
+                    const share = totalProjects ? (count / totalProjects) * 100 : 0;
+
+                    return (
+                        <li key={status.id} title={`${status.name}: ${count} of ${totalProjects} projects`}>
+                            <Link to="/projects" className="group block">
+                                <span className="mb-1.5 flex items-center justify-between text-[13px]">
+                                    <span className="flex items-center gap-2 text-slate-600 group-hover:text-slate-900">
+                                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: status.color }} />
+                                        {status.name}
+                                    </span>
+                                    <span className="font-semibold text-slate-800">{count}</span>
+                                </span>
+                                <span className="block h-1.5 overflow-hidden rounded-full bg-brand-50">
+                                    <span className="block h-full rounded-full bg-brand transition-all group-hover:bg-brand-light" style={{ width: `${share}%` }} />
+                                </span>
+                            </Link>
+                        </li>
+                    );
+                })}
+            </ul>
+        </Card>
+    );
+    const widgetList: DashWidget[] = !stats
+        ? []
+        : [
+              {
+                  id: 'my_stats',
+                  label: 'My task stats',
+                  span: 'full',
+                  node: (
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                          <StatCard icon={ListChecks} label="My open tasks" value={stats.my_tasks_open} to="/tasks" />
+                          <StatCard icon={CalendarClock} label="Due today" value={stats.my_tasks_due_today} to="/tasks" tone={stats.my_tasks_due_today > 0 ? 'warning' : undefined} />
+                          <StatCard icon={AlertTriangle} label="Overdue" value={stats.my_tasks_overdue} to="/tasks" tone={stats.my_tasks_overdue > 0 ? 'critical' : undefined} />
+                          <StatCard icon={Clock} label="Logged this week" value={`${formatDuration(stats.logged_this_week_seconds)} h`} to="/timesheets" />
+                      </div>
+                  ),
+              },
+              { id: 'quick_stats', label: 'Quick stats', span: 'full', node: w && <QuickStats stats={w.quick_stats} /> },
+              { id: 'leads_kpi', label: 'Leads KPI', span: 'third', node: more?.leads && <LeadsKpi leads={more.leads} /> },
+              { id: 'funnel', label: 'Leads funnel', span: 'third', node: more?.leads && <Funnel statuses={more.leads.statuses} /> },
+              { id: 'hot_leads', label: 'Hot leads', span: 'third', node: more?.leads && <HotLeads rows={more.leads.hot} /> },
+              { id: 'finance_overview', label: 'Finance overview', span: 'full', node: w?.finance_overview && <FinanceOverview finance={w.finance_overview} /> },
+              { id: 'business_pulse', label: 'Business pulse', span: 'full', node: more?.finance && <BusinessPulse finance={more.finance} /> },
+              {
+                  id: 'user_widget',
+                  label: 'My tasks, projects, reminders & tickets',
+                  span: 'two',
+                  node: w ? (
+                      <UserWidget data={w} tasks={myTasks} />
+                  ) : (
+                      <Card className="p-5">
+                          <CardHead title="My tasks" link="/tasks" />
+                          {myTasks}
+                      </Card>
+                  ),
+              },
+              { id: 'deadlines', label: 'Upcoming deadlines', span: 'third', node: <Deadlines rows={more?.deadlines ?? []} /> },
+              { id: 'payments', label: 'Payment records', span: 'half', node: w?.can_payments && <PaymentRecords /> },
+              { id: 'calendar', label: 'Calendar', span: 'half', node: <CalendarWidget /> },
+              { id: 'upcoming_events', label: 'Upcoming events', span: 'third', node: w && <UpcomingEvents events={w.upcoming_events} /> },
+              { id: 'contracts_expiring', label: 'Contracts expiring soon', span: 'third', node: w?.contracts_expiring && <ContractsExpiring rows={w.contracts_expiring} /> },
+              { id: 'project_activity', label: 'Project activity', span: 'third', node: w && <ProjectActivity rows={w.project_activity} /> },
+              { id: 'tickets_department', label: 'Tickets awaiting reply by department', span: 'half', node: w?.tickets_by_department && <TicketsByDepartment rows={w.tickets_by_department} /> },
+              {
+                  id: 'support',
+                  label: 'Support (tickets by status)',
+                  span: 'half',
+                  node: more?.tickets && (
+                      <Card className="p-5">
+                          <CardHead title="Support" link="/tickets" />
+                          <p className="-mt-2 mb-4 text-xs text-slate-500">
+                              <b className="text-slate-700">{more.tickets.filter((t) => !t.closed).reduce((a, t) => a + t.count, 0)}</b> tickets not closed
+                          </p>
+                          <BarList rows={more.tickets.filter((t) => !t.closed).map((t) => ({ label: t.name, value: t.count, color: t.color }))} unit="tickets" />
+                      </Card>
+                  ),
+              },
+              { id: 'tickets_report', label: 'Tickets report by staff', span: 'full', node: w?.can_tickets_report && <TicketsReport /> },
+              {
+                  id: 'team_hours',
+                  label: 'Team hours this week',
+                  span: 'half',
+                  node: more?.team_hours && (
+                      <Card className="p-5">
+                          <CardHead title="Team hours this week" link="/reports/timesheets" />
+                          <p className="-mt-2 mb-4 text-xs text-slate-500">Logged on tasks since Monday, top {Math.max(1, more.team_hours.length)}</p>
+                          {more.team_hours.length === 0 ? <p className="py-6 text-center text-sm text-slate-400">No time logged yet this week.</p> : <BarList rows={more.team_hours.map((m) => ({ label: m.name, value: m.seconds }))} format={(v) => `${formatDuration(v)} h`} />}
+                      </Card>
+                  ),
+              },
+              { id: 'projects', label: 'Projects by status', span: 'third', node: projectsCard },
+              { id: 'todos', label: 'My to do items', span: 'two', node: <MyTodos /> },
+          ];
 
     return (
         <div className="w-full space-y-6">
@@ -93,6 +236,9 @@ export default function DashboardPage() {
                             <button type="button" onClick={() => navigate('/chat')} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3.5 py-2 text-[13.5px] font-semibold text-white ring-1 ring-white/20 transition hover:bg-white/20">
                                 <MessageCircle className="h-4 w-4" /> Chat
                             </button>
+                            <button type="button" onClick={() => setCustomizing(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3.5 py-2 text-[13.5px] font-semibold text-white ring-1 ring-white/20 transition hover:bg-white/20">
+                                <LayoutGrid className="h-4 w-4" /> Customize
+                            </button>
                         </div>
                     </div>
                     {more && <WeekStrip days={more.week} />}
@@ -124,118 +270,9 @@ export default function DashboardPage() {
                     </Card>
                 </div>
             ) : (
-                <>
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                        <StatCard icon={ListChecks} label="My open tasks" value={stats.my_tasks_open} to="/tasks" />
-                        <StatCard icon={CalendarClock} label="Due today" value={stats.my_tasks_due_today} to="/tasks" tone={stats.my_tasks_due_today > 0 ? 'warning' : undefined} />
-                        <StatCard icon={AlertTriangle} label="Overdue" value={stats.my_tasks_overdue} to="/tasks" tone={stats.my_tasks_overdue > 0 ? 'critical' : undefined} />
-                        <StatCard icon={Clock} label="Logged this week" value={`${formatDuration(stats.logged_this_week_seconds)} h`} to="/timesheets" />
-                    </div>
-
-                    {more?.leads && (
-                        <div className="grid gap-5 lg:grid-cols-3">
-                            <LeadsKpi leads={more.leads} />
-                            <Funnel statuses={more.leads.statuses} />
-                            <HotLeads rows={more.leads.hot} />
-                        </div>
-                    )}
-
-                    {more?.finance && <BusinessPulse finance={more.finance} />}
-
-                    <div className="grid gap-5 lg:grid-cols-3">
-                        <Card className="p-5 lg:col-span-2">
-                            <CardHead title="My tasks" link="/tasks" />
-                            {stats.upcoming_tasks.length === 0 ? (
-                                <div className="flex flex-col items-center py-8 text-center">
-                                    <span className="text-3xl">🎉</span>
-                                    <p className="mt-2 text-sm text-slate-500">No open tasks assigned to you.</p>
-                                </div>
-                            ) : (
-                                <ul className="-mx-2 divide-y divide-slate-100">
-                                    {stats.upcoming_tasks.map((task) => {
-                                        const priority = optionById(TASK_PRIORITIES, task.priority);
-                                        const late = isOverdue(task.due_date, task.status);
-
-                                        return (
-                                            <li key={task.id}>
-                                                <button type="button" onClick={() => openTask(task.id)} className="flex w-full flex-wrap items-center gap-3 rounded-lg px-2 py-3 text-left transition hover:bg-slate-50">
-                                                    <span className="h-9 w-1 shrink-0 rounded-full" style={{ backgroundColor: priority?.color }} title={`${priority?.name} priority`} />
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="truncate text-[14px] font-semibold text-slate-800">{task.name}</p>
-                                                        <p className="truncate text-xs text-slate-500">
-                                                            {task.project?.name ?? 'No project'} · {priority?.name} priority
-                                                        </p>
-                                                    </div>
-                                                    <StatusBadge option={optionById(TASK_STATUSES, task.status)} />
-                                                    <span className={`inline-flex w-28 items-center justify-end gap-1 text-xs ${late ? 'font-semibold text-red-600' : 'text-slate-500'}`}>
-                                                        {late && <AlertTriangle className="h-3.5 w-3.5" />}
-                                                        {task.due_date ? formatDate(task.due_date) : 'No due date'}
-                                                    </span>
-                                                </button>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
-                        </Card>
-                        <Deadlines rows={more?.deadlines ?? []} />
-                    </div>
-
-                    {(more?.tickets || more?.team_hours) && (
-                        <div className="grid gap-5 lg:grid-cols-2">
-                            {more.tickets && (
-                                <Card className="p-5">
-                                    <CardHead title="Support" link="/tickets" />
-                                    <p className="-mt-2 mb-4 text-xs text-slate-500">
-                                        <b className="text-slate-700">{more.tickets.filter((t) => !t.closed).reduce((a, t) => a + t.count, 0)}</b> tickets not closed
-                                    </p>
-                                    <BarList rows={more.tickets.filter((t) => !t.closed).map((t) => ({ label: t.name, value: t.count, color: t.color }))} unit="tickets" />
-                                </Card>
-                            )}
-                            {more.team_hours && (
-                                <Card className="p-5">
-                                    <CardHead title="Team hours this week" link="/reports/timesheets" />
-                                    <p className="-mt-2 mb-4 text-xs text-slate-500">Logged on tasks since Monday, top {Math.max(1, more.team_hours.length)}</p>
-                                    {more.team_hours.length === 0 ? <p className="py-6 text-center text-sm text-slate-400">No time logged yet this week.</p> : <BarList rows={more.team_hours.map((m) => ({ label: m.name, value: m.seconds }))} format={(v) => `${formatDuration(v)} h`} />}
-                                </Card>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="grid gap-5 lg:grid-cols-3">
-                        <Card className="p-5">
-                            <CardHead title="Projects" link="/projects" />
-                            <p className="-mt-2 mb-4 text-xs text-slate-500">{totalProjects} projects you can see, by status</p>
-                            <ul className="space-y-3.5">
-                                {PROJECT_STATUSES.map((status) => {
-                                    const count = stats.projects_by_status[status.id] ?? 0;
-                                    const share = totalProjects ? (count / totalProjects) * 100 : 0;
-
-                                    return (
-                                        <li key={status.id} title={`${status.name}: ${count} of ${totalProjects} projects`}>
-                                            <Link to="/projects" className="group block">
-                                                <span className="mb-1.5 flex items-center justify-between text-[13px]">
-                                                    <span className="flex items-center gap-2 text-slate-600 group-hover:text-slate-900">
-                                                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: status.color }} />
-                                                        {status.name}
-                                                    </span>
-                                                    <span className="font-semibold text-slate-800">{count}</span>
-                                                </span>
-                                                <span className="block h-1.5 overflow-hidden rounded-full bg-brand-50">
-                                                    <span className="block h-full rounded-full bg-brand transition-all group-hover:bg-brand-light" style={{ width: `${share}%` }} />
-                                                </span>
-                                            </Link>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </Card>
-                        <div className="lg:col-span-2">
-                            <MyTodos />
-                        </div>
-                    </div>
-                </>
+                <WidgetGrid widgets={widgetList} layout={layout} />
             )}
+            {customizing && <CustomizeDashboard widgets={widgetList} layout={layout} onSave={saveLayout} onClose={() => setCustomizing(false)} />}
         </div>
     );
 }

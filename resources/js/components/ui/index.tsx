@@ -221,7 +221,7 @@ export function Modal({
     onClose: () => void;
     children: ReactNode;
     footer?: ReactNode;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
     /** Slide in from the right as a full-height panel (the default); false for a centred dialog. */
     drawer?: boolean;
 }) {
@@ -243,7 +243,7 @@ export function Modal({
         return null;
     }
 
-    const widths = { sm: 'max-w-md', md: 'max-w-2xl', lg: 'max-w-4xl', xl: 'max-w-6xl' };
+    const widths = { sm: 'max-w-md', md: 'max-w-2xl', lg: 'max-w-4xl', xl: 'max-w-6xl', xxl: 'max-w-[1600px]' };
     const head = (
         <div className="relative flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
             <span className="absolute inset-x-0 top-0 h-[3px] bg-[linear-gradient(90deg,var(--color-brand),var(--color-brand-light)_60%,var(--color-accent))]" />

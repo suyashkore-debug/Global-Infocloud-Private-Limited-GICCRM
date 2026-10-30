@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\CreditNoteController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\CustomFieldController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DashboardWidgetsController;
 use App\Http\Controllers\Api\DiscussionController;
 use App\Http\Controllers\Api\DocumentEmailController;
 use App\Http\Controllers\Api\EmailSettingsController;
@@ -27,6 +28,8 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\KnowledgeBaseController;
 use App\Http\Controllers\Api\LeadCallController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\LeadFormController;
+use App\Http\Controllers\Api\LeadImportController;
 use App\Http\Controllers\Api\MailListController;
 use App\Http\Controllers\Api\ManagementDashboardController;
 use App\Http\Controllers\Api\MilestoneController;
@@ -40,6 +43,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ProposalController;
 use App\Http\Controllers\Api\PublicDocumentController;
+use App\Http\Controllers\Api\PublicLeadFormController;
 use App\Http\Controllers\Api\PublicQuoteFormController;
 use App\Http\Controllers\Api\PublicSurveyController;
 use App\Http\Controllers\Api\Purchase\PurchaseInvoiceController;
@@ -151,6 +155,8 @@ Route::post('/public/documents/{type}/{id}/{hash}/respond', [PublicDocumentContr
 // Public estimate request web form (no login).
 Route::get('/public/quote-forms/{key}', [PublicQuoteFormController::class, 'show']);
 Route::post('/public/quote-forms/{key}', [PublicQuoteFormController::class, 'submit'])->middleware('throttle:10,1');
+Route::get('/public/lead-forms/{key}', [PublicLeadFormController::class, 'show']);
+Route::post('/public/lead-forms/{key}', [PublicLeadFormController::class, 'submit'])->middleware('throttle:10,1');
 
 Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
@@ -159,6 +165,9 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
 
     Route::get('/dashboard', DashboardController::class);
     Route::get('/dashboard/insights', [DashboardController::class, 'insights']);
+    Route::get('/dashboard/widgets', [DashboardWidgetsController::class, 'index']);
+    Route::get('/dashboard/tickets-report', [DashboardWidgetsController::class, 'ticketsReport']);
+    Route::get('/dashboard/payments', [DashboardWidgetsController::class, 'payments']);
     Route::get('/search', SearchController::class);
     Route::post('/realtime/auth', [RealtimeAuthController::class, 'staff'])->middleware('throttle:60,1');
     Route::get('/push/key', [PushController::class, 'key']);
@@ -221,10 +230,16 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::delete('/contract-comments/{contractComment}', [ContractController::class, 'deleteComment']);
 
     // Leads
+    Route::get('/leads/import', [LeadImportController::class, 'show']);
+    Route::get('/leads/import/sample', [LeadImportController::class, 'sample']);
+    Route::post('/leads/import', [LeadImportController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/leads/move', [LeadController::class, 'move']);
+    Route::post('/leads/bulk', [LeadController::class, 'bulk']);
+    Route::apiResource('lead-forms', LeadFormController::class)->except('show');
     Route::apiResource('leads', LeadController::class);
     Route::post('/leads/{lead}/flag', [LeadController::class, 'flag']);
     Route::post('/leads/{lead}/qualification', [LeadController::class, 'qualify']);
+    Route::post('/leads/{lead}/activities', [LeadController::class, 'addActivity']);
     Route::post('/leads/{lead}/convert', [LeadController::class, 'convert']);
     Route::get('/leads/{lead}/calls', [LeadCallController::class, 'index']);
     Route::post('/leads/{lead}/calls', [LeadCallController::class, 'store']);
@@ -245,6 +260,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::get('/records/{type}/{id}/reminders', [RecordExtrasController::class, 'reminders'])->whereNumber('id');
     Route::post('/records/{type}/{id}/reminders', [RecordExtrasController::class, 'addReminder'])->whereNumber('id');
     Route::post('/records/{type}/{id}/files', [RecordExtrasController::class, 'upload'])->whereNumber('id');
+    Route::get('/records/{type}/{id}/files/zip', [RecordExtrasController::class, 'downloadAll'])->whereNumber('id');
     Route::delete('/notes/{note}', [RecordExtrasController::class, 'deleteNote']);
     Route::delete('/reminders/{reminder}', [RecordExtrasController::class, 'deleteReminder']);
 

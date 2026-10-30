@@ -80,6 +80,13 @@ class Options
         'lead_lock_after_convert_to_customer' => '0',
         'lead_unique_validation' => 'email',
         'auto_assign_customer_admin_after_lead_convert' => '1',
+        'allow_non_admin_members_to_import_leads' => '0',
+        'leads_kanban_limit' => '50',
+        // dateadded, leadorder or lastcontact; asc or desc.
+        'default_leads_kanban_sort' => 'leadorder',
+        'default_leads_kanban_sort_type' => 'asc',
+        // How wide a lead opens: modal-lg, modal-xl or modal-xxl.
+        'lead_modal_class' => 'modal-xl',
         // WhatsApp with leads (Setup → WhatsApp). Numbers typed without a country code get this one.
         // meta = Meta Cloud API directly; bird = through a Bird (platform.bird.com) workspace.
         'whatsapp_provider' => 'meta',
@@ -139,7 +146,7 @@ class Options
     public const PUBLIC = [
         'customer_default_country', 'default_contact_permissions', 'ticket_services_enabled', 'ticket_replies_order', 'default_ticket_reply_status',
         'maximum_allowed_ticket_attachments', 'ticket_attachments_file_extensions', 'leads_default_status', 'leads_default_source',
-        'calendar_first_day', 'lead_unique_validation',
+        'calendar_first_day', 'lead_unique_validation', 'allow_non_admin_members_to_import_leads', 'leads_kanban_limit', 'lead_modal_class', 'default_leads_kanban_sort', 'default_leads_kanban_sort_type',
     ];
 
     public static function get(string $name, ?int $companyId = null): string

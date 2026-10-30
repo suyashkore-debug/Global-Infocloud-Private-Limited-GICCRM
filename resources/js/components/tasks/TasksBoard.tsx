@@ -23,7 +23,7 @@ const DEFAULT_STATUSES = TASK_STATUSES.filter((s) => s.id !== 5).map((s) => s.id
  * Perfex tasks table and Kanban board, with the status summary, filters, row options (Start
  * Timer | Edit | Delete) and bulk actions. Used on the Tasks page and inside a project.
  */
-export default function TasksBoard({ projectId, canCreate: canCreateOverride }: { projectId?: number; canCreate?: boolean }) {
+export default function TasksBoard({ projectId, lead, canCreate: canCreateOverride }: { projectId?: number; lead?: { id: number; name: string }; canCreate?: boolean }) {
     const toast = useToast();
     const staff = useStaff();
     const { openTask, newTask, editTask } = useTaskModals();
@@ -54,7 +54,7 @@ export default function TasksBoard({ projectId, canCreate: canCreateOverride }: 
     };
 
     const params = useMemo(() => {
-        const p: Record<string, unknown> = { search, project_id: projectId, sort: view === 'kanban' ? 'kanban_order' : 'id', direction: view === 'kanban' ? 'asc' : 'desc' };
+        const p: Record<string, unknown> = { search, project_id: projectId, lead_id: lead?.id, sort: view === 'kanban' ? 'kanban_order' : 'id', direction: view === 'kanban' ? 'asc' : 'desc' };
         if (view === 'list') {
             p.status = statuses.length ? statuses : [0];
             p.page = page;
@@ -79,7 +79,7 @@ export default function TasksBoard({ projectId, canCreate: canCreateOverride }: 
         }
 
         return p;
-    }, [search, projectId, view, statuses, page, perPage, filter, assignee, priority, startFrom, startTo]);
+    }, [search, projectId, lead?.id, view, statuses, page, perPage, filter, assignee, priority, startFrom, startTo]);
 
     const { data, loading, error, reload, setData } = useApi<TaskList>('/tasks', params);
     useEvent([TASKS_CHANGED, TIMERS_CHANGED], reload);
@@ -134,7 +134,7 @@ export default function TasksBoard({ projectId, canCreate: canCreateOverride }: 
 
             <div className="flex flex-wrap items-center gap-2">
                 {canCreate && (
-                    <Button onClick={() => newTask({ project_id: projectId ?? null })}>
+                    <Button onClick={() => newTask({ project_id: projectId ?? null, lead: lead ?? null })}>
                         <Plus className="h-4 w-4" /> New Task
                     </Button>
                 )}
@@ -147,7 +147,7 @@ export default function TasksBoard({ projectId, canCreate: canCreateOverride }: 
                     {view === 'list' ? <Columns3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
                 </button>
                 <span className="ml-auto" />
-                {!projectId && <SavedFilters identifier="tasks" current={savedFilterValues} onApply={applySaved} />}
+                {!projectId && !lead && <SavedFilters identifier="tasks" current={savedFilterValues} onApply={applySaved} />}
                 <Button variant="secondary" onClick={() => setShowFilters(!showFilters)}>
                     <Filter className="h-4 w-4" /> Filters
                 </Button>
@@ -222,7 +222,7 @@ export default function TasksBoard({ projectId, canCreate: canCreateOverride }: 
                 loading && !data ? (
                     <Spinner />
                 ) : (
-                    data && <Kanban tasks={data.data} onOpen={openTask} onMoved={(tasks) => setData({ ...data, data: tasks })} onAdd={canCreate ? (status) => newTask({ project_id: projectId ?? null, status }) : undefined} />
+                    data && <Kanban tasks={data.data} onOpen={openTask} onMoved={(tasks) => setData({ ...data, data: tasks })} onAdd={canCreate ? (status) => newTask({ project_id: projectId ?? null, lead: lead ?? null, status }) : undefined} />
                 )
             ) : (
                 <Card className="overflow-hidden">

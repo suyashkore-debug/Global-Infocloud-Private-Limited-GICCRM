@@ -14,6 +14,9 @@ import ExpenseFormPage from './pages/crm/ExpenseFormPage';
 import ExpensesPage from './pages/crm/ExpensesPage';
 import ExpenseViewPage from './pages/crm/ExpenseViewPage';
 import LeadsPage from './pages/crm/LeadsPage';
+import LeadImportPage from './pages/crm/LeadImportPage';
+import LeadFormsPage from './pages/crm/LeadFormsPage';
+import PublicLeadFormPage from './pages/crm/PublicLeadFormPage';
 import TicketFormPage from './pages/crm/TicketFormPage';
 import TicketsPage from './pages/crm/TicketsPage';
 import TicketViewPage from './pages/crm/TicketViewPage';
@@ -94,6 +97,7 @@ createRoot(document.getElementById('app')!).render(
                     <Routes>
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/forms/quote/:key" element={<PublicQuoteFormPage />} />
+                        <Route path="/forms/wtl/:key" element={<PublicLeadFormPage />} />
                         <Route path="/survey/:id/:hash" element={<PublicSurveyPage />} />
                         <Route path="/portal/login" element={<PortalLoginPage />} />
                         <Route path="/portal/forgot-password" element={<PortalForgotPage />} />
@@ -153,6 +157,8 @@ createRoot(document.getElementById('app')!).render(
                                 <Route path="contracts/:id" element={<ContractViewPage />} />
                                 <Route path="contracts/:id/edit" element={<ContractFormPage />} />
                                 <Route path="leads" element={<LeadsPage />} />
+                                <Route path="leads/import" element={<LeadImportPage />} />
+                                <Route path="leads/forms" element={<LeadFormsPage />} />
                                 <Route path="knowledge-base" element={<KnowledgeBasePage />} />
                                 <Route path="utilities/media" element={<MediaPage />} />
                                 <Route path="utilities/bulk-pdf" element={<BulkPdfPage />} />

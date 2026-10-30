@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, ArrowRightLeft, Ban, FileText, Mail, MessageCircle, Paperclip, Pencil, Phone, PhoneIncoming, RotateCcw, Sparkles, Star, StickyNote, Trophy, UserCheck, type LucideIcon } from 'lucide-react';
+import { Activity, ArrowRight, ArrowRightLeft, Ban, FileText, Mail, MessageCircle, Paperclip, Pencil, PenLine, Phone, PhoneIncoming, RotateCcw, Sparkles, Star, StickyNote, Trophy, UserCheck, type LucideIcon } from 'lucide-react';
 import { formatDate, formatDateTime } from '../../lib/format';
 import type { Lead } from '../../types';
 
@@ -24,7 +24,10 @@ const KINDS: { test: RegExp; icon: LucideIcon; tone: string; label: string }[] =
 ];
 const OTHER = { icon: Activity, tone: 'bg-slate-400', label: 'Activity' };
 
-const kindOf = (a: Item) => KINDS.find((k) => k.test.test(a.description)) ?? OTHER;
+/** Lines staff wrote themselves ("Enter activity") stand out in orange. */
+const WRITTEN = { icon: PenLine, tone: 'bg-accent', label: 'Written activity' };
+
+const kindOf = (a: Item) => (a.custom ? WRITTEN : (KINDS.find((k) => k.test.test(a.description)) ?? OTHER));
 
 /** "Today", "Yesterday" or the date, for the day headings. */
 function dayLabel(iso: string): string {

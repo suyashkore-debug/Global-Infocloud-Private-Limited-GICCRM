@@ -1,6 +1,45 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
-import { Checkbox, Field, Input, Select, StaffMultiSelect, Tabs, Textarea } from '../../components/ui';
+import {
+    Boxes,
+    Building2,
+    Calculator,
+    CalendarDays,
+    CircleDot,
+    Coins,
+    CreditCard,
+    DatabaseBackup,
+    FileDown,
+    FileSignature,
+    FileText,
+    Flag,
+    History,
+    Inbox,
+    LifeBuoy,
+    ListChecks,
+    Mail,
+    MessageCircle,
+    MessageSquareText,
+    MessagesSquare,
+    Network,
+    Percent,
+    Phone,
+    Receipt,
+    ReceiptText,
+    Settings,
+    Share2,
+    ShieldCheck,
+    ShoppingCart,
+    SlidersHorizontal,
+    Tag,
+    Target,
+    UserRound,
+    Users,
+    Wallet,
+    Wrench,
+    type LucideIcon,
+} from 'lucide-react';
+import { Checkbox, Field, Input, Select, StaffMultiSelect, Textarea } from '../../components/ui';
 import { useStaff } from '../../hooks/useStaff';
 import type { Currency, PaymentMode, Tax } from '../../types';
 import PermissionsPage from '../SettingsPage';
@@ -9,48 +48,142 @@ import CallsSetup from './CallsSetup';
 import CustomFieldsSetup from './CustomFieldsSetup';
 import { EmailLogList, EmailSettingsForm, EmailTemplatesList } from './EmailSetup';
 import ListEditor from './ListEditor';
-import OptionsForm from './OptionsForm';
+import OptionsForm, { type OptionSection } from './OptionsForm';
 import WhatsAppSetup from './WhatsAppSetup';
 import { CalendarSettings, CustomersSettings, LeadsSettings, PdfSettings, SupportSettings, TagsSettings } from './MoreSettings';
 
-const TABS = [
-    { id: 'company', label: 'Company' },
-    { id: 'finance', label: 'Finance' },
-    { id: 'customers', label: 'Customers' },
-    { id: 'tasks', label: 'Tasks' },
-    { id: 'support', label: 'Support' },
-    { id: 'leads', label: 'Leads' },
-    { id: 'calendar', label: 'Calendar' },
-    { id: 'pdf', label: 'PDF' },
-    { id: 'chat', label: 'Chat' },
-    { id: 'tags', label: 'Tags' },
-    { id: 'taxes', label: 'Taxes' },
-    { id: 'currencies', label: 'Currencies' },
-    { id: 'payment-modes', label: 'Payment Modes' },
-    { id: 'customer-groups', label: 'Customer Groups' },
-    { id: 'item-groups', label: 'Item Groups' },
-    { id: 'expense-categories', label: 'Expense Categories' },
-    { id: 'contract-types', label: 'Contract Types' },
-    { id: 'vendor-categories', label: 'Vendor Categories' },
-    { id: 'lead-statuses', label: 'Lead Statuses' },
-    { id: 'lead-sources', label: 'Lead Sources' },
-    { id: 'support-departments', label: 'Support Departments' },
-    { id: 'ticket-statuses', label: 'Ticket Statuses' },
-    { id: 'ticket-priorities', label: 'Ticket Priorities' },
-    { id: 'estimate-request-statuses', label: 'Estimate Request Statuses' },
-    { id: 'ticket-services', label: 'Ticket Services' },
-    { id: 'predefined-replies', label: 'Predefined Replies' },
-    { id: 'email', label: 'Email' },
-    { id: 'email-templates', label: 'Email Templates' },
-    { id: 'email-log', label: 'Email Log' },
-    { id: 'whatsapp', label: 'WhatsApp' },
-    { id: 'calls', label: 'Calls' },
-    { id: 'custom-fields', label: 'Custom Fields' },
-    { id: 'permissions', label: 'Staff Permissions' },
-    { id: 'backup', label: 'Backup' },
+/** Setup sections grouped as Perfex's Settings menu, each with its icon. */
+const GROUPS = [
+    {
+        title: 'General',
+        items: [
+            { id: 'company', label: 'Company Information', icon: Building2 },
+            { id: 'email', label: 'Email', icon: Mail },
+            { id: 'email-templates', label: 'Email Templates', icon: FileText },
+            { id: 'email-log', label: 'Email Log', icon: History },
+        ],
+    },
+    {
+        title: 'Finance',
+        items: [
+            { id: 'finance', label: 'General', icon: Settings },
+            { id: 'invoices', label: 'Invoices', icon: Receipt },
+            { id: 'proposals', label: 'Proposals', icon: FileText },
+            { id: 'estimates', label: 'Estimates', icon: Calculator },
+            { id: 'credit-notes', label: 'Credit Notes', icon: ReceiptText },
+            { id: 'contracts', label: 'Contracts', icon: FileSignature },
+            { id: 'taxes', label: 'Taxes', icon: Percent },
+            { id: 'currencies', label: 'Currencies', icon: Coins },
+            { id: 'payment-modes', label: 'Payment Modes', icon: CreditCard },
+        ],
+    },
+    {
+        title: 'Configure Features',
+        items: [
+            { id: 'customers', label: 'Customers', icon: UserRound },
+            { id: 'tasks', label: 'Tasks', icon: ListChecks },
+            { id: 'support', label: 'Support', icon: LifeBuoy },
+            { id: 'leads', label: 'Leads', icon: Target },
+        ],
+    },
+    {
+        title: 'Lists',
+        items: [
+            { id: 'customer-groups', label: 'Customer Groups', icon: Users },
+            { id: 'item-groups', label: 'Item Groups', icon: Boxes },
+            { id: 'expense-categories', label: 'Expense Categories', icon: Wallet },
+            { id: 'contract-types', label: 'Contract Types', icon: FileSignature },
+            { id: 'vendor-categories', label: 'Vendor Categories', icon: ShoppingCart },
+            { id: 'lead-statuses', label: 'Lead Statuses', icon: CircleDot },
+            { id: 'lead-sources', label: 'Lead Sources', icon: Share2 },
+            { id: 'support-departments', label: 'Support Departments', icon: Network },
+            { id: 'ticket-statuses', label: 'Ticket Statuses', icon: CircleDot },
+            { id: 'ticket-priorities', label: 'Ticket Priorities', icon: Flag },
+            { id: 'ticket-services', label: 'Ticket Services', icon: Wrench },
+            { id: 'predefined-replies', label: 'Predefined Replies', icon: MessageSquareText },
+            { id: 'estimate-request-statuses', label: 'Estimate Request Statuses', icon: Inbox },
+        ],
+    },
+    {
+        title: 'Integrations',
+        items: [
+            { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+            { id: 'calls', label: 'Calls', icon: Phone },
+        ],
+    },
+    {
+        title: 'Other',
+        items: [
+            { id: 'calendar', label: 'Calendar', icon: CalendarDays },
+            { id: 'pdf', label: 'PDF', icon: FileDown },
+            { id: 'chat', label: 'Chat', icon: MessagesSquare },
+            { id: 'tags', label: 'Tags', icon: Tag },
+            { id: 'custom-fields', label: 'Custom Fields', icon: SlidersHorizontal },
+        ],
+    },
+    {
+        title: 'Misc',
+        items: [
+            { id: 'permissions', label: 'Staff Permissions', icon: ShieldCheck },
+            { id: 'backup', label: 'Backup', icon: DatabaseBackup },
+        ],
+    },
 ] as const;
 
-type TabId = (typeof TABS)[number]['id'];
+
+/** Setup → Finance: one settings page per document type (as Perfex's Settings → Finance). */
+const FINANCE: Record<string, OptionSection> = {
+    'finance': {
+        title: 'General',
+        fields: [{ name: 'number_padding_prefixes', label: 'Number padding zeros', type: 'number', hint: 'e.g. 4 → 0001' }],
+    },
+    'invoices': {
+        title: 'Invoices',
+        fields: [
+            { name: 'invoice_prefix', label: 'Invoice Number Prefix' },
+            { name: 'next_invoice_number', label: 'Next Invoice Number', type: 'number' },
+            { name: 'invoice_number_format', label: 'Invoice Number Format', type: 'format' },
+            { name: 'invoice_due_after', label: 'Invoice due after (days)', type: 'number' },
+            { name: 'predefined_clientnote_invoice', label: 'Predefined Client Note', type: 'textarea' },
+            { name: 'predefined_terms_invoice', label: 'Predefined Terms & Conditions', type: 'textarea' },
+        ],
+    },
+    'estimates': {
+        title: 'Estimates',
+        fields: [
+            { name: 'estimate_prefix', label: 'Estimate Number Prefix' },
+            { name: 'next_estimate_number', label: 'Next Estimate Number', type: 'number' },
+            { name: 'estimate_number_format', label: 'Estimate Number Format', type: 'format' },
+            { name: 'estimate_due_after', label: 'Estimate expires after (days)', type: 'number' },
+            { name: 'predefined_clientnote_estimate', label: 'Predefined Client Note', type: 'textarea' },
+            { name: 'predefined_terms_estimate', label: 'Predefined Terms & Conditions', type: 'textarea' },
+        ],
+    },
+    'proposals': {
+        title: 'Proposals',
+        fields: [
+            { name: 'proposal_number_prefix', label: 'Proposal Number Prefix' },
+            { name: 'proposal_due_after', label: 'Proposal open till (days)', type: 'number' },
+        ],
+    },
+    'contracts': {
+        title: 'Contracts',
+        fields: [{ name: 'contract_expiration_before', label: 'Notify before contract ends (days)', type: 'number' }],
+    },
+    'credit-notes': {
+        title: 'Credit Notes',
+        fields: [
+            { name: 'credit_note_prefix', label: 'Credit Note Number Prefix' },
+            { name: 'next_credit_note_number', label: 'Next Credit Note Number', type: 'number' },
+            { name: 'credit_note_number_format', label: 'Credit Note Number Format', type: 'format' },
+            { name: 'predefined_clientnote_credit_note', label: 'Predefined Client Note', type: 'textarea' },
+            { name: 'predefined_terms_credit_note', label: 'Predefined Terms & Conditions', type: 'textarea' },
+        ],
+    },
+};
+
+const TABS: readonly { id: string; label: string; icon: LucideIcon }[] = GROUPS.flatMap((g) => [...g.items]);
+type TabId = (typeof GROUPS)[number]['items'][number]['id'];
 
 const NAMES: Record<string, string> = {
     'customer-groups': 'Customer Group',
@@ -72,10 +205,62 @@ export default function SetupPage() {
         return <Navigate to="/" replace />;
     }
 
+    const visible = (id: string) => id !== 'backup' || user.is_super_admin;
+    const current = TABS.find((t) => t.id === tab)!;
+
     return (
         <div className="w-full space-y-4">
             <h4 className="page-title">Setup</h4>
-            <Tabs tabs={TABS.filter((t) => t.id !== 'backup' || user.is_super_admin)} active={tab} onChange={(id) => setParams({ tab: id })} />
+            <div className="grid items-start gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
+                {/* Perfex Settings menu: grouped sections on the left (a dropdown on phones). */}
+                <div className="lg:hidden">
+                    <Select value={tab} onChange={(e) => setParams({ tab: e.target.value })}>
+                        {GROUPS.map((g) =>
+                            g.items.filter((i) => visible(i.id)).map((i) => (
+                                <option key={i.id} value={i.id}>
+                                    {g.title} · {i.label}
+                                </option>
+                            )),
+                        )}
+                    </Select>
+                </div>
+                <nav aria-label="Setup sections" className="hidden lg:sticky lg:top-[84px] lg:block">
+                    <h3 className="mb-2 px-1 text-[16px] font-bold text-slate-800">Settings</h3>
+                    <div className="panel_s !mb-0 p-3 lg:max-h-[calc(100vh-150px)] lg:overflow-y-auto">
+                    {GROUPS.map((g) => (
+                        <div key={g.title} className="mb-3 last:mb-0">
+                            <p className="px-2.5 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">{g.title}</p>
+                            <ul className="space-y-0.5">
+                                {g.items
+                                    .filter((i) => visible(i.id))
+                                    .map((i) => {
+                                        const Icon = i.icon;
+                                        const on = i.id === tab;
+                                        return (
+                                            <li key={i.id}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setParams({ tab: i.id })}
+                                                    aria-current={on ? 'page' : undefined}
+                                                    className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-[13px] transition ${on ? 'bg-brand-50 font-semibold text-brand' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                                                >
+                                                    <Icon className={`h-4 w-4 shrink-0 ${on ? 'text-accent' : 'text-slate-400'}`} />
+                                                    {i.label}
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                            </ul>
+                        </div>
+                    ))}
+                    </div>
+                </nav>
+
+                <div className="min-w-0 space-y-4">
+                    <h3 className="flex items-center gap-2 px-1 text-[16px] font-bold text-slate-800">
+                        <current.icon className="h-[18px] w-[18px] text-accent" />
+                        {current.label}
+                    </h3>
 
             {tab === 'company' && (
                 <OptionsForm
@@ -157,59 +342,7 @@ export default function SetupPage() {
                     ]}
                 />
             )}
-            {tab === 'finance' && (
-                <OptionsForm
-                    sections={[
-                        {
-                            title: 'General',
-                            fields: [{ name: 'number_padding_prefixes', label: 'Number padding zeros', type: 'number', hint: 'e.g. 4 → 0001' }],
-                        },
-                        {
-                            title: 'Invoices',
-                            fields: [
-                                { name: 'invoice_prefix', label: 'Invoice Number Prefix' },
-                                { name: 'next_invoice_number', label: 'Next Invoice Number', type: 'number' },
-                                { name: 'invoice_number_format', label: 'Invoice Number Format', type: 'format' },
-                                { name: 'invoice_due_after', label: 'Invoice due after (days)', type: 'number' },
-                                { name: 'predefined_clientnote_invoice', label: 'Predefined Client Note', type: 'textarea' },
-                                { name: 'predefined_terms_invoice', label: 'Predefined Terms & Conditions', type: 'textarea' },
-                            ],
-                        },
-                        {
-                            title: 'Estimates',
-                            fields: [
-                                { name: 'estimate_prefix', label: 'Estimate Number Prefix' },
-                                { name: 'next_estimate_number', label: 'Next Estimate Number', type: 'number' },
-                                { name: 'estimate_number_format', label: 'Estimate Number Format', type: 'format' },
-                                { name: 'estimate_due_after', label: 'Estimate expires after (days)', type: 'number' },
-                                { name: 'predefined_clientnote_estimate', label: 'Predefined Client Note', type: 'textarea' },
-                                { name: 'predefined_terms_estimate', label: 'Predefined Terms & Conditions', type: 'textarea' },
-                            ],
-                        },
-                        {
-                            title: 'Proposals',
-                            fields: [
-                                { name: 'proposal_number_prefix', label: 'Proposal Number Prefix' },
-                                { name: 'proposal_due_after', label: 'Proposal open till (days)', type: 'number' },
-                            ],
-                        },
-                        {
-                            title: 'Contracts',
-                            fields: [{ name: 'contract_expiration_before', label: 'Notify before contract ends (days)', type: 'number' }],
-                        },
-                        {
-                            title: 'Credit Notes',
-                            fields: [
-                                { name: 'credit_note_prefix', label: 'Credit Note Number Prefix' },
-                                { name: 'next_credit_note_number', label: 'Next Credit Note Number', type: 'number' },
-                                { name: 'credit_note_number_format', label: 'Credit Note Number Format', type: 'format' },
-                                { name: 'predefined_clientnote_credit_note', label: 'Predefined Client Note', type: 'textarea' },
-                                { name: 'predefined_terms_credit_note', label: 'Predefined Terms & Conditions', type: 'textarea' },
-                            ],
-                        },
-                    ]}
-                />
-            )}
+            {tab in FINANCE && <OptionsForm key={tab} sections={[FINANCE[tab as keyof typeof FINANCE]]} />}
 
             {tab === 'taxes' && (
                 <ListEditor<Tax, { name: string; rate: string }>
@@ -427,6 +560,8 @@ export default function SetupPage() {
             {tab === 'calls' && <CallsSetup />}
             {tab === 'custom-fields' && <CustomFieldsSetup />}
             {tab === 'permissions' && <PermissionsPage />}
+                </div>
+            </div>
         </div>
     );
 }
