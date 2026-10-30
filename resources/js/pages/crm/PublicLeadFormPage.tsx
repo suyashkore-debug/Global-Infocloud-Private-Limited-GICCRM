@@ -2,9 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle2 } from 'lucide-react';
+import Recaptcha from '../../components/Recaptcha';
 import type { FormField } from '../estimate-requests/types';
 
-type PublicForm = { name: string; fields: FormField[]; submit_btn_name: string; submit_btn_bg_color: string; submit_btn_text_color: string };
+type PublicForm = { name: string; fields: FormField[]; submit_btn_name: string; submit_btn_bg_color: string; submit_btn_text_color: string; recaptcha_site_key: string | null };
 
 const inputClass =
     'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-[0_1px_2px_rgba(16,24,40,0.04)] outline-none transition placeholder:text-slate-400 focus:border-[#0b2c56]/60 focus:ring-4 focus:ring-[#0b2c56]/10';
@@ -17,6 +18,7 @@ export default function PublicLeadFormPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [done, setDone] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
+    const [captchaReset, setCaptchaReset] = useState(0);
 
     useEffect(() => {
         axios
@@ -41,6 +43,7 @@ export default function PublicLeadFormPage() {
             const data = (err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }).response?.data;
             const fieldErrors = Object.fromEntries(Object.entries(data?.errors ?? {}).map(([k, v]) => [k.split('.')[0], v[0]]));
             setErrors(Object.keys(fieldErrors).length ? fieldErrors : { _: data?.message ?? 'Something went wrong, please try again.' });
+            setCaptchaReset((n) => n + 1);
         } finally {
             setSending(false);
         }
@@ -73,6 +76,7 @@ export default function PublicLeadFormPage() {
                                 {errors[f.name] && <p className="mt-1 text-xs text-red-600">{errors[f.name]}</p>}
                             </div>
                         ))}
+                        {form.recaptcha_site_key && <Recaptcha siteKey={form.recaptcha_site_key} resetKey={captchaReset} error={errors.recaptcha} />}
                         {errors._ && <p className="text-sm text-red-600">{errors._}</p>}
                         <button
                             type="submit"

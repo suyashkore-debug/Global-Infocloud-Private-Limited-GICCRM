@@ -15,6 +15,7 @@ use App\Services\DefaultLookups;
 use App\Services\Emails;
 use App\Services\Notifier;
 use App\Services\Options;
+use App\Services\Recaptcha;
 use App\Support\PublicFormFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,10 @@ class PublicLeadFormController extends Controller
     {
         $form = $this->form($key);
 
-        return response()->json(['data' => $form->only(['name', 'fields', 'submit_btn_name', 'submit_btn_bg_color', 'submit_btn_text_color'])]);
+        return response()->json(['data' => [
+            ...$form->only(['name', 'fields', 'submit_btn_name', 'submit_btn_bg_color', 'submit_btn_text_color']),
+            'recaptcha_site_key' => Recaptcha::forForm($form->recaptcha, $form->company_id),
+        ]]);
     }
 
     public function submit(Request $request, string $key, Notifier $notifier): JsonResponse
@@ -39,6 +43,9 @@ class PublicLeadFormController extends Controller
         $form = $this->form($key);
         // The rest of the request works for the form's company (company scopes, defaults).
         $request->attributes->set('portal_company_id', $form->company_id);
+        if (Recaptcha::forForm($form->recaptcha, $form->company_id)) {
+            Recaptcha::check($request->input('g-recaptcha-response'), $request->ip(), $form->company_id);
+        }
         $data = $request->validate(PublicFormFields::rules($form->fields));
 
         [$fields, $custom, $extra] = $this->split($form, $data);

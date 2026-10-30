@@ -124,6 +124,41 @@ class SetupController extends Controller
         return response()->json(['data' => collect(Options::PUBLIC)->mapWithKeys(fn ($name) => [$name => Options::get($name)])]);
     }
 
+    /** Setup → reCAPTCHA: the site key, and whether a secret key is saved (never the key itself). */
+    public function recaptcha(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $company = (int) $request->user()->company_id;
+
+        return response()->json(['data' => [
+            'site_key' => Options::get('recaptcha_site_key', $company),
+            'has_secret_key' => Options::secret('recaptcha_secret_key', $company) !== '',
+        ]]);
+    }
+
+    public function saveRecaptcha(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $company = (int) $request->user()->company_id;
+        $data = $request->validate([
+            'site_key' => ['nullable', 'string', 'max:200'],
+            'secret_key' => ['nullable', 'string', 'max:200'],
+            'clear' => ['boolean'],
+        ]);
+
+        if ($data['clear'] ?? false) {
+            Options::set('recaptcha_site_key', '', $company);
+            Options::setSecret('recaptcha_secret_key', '', $company);
+        } else {
+            Options::set('recaptcha_site_key', trim((string) ($data['site_key'] ?? '')), $company);
+            if (! empty($data['secret_key'])) {
+                Options::setSecret('recaptcha_secret_key', trim($data['secret_key']), $company);
+            }
+        }
+
+        return $this->recaptcha($request);
+    }
+
     public function saveOptions(Request $request): JsonResponse
     {
         abort_unless($request->user()->isAdmin(), 403);
@@ -134,7 +169,7 @@ class SetupController extends Controller
         ]);
 
         foreach ($data['options'] as $name => $value) {
-            if (array_key_exists($name, Options::DEFAULTS)) {
+            if (array_key_exists($name, Options::DEFAULTS) && $name !== 'recaptcha_secret_key') {
                 Options::set($name, $value);
             }
         }

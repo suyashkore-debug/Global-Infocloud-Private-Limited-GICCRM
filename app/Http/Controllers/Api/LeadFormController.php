@@ -84,6 +84,7 @@ class LeadFormController extends Controller
             'notify_ids' => ['nullable', 'array'],
             'notify_ids.*' => ['integer'],
             'active' => ['boolean'],
+            'recaptcha' => ['boolean'],
         ], [
             'fields.*.name.distinct' => 'Two fields fill the same place; give each field its own.',
             'submit_redirect_url.required_if' => 'Enter the website address to redirect to.',

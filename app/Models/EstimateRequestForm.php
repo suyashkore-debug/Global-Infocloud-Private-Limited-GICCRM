@@ -16,7 +16,7 @@ class EstimateRequestForm extends Model
 
     protected $fillable = [
         'company_id', 'form_key', 'name', 'fields', 'estimate_request_status_id', 'responsible_id', 'submit_btn_name',
-        'success_submit_msg', 'notify_request_submitted', 'notify_type', 'notify_ids', 'active', 'created_by',
+        'success_submit_msg', 'notify_request_submitted', 'notify_type', 'notify_ids', 'active', 'recaptcha', 'created_by',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class EstimateRequestForm extends Model
             'notify_ids' => 'array',
             'notify_request_submitted' => 'boolean',
             'active' => 'boolean',
+            'recaptcha' => 'boolean',
         ];
     }
 

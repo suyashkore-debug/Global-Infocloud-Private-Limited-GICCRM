@@ -157,6 +157,7 @@ function FormEditor({ form, onClose, onSaved }: { form: QuoteForm | null; onClos
         notify_type: form?.notify_type ?? 'specific_staff',
         notify_ids: form?.notify_ids ?? [],
         active: form?.active ?? true,
+        recaptcha: form?.recaptcha ?? false,
     });
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -250,6 +251,7 @@ function FormEditor({ form, onClose, onSaved }: { form: QuoteForm | null; onClos
                         )}
                     </div>
                     <Checkbox label="Active (form accepts submissions)" checked={state.active} onChange={(v) => set({ active: v })} />
+                    <Checkbox label="Use Google reCAPTCHA (keys in Setup → reCAPTCHA)" checked={state.recaptcha} onChange={(v) => set({ recaptcha: v })} />
                 </div>
 
                 <div className="space-y-2">

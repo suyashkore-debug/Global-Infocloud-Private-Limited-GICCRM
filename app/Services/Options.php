@@ -50,6 +50,9 @@ class Options
         'predefined_clientnote_credit_note' => '',
         // Contracts: notify the contract's creator this many days before it ends.
         'contract_expiration_before' => '4',
+        // Google reCAPTCHA v2 for web forms (the secret key is stored encrypted).
+        'recaptcha_site_key' => '',
+        'recaptcha_secret_key' => '',
         // Tasks (Perfex Settings → Tasks).
         'auto_stop_tasks_timers_on_new_timer' => '1',
         'timer_started_change_status_in_progress' => '1',

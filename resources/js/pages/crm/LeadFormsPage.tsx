@@ -37,6 +37,7 @@ export type LeadWebForm = {
     notify_type: 'specific_staff' | 'roles' | 'assigned' | null;
     notify_ids: number[] | null;
     active: boolean;
+    recaptcha: boolean;
     leads_count?: number;
     created_at: string;
 };
@@ -256,6 +257,7 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
         notify_type: form?.notify_type ?? 'assigned',
         notify_ids: form?.notify_ids ?? [],
         active: form?.active ?? true,
+        recaptcha: form?.recaptcha ?? false,
     });
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -492,6 +494,7 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                             <div className="flex flex-wrap gap-x-6 gap-y-2 sm:col-span-2">
                                 <Checkbox label="Auto mark as public" checked={state.mark_public} onChange={(v) => set({ mark_public: v })} />
                                 <Checkbox label="Active (the form accepts submissions)" checked={state.active} onChange={(v) => set({ active: v })} />
+                                <Checkbox label="Use Google reCAPTCHA (keys in Setup → reCAPTCHA)" checked={state.recaptcha} onChange={(v) => set({ recaptcha: v })} />
                             </div>
                         </FormSection>
 

@@ -24,7 +24,7 @@ class LeadForm extends Model
         'company_id', 'form_key', 'name', 'fields', 'lead_status_id', 'lead_source_id', 'responsible_id', 'lead_name_prefix', 'language',
         'submit_btn_name', 'submit_btn_bg_color', 'submit_btn_text_color', 'submit_action', 'success_submit_msg', 'submit_redirect_url',
         'mark_public', 'allow_duplicate', 'track_duplicate_field', 'track_duplicate_field_and', 'create_task_on_duplicate',
-        'notify_lead_imported', 'notify_type', 'notify_ids', 'active', 'created_by',
+        'notify_lead_imported', 'notify_type', 'notify_ids', 'active', 'recaptcha', 'created_by',
     ];
 
     protected function casts(): array
@@ -37,6 +37,7 @@ class LeadForm extends Model
             'create_task_on_duplicate' => 'boolean',
             'notify_lead_imported' => 'boolean',
             'active' => 'boolean',
+            'recaptcha' => 'boolean',
         ];
     }
 

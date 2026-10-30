@@ -2,9 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle2 } from 'lucide-react';
+import Recaptcha from '../../components/Recaptcha';
 import type { FormField } from './types';
 
-type PublicForm = { name: string; fields: FormField[]; submit_btn_name: string };
+type PublicForm = { name: string; fields: FormField[]; submit_btn_name: string; recaptcha_site_key: string | null };
 
 const inputClass = 'w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
 
@@ -16,6 +17,7 @@ export default function PublicQuoteFormPage() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [done, setDone] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
+    const [captchaReset, setCaptchaReset] = useState(0);
 
     useEffect(() => {
         axios
@@ -35,6 +37,7 @@ export default function PublicQuoteFormPage() {
             const data = (err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }).response?.data;
             const fieldErrors = Object.fromEntries(Object.entries(data?.errors ?? {}).map(([k, v]) => [k.split('.')[0], v[0]]));
             setErrors(Object.keys(fieldErrors).length ? fieldErrors : { _: data?.message ?? 'Something went wrong, please try again.' });
+            setCaptchaReset((n) => n + 1);
         } finally {
             setSending(false);
         }
@@ -67,6 +70,7 @@ export default function PublicQuoteFormPage() {
                                 {errors[f.name] && <p className="mt-1 text-xs text-red-600">{errors[f.name]}</p>}
                             </div>
                         ))}
+                        {form.recaptcha_site_key && <Recaptcha siteKey={form.recaptcha_site_key} resetKey={captchaReset} error={errors.recaptcha} />}
                         {errors._ && <p className="text-sm text-red-600">{errors._}</p>}
                         <button type="submit" disabled={sending} className="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-light disabled:opacity-60">
                             {sending ? 'Sending…' : form.submit_btn_name}

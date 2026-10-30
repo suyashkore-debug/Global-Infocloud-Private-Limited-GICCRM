@@ -220,6 +220,7 @@ class EstimateRequestController extends Controller
             'notify_ids' => ['nullable', 'array'],
             'notify_ids.*' => ['integer'],
             'active' => ['boolean'],
+            'recaptcha' => ['boolean'],
         ]);
 
         // Every request needs an e-mail: make sure the form has a required "email" field.

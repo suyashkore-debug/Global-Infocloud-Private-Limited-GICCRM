@@ -45,6 +45,7 @@ import type { Currency, PaymentMode, Tax } from '../../types';
 import PermissionsPage from '../SettingsPage';
 import BackupSetup from './BackupSetup';
 import CallsSetup from './CallsSetup';
+import RecaptchaSetup from './RecaptchaSetup';
 import CustomFieldsSetup from './CustomFieldsSetup';
 import { EmailLogList, EmailSettingsForm, EmailTemplatesList } from './EmailSetup';
 import ListEditor from './ListEditor';
@@ -109,6 +110,7 @@ const GROUPS = [
         items: [
             { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
             { id: 'calls', label: 'Calls', icon: Phone },
+            { id: 'recaptcha', label: 'reCAPTCHA', icon: ShieldCheck },
         ],
     },
     {
@@ -558,6 +560,7 @@ export default function SetupPage() {
             {tab === 'email-log' && <EmailLogList />}
             {tab === 'whatsapp' && <WhatsAppSetup />}
             {tab === 'calls' && <CallsSetup />}
+            {tab === 'recaptcha' && <RecaptchaSetup />}
             {tab === 'custom-fields' && <CustomFieldsSetup />}
             {tab === 'permissions' && <PermissionsPage />}
                 </div>

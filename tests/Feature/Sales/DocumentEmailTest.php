@@ -100,3 +100,40 @@ it('lets only admins change e-mail settings and keeps the smtp password secret',
     expect(Options::get('smtp_password'))->not->toBe('secret')->not->toBe('');
     $this->getJson('/api/email-templates')->assertOk()->assertJsonPath('meta.merge_fields.invoice.0', 'invoice_number');
 });
+
+it('schedules an invoice e-mail and the scheduler sends it when due', function () {
+    Mail::fake();
+    $admin = signIn(companyAdmin());
+    $invoice = Invoice::factory()->create(['customer_id' => customerWithContact($admin->company_id)->id]);
+    $at = now()->addDay()->startOfMinute();
+
+    $this->postJson("/api/invoices/{$invoice->id}/email", ['recipients' => ['ravi@acme.test'], 'cc' => 'boss@gic.test', 'scheduled_at' => $at->toIso8601String()])
+        ->assertOk()->assertJsonPath('message', fn ($m) => str_starts_with($m, 'E-mail scheduled for'));
+    expect($this->getJson("/api/invoices/{$invoice->id}/email")->json('data.schedule.recipients'))->toBe(['ravi@acme.test']);
+    Mail::assertNothingSent();
+
+    // Not yet due.
+    auth()->forgetGuards();
+    $this->artisan('emails:send-scheduled')->assertSuccessful();
+    Mail::assertNothingSent();
+
+    $this->travelTo($at->copy()->addMinute());
+    $this->artisan('emails:send-scheduled')->assertSuccessful();
+    Mail::assertSent(TemplateMail::class, fn (TemplateMail $mail) => $mail->hasTo('ravi@acme.test') && $mail->hasCc('boss@gic.test'));
+    expect($invoice->refresh()->sent)->toBeTrue()
+        ->and(App\Models\ScheduledEmail::withoutGlobalScopes()->count())->toBe(0);
+});
+
+it('cancels a schedule, refuses past times and only schedules invoices and estimates', function () {
+    $admin = signIn(companyAdmin());
+    $customer = customerWithContact($admin->company_id);
+    $invoice = Invoice::factory()->create(['customer_id' => $customer->id]);
+
+    $this->postJson("/api/invoices/{$invoice->id}/email", ['recipients' => ['ravi@acme.test'], 'scheduled_at' => now()->subHour()->toIso8601String()])->assertJsonValidationErrors('scheduled_at');
+    $this->postJson("/api/invoices/{$invoice->id}/email", ['recipients' => ['ravi@acme.test'], 'scheduled_at' => now()->addHour()->toIso8601String()])->assertOk();
+    $this->deleteJson("/api/invoices/{$invoice->id}/email-schedule")->assertOk();
+    expect($this->getJson("/api/invoices/{$invoice->id}/email")->json('data.schedule'))->toBeNull();
+
+    $contract = Contract::create(['subject' => 'AMC', 'customer_id' => $customer->id, 'start_date' => today(), 'hash' => Str::random(32), 'created_by' => $admin->id]);
+    $this->postJson("/api/contracts/{$contract->id}/email", ['recipients' => ['ravi@acme.test'], 'scheduled_at' => now()->addHour()->toIso8601String()])->assertStatus(422);
+});

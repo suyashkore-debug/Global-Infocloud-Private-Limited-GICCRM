@@ -294,6 +294,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     // Send a sales document / contract by e-mail
     Route::get('/{type}/{id}/email', [DocumentEmailController::class, 'preview'])->whereIn('type', ['invoices', 'estimates', 'proposals', 'credit-notes', 'contracts'])->whereNumber('id');
     Route::post('/{type}/{id}/email', [DocumentEmailController::class, 'send'])->whereIn('type', ['invoices', 'estimates', 'proposals', 'credit-notes', 'contracts'])->whereNumber('id');
+    Route::delete('/{type}/{id}/email-schedule', [DocumentEmailController::class, 'cancelSchedule'])->whereIn('type', ['invoices', 'estimates'])->whereNumber('id');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf']);
 
     // E-mail settings, templates and log (admins)
@@ -303,6 +304,8 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::get('/settings/whatsapp', [WhatsAppController::class, 'settings']);
     Route::put('/settings/whatsapp', [WhatsAppController::class, 'saveSettings']);
     Route::get('/settings/calls', [TelephonyController::class, 'settings']);
+    Route::get('/settings/recaptcha', [SetupController::class, 'recaptcha']);
+    Route::put('/settings/recaptcha', [SetupController::class, 'saveRecaptcha']);
     Route::put('/settings/calls', [TelephonyController::class, 'saveSettings']);
     Route::get('/email-templates', [EmailSettingsController::class, 'templates']);
     Route::get('/email-templates/{emailTemplate}', [EmailSettingsController::class, 'template']);

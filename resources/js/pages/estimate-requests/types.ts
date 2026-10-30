@@ -39,6 +39,7 @@ export type QuoteForm = {
     notify_type: 'specific_staff' | 'roles' | 'assigned' | null;
     notify_ids: number[] | null;
     active: boolean;
+    recaptcha: boolean;
     requests_count?: number;
     created_at: string;
 };

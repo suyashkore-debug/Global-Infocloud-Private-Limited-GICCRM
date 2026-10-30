@@ -103,3 +103,30 @@ it('e-mails the lead a thank-you and the responsible person when the templates a
     expect($sent['ravi@patil.test'] ?? null)->toBe('new-web-to-lead-form-submitted')
         ->and($sent[strtolower($sales->email)] ?? null)->toBe('new-lead-assigned');
 });
+
+it('asks for reCAPTCHA on forms that use it once the keys are saved', function () {
+    $admin = signIn(companyAdmin());
+    $form = $this->postJson('/api/lead-forms', webForm(['recaptcha' => true]))->assertCreated()->json('data');
+    $key = $form['form_key'];
+    $payload = ['name' => 'Bot', 'email' => 'bot@x.test'];
+
+    // No keys yet: the form works without a captcha, as in Perfex.
+    auth()->forgetGuards();
+    $this->getJson("/api/public/lead-forms/{$key}")->assertJsonPath('data.recaptcha_site_key', null);
+    $this->postJson("/api/public/lead-forms/{$key}", $payload)->assertCreated();
+
+    signIn($admin);
+    $this->putJson('/api/settings/recaptcha', ['site_key' => 'site-123', 'secret_key' => 'secret-456'])
+        ->assertOk()->assertJsonPath('data.has_secret_key', true)->assertJsonMissing(['secret-456']);
+    expect(App\Models\Option::withoutGlobalScopes()->where('name', 'recaptcha_secret_key')->value('value'))->not->toBe('secret-456');
+
+    auth()->forgetGuards();
+    $this->getJson("/api/public/lead-forms/{$key}")->assertJsonPath('data.recaptcha_site_key', 'site-123');
+    $this->postJson("/api/public/lead-forms/{$key}", $payload)->assertUnprocessable()->assertJsonValidationErrors('recaptcha');
+
+    Http::fake(['www.google.com/recaptcha/*' => Http::sequence()->push(['success' => false])->push(['success' => true])]);
+    $this->postJson("/api/public/lead-forms/{$key}", [...$payload, 'g-recaptcha-response' => 'bad'])->assertUnprocessable();
+    $this->postJson("/api/public/lead-forms/{$key}", [...$payload, 'email' => 'human@x.test', 'g-recaptcha-response' => 'good'])->assertCreated();
+    Http::assertSent(fn ($r) => $r['secret'] === 'secret-456' && $r['response'] === 'good');
+    expect(Lead::where('email', 'human@x.test')->exists())->toBeTrue();
+});

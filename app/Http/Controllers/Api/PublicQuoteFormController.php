@@ -8,6 +8,7 @@ use App\Models\EstimateRequestForm;
 use App\Models\EstimateRequestStatus;
 use App\Services\DefaultLookups;
 use App\Services\Notifier;
+use App\Services\Recaptcha;
 use App\Support\PublicFormFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,12 +27,16 @@ class PublicQuoteFormController extends Controller
             'name' => $form->name,
             'fields' => $form->fields,
             'submit_btn_name' => $form->submit_btn_name,
+            'recaptcha_site_key' => Recaptcha::forForm($form->recaptcha, $form->company_id),
         ]]);
     }
 
     public function submit(Request $request, string $key, Notifier $notifier): JsonResponse
     {
         $form = $this->form($key);
+        if (Recaptcha::forForm($form->recaptcha, $form->company_id)) {
+            Recaptcha::check($request->input('g-recaptcha-response'), $request->ip(), $form->company_id);
+        }
         $data = $request->validate(PublicFormFields::rules($form->fields));
 
         $submission = collect($form->fields)->reject(fn ($f) => $f['type'] === 'file')->map(fn ($f) => [
