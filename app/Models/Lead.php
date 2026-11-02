@@ -18,10 +18,27 @@ class Lead extends Model
     public const QUALIFICATION = ['industry', 'company_size', 'business_need', 'decision_maker', 'timeline'];
 
     protected $fillable = [
-        'company_id', 'name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state',
+        'company_id', 'name', 'first_name', 'last_name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state',
         'zip', 'country', 'default_language', 'lead_status_id', 'lead_source_id', 'lead_form_id', 'assigned_id', 'assigned_at', 'lead_value', 'qualification', 'is_public',
         'lost', 'junk', 'last_contact_at', 'last_status_change_at', 'customer_id', 'converted_at', 'lead_order', 'created_by',
     ];
+
+    /**
+     * The full name follows the first and last name; a lead saved with only a name (import, web
+     * forms, API) gets it split at the first space.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Lead $lead) {
+            if (($lead->isDirty('first_name') || $lead->isDirty('last_name')) && trim((string) $lead->first_name) !== '') {
+                $lead->name = mb_substr(trim(trim((string) $lead->first_name).' '.trim((string) $lead->last_name)), 0, 300);
+            } elseif ($lead->isDirty('name')) {
+                [$first, $last] = array_pad(explode(' ', trim((string) $lead->name), 2), 2, null);
+                $lead->first_name = mb_substr((string) $first, 0, 191) ?: null;
+                $lead->last_name = $last !== null ? mb_substr(trim($last), 0, 191) : null;
+            }
+        });
+    }
 
     protected function casts(): array
     {

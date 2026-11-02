@@ -70,7 +70,7 @@ class EstimateRequestController extends Controller
         $this->authorize('update', $estimateRequest);
         $data = $request->validate([
             'estimate_request_status_id' => ['sometimes', 'integer', Rule::exists('estimate_request_statuses', 'id')->where('company_id', $request->user()->company_id)],
-            'assigned_id' => ['sometimes', 'nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $request->user()->company_id)],
+            'assigned_id' => ['sometimes', 'nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $request->user()->company_id)],
             'tags' => ['sometimes', 'array'],
             'tags.*' => ['string', 'max:100'],
         ]);
@@ -212,7 +212,7 @@ class EstimateRequestController extends Controller
             'fields.*.options' => ['nullable', 'array', 'max:50'],
             'fields.*.options.*' => ['string', 'max:191'],
             'estimate_request_status_id' => ['nullable', 'integer', Rule::exists('estimate_request_statuses', 'id')->where('company_id', $company)],
-            'responsible_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)],
+            'responsible_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
             'submit_btn_name' => ['nullable', 'string', 'max:100'],
             'success_submit_msg' => ['nullable', 'string', 'max:5000'],
             'notify_request_submitted' => ['boolean'],

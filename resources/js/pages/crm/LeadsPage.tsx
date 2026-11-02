@@ -22,6 +22,8 @@ import SavedFilters, { savedIds, savedText } from '../../components/filters/Save
 
 /** Columns the list can also show (Perfex's hidden columns), chosen from "Columns". */
 const OPTIONAL_COLUMNS: [string, string][] = [
+    ['email', 'Email'],
+    ['lead_value', 'Value'],
     ['city', 'City'],
     ['state', 'State'],
     ['country', 'Country'],
@@ -413,9 +415,9 @@ export default function LeadsPage() {
                                     <th>#</th>
                                     <th>Name</th>
                                     <th>Company</th>
-                                    <th>Email</th>
+                                    {show('email') && <th>Email</th>}
                                     <th>Phone</th>
-                                    <th className="text-right">Value</th>
+                                    {show('lead_value') && <th className="text-right">Value</th>}
                                     <th>Tags</th>
                                     <th>Assigned</th>
                                     <th>Status</th>
@@ -448,9 +450,9 @@ export default function LeadsPage() {
                                             </span>
                                         </td>
                                         <td>{lead.company}</td>
-                                        <td>{lead.email}</td>
+                                        {show('email') && <td>{lead.email}</td>}
                                         <td>{lead.phone}</td>
-                                        <td className="text-right">{lead.lead_value ? money(lead.lead_value) : ''}</td>
+                                        {show('lead_value') && <td className="text-right">{lead.lead_value ? money(lead.lead_value) : ''}</td>}
                                         <td>
                                             <div className="flex flex-wrap gap-1">{lead.tags?.map((t) => <Tag key={t}>{t}</Tag>)}</div>
                                         </td>

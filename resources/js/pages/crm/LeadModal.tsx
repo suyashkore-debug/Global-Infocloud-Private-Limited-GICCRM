@@ -28,7 +28,8 @@ const appOptionsLoad = () => api.get<{ data: Record<string, string> }>('/app-opt
 type Tab = 'profile' | 'proposals' | 'tasks' | 'attachments' | 'reminders' | 'notes' | 'activity' | 'whatsapp' | 'calls';
 
 const blank = {
-    name: '',
+    first_name: '',
+    last_name: '',
     title: '',
     company: '',
     description: '',
@@ -323,8 +324,11 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
 
                                 <FormSection icon={UserRound} title="Contact" hint="The person you are talking to.">
                                     <div className="grid gap-4 sm:grid-cols-3">
-                                        <Field label="Name" required error={errors.name}>
-                                            <IconInput icon={UserRound} value={form.name} onChange={set('name')} placeholder="Full name" autoFocus />
+                                        <Field label="First Name" required error={errors.first_name ?? errors.name}>
+                                            <IconInput icon={UserRound} value={form.first_name} onChange={set('first_name')} placeholder="First name" autoFocus />
+                                        </Field>
+                                        <Field label="Last Name" error={errors.last_name}>
+                                            <IconInput icon={UserRound} value={form.last_name} onChange={set('last_name')} placeholder="Last name" />
                                         </Field>
                                         <Field label="Position">
                                             <IconInput icon={BriefcaseBusiness} value={form.title} onChange={set('title')} placeholder="e.g. Purchase Manager" />
@@ -587,7 +591,7 @@ function ConvertModal({ open, lead, onClose, onDone }: { open: boolean; lead: Le
     useEffect(() => {
         if (open) {
             const [first, ...rest] = lead.name.split(' ');
-            setForm({ name: lead.company || lead.name, contact_first_name: first, contact_last_name: rest.join(' '), email: lead.email ?? '', phone: lead.phone ?? '', title: lead.title ?? '', password: '' });
+            setForm({ name: lead.company || lead.name, contact_first_name: lead.first_name ?? first, contact_last_name: lead.first_name ? (lead.last_name ?? '') : rest.join(' '), email: lead.email ?? '', phone: lead.phone ?? '', title: lead.title ?? '', password: '' });
             setOptions({ send_set_password_email: true, transfer_notes: true, copy_custom_fields: true });
             setErrors({});
             setError(null);

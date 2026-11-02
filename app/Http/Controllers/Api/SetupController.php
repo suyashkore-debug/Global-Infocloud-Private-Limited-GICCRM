@@ -260,7 +260,7 @@ class SetupController extends Controller
         if ($list === 'support-departments' && $request->has('member_ids')) {
             $ids = $request->validate([
                 'member_ids' => ['array'],
-                'member_ids.*' => ['integer', Rule::exists('hrms.users', 'id')->where('company_id', $request->user()->company_id)],
+                'member_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $request->user()->company_id)],
             ])['member_ids'] ?? [];
             $record->syncMembers($ids);
         }

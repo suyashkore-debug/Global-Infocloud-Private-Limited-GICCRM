@@ -8,16 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * An HRMS company (tenant). Read only, managed in HRMS.
+ * A company (tenant): a copy of the HRMS company, kept in step by HrmsSync.
  */
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
     use HasFactory, SoftDeletes;
 
-    protected $connection = 'hrms';
+    protected $table = 'crm_companies';
 
-    protected $table = 'companies';
+    protected $guarded = ['id'];
 
     /**
      * The company's part of its customers-area link (/portal/login?company=…): the HRMS careers

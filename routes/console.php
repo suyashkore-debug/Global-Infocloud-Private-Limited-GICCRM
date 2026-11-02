@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('tasks:send-reminders')->everyMinute()->withoutOverlapping();
 Schedule::command('emails:send-scheduled')->everyMinute()->withoutOverlapping();
+Schedule::command('hrms:sync')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('backup:run --auto')->hourly()->withoutOverlapping();
 Schedule::command('timers:auto-stop')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('tasks:create-recurring')->dailyAt('00:10')->withoutOverlapping();

@@ -46,6 +46,7 @@ import PermissionsPage from '../SettingsPage';
 import BackupSetup from './BackupSetup';
 import CallsSetup from './CallsSetup';
 import RecaptchaSetup from './RecaptchaSetup';
+import StaffMembersSetup from './StaffMembersSetup';
 import CustomFieldsSetup from './CustomFieldsSetup';
 import { EmailLogList, EmailSettingsForm, EmailTemplatesList } from './EmailSetup';
 import ListEditor from './ListEditor';
@@ -55,6 +56,13 @@ import { CalendarSettings, CustomersSettings, LeadsSettings, PdfSettings, Suppor
 
 /** Setup sections grouped as Perfex's Settings menu, each with its icon. */
 const GROUPS = [
+    {
+        title: 'Staff',
+        items: [
+            { id: 'staff', label: 'Staff Members', icon: Users },
+            { id: 'permissions', label: 'Staff Permissions', icon: ShieldCheck },
+        ],
+    },
     {
         title: 'General',
         items: [
@@ -126,7 +134,6 @@ const GROUPS = [
     {
         title: 'Misc',
         items: [
-            { id: 'permissions', label: 'Staff Permissions', icon: ShieldCheck },
             { id: 'backup', label: 'Backup', icon: DatabaseBackup },
         ],
     },
@@ -563,6 +570,7 @@ export default function SetupPage() {
             {tab === 'recaptcha' && <RecaptchaSetup />}
             {tab === 'custom-fields' && <CustomFieldsSetup />}
             {tab === 'permissions' && <PermissionsPage />}
+            {tab === 'staff' && <StaffMembersSetup />}
                 </div>
             </div>
         </div>

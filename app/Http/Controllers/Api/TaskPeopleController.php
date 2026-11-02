@@ -53,7 +53,7 @@ class TaskPeopleController extends Controller
     private function validatedUserId(Request $request): int
     {
         return (int) $request->validate([
-            'user_id' => ['required', 'integer', Rule::exists('hrms.users', 'id')
+            'user_id' => ['required', 'integer', Rule::exists('crm_users', 'id')
                 ->where('company_id', $request->user()->company_id)
                 ->where('is_active', true)
                 ->whereNull('deleted_at')],

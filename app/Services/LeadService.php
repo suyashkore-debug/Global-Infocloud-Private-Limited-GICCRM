@@ -22,7 +22,7 @@ use Illuminate\Validation\ValidationException;
 class LeadService
 {
     private const FIELDS = [
-        'name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip', 'country', 'default_language',
+        'name', 'first_name', 'last_name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip', 'country', 'default_language',
         'lead_status_id', 'lead_source_id', 'assigned_id', 'lead_value', 'is_public', 'last_contact_at',
     ];
 

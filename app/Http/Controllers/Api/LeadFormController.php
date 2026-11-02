@@ -65,7 +65,7 @@ class LeadFormController extends Controller
             'fields.*.options.*' => ['string', 'max:191'],
             'lead_status_id' => ['nullable', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'lead_source_id' => ['nullable', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
-            'responsible_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
+            'responsible_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'lead_name_prefix' => ['nullable', 'string', 'max:100'],
             'language' => ['nullable', 'string', 'max:40'],
             'submit_btn_name' => ['required', 'string', 'max:100'],

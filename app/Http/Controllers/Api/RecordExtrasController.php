@@ -90,7 +90,7 @@ class RecordExtrasController extends Controller
         $data = $request->validate([
             'remind_at' => ['required', 'date', 'after:now'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'user_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $request->user()->company_id)],
+            'user_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $request->user()->company_id)],
             'notify_by_email' => ['boolean'],
         ]);
 

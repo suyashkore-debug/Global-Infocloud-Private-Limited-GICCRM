@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\SavedFilterController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SetupController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\StaffMembersController;
 use App\Http\Controllers\Api\SurveyController;
 use App\Http\Controllers\Api\TagController;
 use App\Http\Controllers\Api\TaskChecklistController;
@@ -174,6 +175,11 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::post('/push/subscribe', [PushController::class, 'subscribe'])->middleware('throttle:30,1');
     Route::post('/push/unsubscribe', [PushController::class, 'unsubscribe']);
     Route::get('/staff', [StaffController::class, 'index']);
+    Route::get('/staff-members', [StaffMembersController::class, 'index']);
+    Route::post('/staff-members', [StaffMembersController::class, 'store']);
+    Route::put('/staff-members/{id}', [StaffMembersController::class, 'update'])->whereNumber('id');
+    Route::delete('/staff-members/{id}', [StaffMembersController::class, 'destroy'])->whereNumber('id');
+    Route::post('/staff-members/sync', [StaffMembersController::class, 'sync']);
 
     // Customers
     Route::get('/customers/options', [CustomerController::class, 'options']);

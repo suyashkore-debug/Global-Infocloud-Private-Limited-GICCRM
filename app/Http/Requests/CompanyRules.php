@@ -25,7 +25,7 @@ trait CompanyRules
      */
     protected function staffMember(): Exists
     {
-        return Rule::exists('hrms.users', 'id')
+        return Rule::exists('crm_users', 'id')
             ->where('company_id', $this->companyId())
             ->where('is_active', true)
             ->whereNull('deleted_at');

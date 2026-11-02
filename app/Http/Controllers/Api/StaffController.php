@@ -9,8 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * The company's active HRMS employees, for member / assignee pickers. A new HRMS employee
- * shows up here immediately.
+ * The company's active staff (HRMS and CRM accounts), for member / assignee pickers.
  */
 class StaffController extends Controller
 {
@@ -20,7 +19,7 @@ class StaffController extends Controller
             User::where('company_id', $request->user()->company_id)
                 ->where('is_active', true)
                 ->orderBy('full_name')
-                ->get(['id', 'full_name', 'first_name', 'last_name', 'email', 'employee_code', 'profile_photo'])
+                ->get(['id', 'source', 'full_name', 'first_name', 'last_name', 'email', 'employee_code', 'profile_photo'])
         );
     }
 }

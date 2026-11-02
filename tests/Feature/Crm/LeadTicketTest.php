@@ -295,3 +295,18 @@ it('sorts the kanban as asked, loads more of one column and counts notes and fil
         ->and(collect($this->getJson('/api/leads?kanban=1&kanban_sort=dateadded&kanban_dir=asc')->json('data'))->first()['notes_count'])->toBe(1);
     $this->getJson("/api/leads/{$first}")->assertJsonPath('data.tasks_count', 0);
 });
+
+it('saves a lead by first and last name and keeps the full name in step', function () {
+    signIn(companyAdmin());
+    App\Services\DefaultLookups::ensureLeadLists();
+    $base = ['lead_status_id' => App\Models\LeadStatus::value('id'), 'lead_source_id' => App\Models\LeadSource::value('id')];
+
+    $id = $this->postJson('/api/leads', [...$base, 'first_name' => 'Ravi', 'last_name' => 'Patil'])->assertCreated()
+        ->assertJsonPath('data.name', 'Ravi Patil')->assertJsonPath('data.last_name', 'Patil')->json('data.id');
+    $this->putJson("/api/leads/{$id}", [...$base, 'first_name' => 'Ravindra', 'last_name' => 'Patil'])->assertOk()->assertJsonPath('data.name', 'Ravindra Patil');
+
+    // Only a full name (import, web forms, API): split at the first space.
+    $this->postJson('/api/leads', [...$base, 'name' => 'Anita Rao Deshmukh'])->assertCreated()
+        ->assertJsonPath('data.first_name', 'Anita')->assertJsonPath('data.last_name', 'Rao Deshmukh');
+    $this->postJson('/api/leads', $base)->assertJsonValidationErrors('first_name');
+});

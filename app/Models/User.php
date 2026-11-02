@@ -9,20 +9,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * An HRMS (GICSupportCRMLaravel) user. Accounts are created and managed in HRMS only;
- * this app reads them through the read-only "hrms" connection.
+ * A staff account of the CRM: a copy of an HRMS user (source "hrms", same id, kept in step by
+ * HrmsSync) or an account created in the CRM only (source "crm", ids from 1000001).
  */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, SoftDeletes;
 
-    protected $connection = 'hrms';
+    public const SOURCE_HRMS = 'hrms';
 
-    protected $table = 'users';
+    public const SOURCE_CRM = 'crm';
+
+    protected $table = 'crm_users';
+
+    protected $guarded = ['id'];
 
     /**
      * @var list<string>
@@ -46,6 +51,8 @@ class User extends Authenticatable
             'is_company_admin' => 'boolean',
             'is_super_admin' => 'boolean',
             'last_login_at' => 'datetime',
+            'locked_until' => 'datetime',
+            'hrms_synced_at' => 'datetime',
         ];
     }
 
@@ -62,7 +69,7 @@ class User extends Authenticatable
      */
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->belongsToMany(Role::class, 'crm_user_roles');
     }
 
     /**
@@ -91,8 +98,18 @@ class User extends Authenticatable
         if (str_starts_with($path, 'http')) {
             return $path;
         }
+        // Photos of CRM accounts are kept in this app's public storage.
+        if ($this->isCrmAccount()) {
+            return Storage::disk('public')->url($path);
+        }
 
         return rtrim(config('services.hrms.storage_url'), '/').'/'.ltrim(preg_replace('#^/?(storage/|public/)#', '', $path), '/');
+    }
+
+    /** Created in the CRM (not an HRMS account): its password and profile are managed here. */
+    public function isCrmAccount(): bool
+    {
+        return $this->source === self::SOURCE_CRM;
     }
 
     public function isAdmin(): bool

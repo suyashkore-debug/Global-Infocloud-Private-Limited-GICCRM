@@ -122,7 +122,7 @@ export default function LoginPage() {
                 <div className="relative mt-10 grid items-center gap-12 2xl:grid-cols-[minmax(0,1fr)_320px] 2xl:gap-20">
                     <div>
                         <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[12px] font-semibold text-blue-100 ring-1 ring-white/15">
-                            <Sparkles className="h-3.5 w-3.5 text-[#ffb48a]" /> One login with your HRMS
+                            <Sparkles className="h-3.5 w-3.5 text-[#ffb48a]" /> Log in with your CRM or HRMS account
                         </p>
                         <h1 className="mt-5 text-[38px] font-extrabold leading-[1.1] tracking-tight xl:text-[44px]">
                             Run every project, sale and ticket
@@ -296,7 +296,7 @@ export default function LoginPage() {
                             <div>
                                 <p className="text-[13px] font-semibold text-[#fa6010]">{greeting} 👋</p>
                                 <h2 className="mt-0.5 text-[28px] font-extrabold tracking-tight text-[#0b2c56]">Sign in to your CRM</h2>
-                                <p className="mt-1.5 text-sm text-gray-500">Use your GIC Folks (HRMS) email or mobile number.</p>
+                                <p className="mt-1.5 text-sm text-gray-500">Use your CRM username or email, or your GIC Folks (HRMS) email or mobile number.</p>
                             </div>
 
                             <div>
@@ -361,7 +361,7 @@ export default function LoginPage() {
                         </form>
                     )}
                         <p className="mt-8 flex items-center justify-center gap-1.5 text-xs text-gray-400">
-                            <ShieldCheck className="h-3.5 w-3.5" /> Secured with your HRMS account
+                            <ShieldCheck className="h-3.5 w-3.5" /> Secured login for CRM and HRMS accounts
                         </p>
                     </div>
                 </div>

@@ -9,12 +9,15 @@ use App\Models\StaffProfile;
 use App\Models\SupportDepartment;
 use App\Models\User;
 use App\Services\HrmsAuthClient;
+use App\Services\HrmsSync;
 use App\Services\Timesheets;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Perfex "My Profile" / "Edit Profile". The person (name, phone, photo, password) belongs to
@@ -76,11 +79,21 @@ class ProfileController extends Controller
         ]);
         $user = $request->user();
 
-        $response = $this->send(fn () => $this->hrms->updateProfile((string) $request->bearerToken(), [
-            'firstname' => $data['first_name'], 'lastname' => $data['last_name'], 'phonenumber' => $data['mobile'],
-        ]));
-        if (! $response->successful()) {
-            return $this->relayError($response);
+        if ($user->isCrmAccount()) {
+            $user->forceFill([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'full_name' => trim($data['first_name'].' '.$data['last_name']),
+                'mobile' => $data['mobile'],
+            ])->save();
+        } else {
+            $response = $this->send(fn () => $this->hrms->updateProfile($this->hrmsToken($request), [
+                'firstname' => $data['first_name'], 'lastname' => $data['last_name'], 'phonenumber' => $data['mobile'],
+            ]));
+            if (! $response->successful()) {
+                return $this->relayError($response);
+            }
+            $this->refreshFromHrms($user);
         }
 
         StaffProfile::updateOrCreate(['user_id' => $user->id], [
@@ -100,7 +113,17 @@ class ProfileController extends Controller
             'new_password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $response = $this->send(fn () => $this->hrms->changePassword((string) $request->bearerToken(), [
+        $user = $request->user();
+        if ($user->isCrmAccount()) {
+            if (! Hash::check($data['old_password'], (string) $user->password)) {
+                return response()->json(['message' => 'The current password is wrong.', 'errors' => ['old_password' => ['The current password is wrong.']]], 422);
+            }
+            $user->forceFill(['password' => Hash::make($data['new_password'])])->save();
+
+            return response()->json(['message' => 'Password changed.']);
+        }
+
+        $response = $this->send(fn () => $this->hrms->changePassword($this->hrmsToken($request), [
             'old_password' => $data['old_password'],
             'new_password' => $data['new_password'],
             'new_password_confirmation' => $data['new_password'],
@@ -117,12 +140,42 @@ class ProfileController extends Controller
         $file = $request->file('photo');
         $format = $file->extension() === 'jpeg' ? 'jpg' : $file->extension();
 
-        $response = $this->send(fn () => $this->hrms->changePhoto((string) $request->bearerToken(), "data:image/{$format};base64,".base64_encode($file->get())));
-        if (! $response->successful()) {
-            return $this->relayError($response);
+        $user = $request->user();
+        if ($user->isCrmAccount()) {
+            $old = $user->profile_photo;
+            $user->forceFill(['profile_photo' => $file->store('crm-staff', 'public')])->save();
+            $old && Storage::disk('public')->delete($old);
+        } else {
+            $response = $this->send(fn () => $this->hrms->changePhoto($this->hrmsToken($request), "data:image/{$format};base64,".base64_encode($file->get())));
+            if (! $response->successful()) {
+                return $this->relayError($response);
+            }
+            $this->refreshFromHrms($user);
         }
 
         return response()->json(['message' => 'Profile photo updated.', 'data' => new UserResource($request->user()->fresh())]);
+    }
+
+    /**
+     * The HRMS token kept with this login; without one (signed in while HRMS was down) HRMS
+     * cannot be asked, so the change waits for the next HRMS login.
+     */
+    private function hrmsToken(Request $request): string
+    {
+        $token = $request->user()->currentAccessToken()?->hrms_token ?? null;
+        abort_unless($token, response()->json(['message' => 'HRMS was not reachable when you signed in. Please sign out and sign in again to change your HRMS profile.'], 503));
+
+        return $token;
+    }
+
+    /** Pick up what HRMS now has (best effort). */
+    private function refreshFromHrms(User $user): void
+    {
+        try {
+            HrmsSync::user($user->id);
+        } catch (\Throwable) {
+            // The next sync catches up.
+        }
     }
 
     /**

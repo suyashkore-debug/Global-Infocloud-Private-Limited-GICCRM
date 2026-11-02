@@ -139,7 +139,7 @@ class PurchaseOrderController extends Controller
             'purchase_request_id' => ['nullable', 'integer', Rule::exists('purchase_requests', 'id')->where('company_id', $company)],
             'project_id' => ['nullable', 'integer', Rule::exists('projects', 'id')->where('company_id', $company)],
             'currency_id' => ['nullable', 'integer', Rule::exists('currencies', 'id')->where('company_id', $company)],
-            'buyer_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)],
+            'buyer_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
             'order_date' => ['required', 'date'],
             'delivery_date' => ['nullable', 'date', 'after_or_equal:order_date'],
             'vendor_note' => ['nullable', 'string', 'max:10000'],

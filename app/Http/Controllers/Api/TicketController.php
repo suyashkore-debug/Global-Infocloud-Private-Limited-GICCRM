@@ -150,7 +150,7 @@ class TicketController extends Controller
             'ticket_status_id' => ['sometimes', 'integer', $in('ticket_statuses')],
             'ticket_service_id' => ['nullable', 'integer', $in('ticket_services')],
             'project_id' => ['nullable', 'integer', $in('projects')],
-            'assigned_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
+            'assigned_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'tags' => ['array'],
             'tags.*' => ['string', 'max:100'],
         ]);

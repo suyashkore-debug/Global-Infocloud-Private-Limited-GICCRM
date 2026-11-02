@@ -350,7 +350,7 @@ class ChatController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:191'],
             'member_ids' => ['required', 'array', 'min:1'],
-            'member_ids.*' => ['integer', Rule::exists('hrms.users', 'id')->where('company_id', $me->company_id)->where('is_active', true)],
+            'member_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $me->company_id)->where('is_active', true)],
         ]);
 
         $group = DB::transaction(function () use ($me, $data) {
@@ -379,7 +379,7 @@ class ChatController extends Controller
         abort_unless($chatGroup->canManage($me), 403);
         $ids = $request->validate([
             'user_ids' => ['required', 'array', 'min:1'],
-            'user_ids.*' => ['integer', Rule::exists('hrms.users', 'id')->where('company_id', $me->company_id)->where('is_active', true)],
+            'user_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $me->company_id)->where('is_active', true)],
         ])['user_ids'];
         foreach (array_unique($ids) as $userId) {
             $chatGroup->members()->firstOrCreate(['user_id' => $userId], ['last_read_message_id' => $chatGroup->messages()->max('id')]);

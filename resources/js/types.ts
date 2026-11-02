@@ -534,6 +534,8 @@ export interface LeadStatus {
 export interface Lead {
     id: number;
     name: string;
+    first_name: string | null;
+    last_name: string | null;
     title: string | null;
     company: string | null;
     description: string | null;

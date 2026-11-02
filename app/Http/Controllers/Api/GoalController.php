@@ -91,7 +91,7 @@ class GoalController extends Controller
             'achievement' => ['required', 'numeric', 'gt:0'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'staff_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)],
+            'staff_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
             'notify_when_fail' => ['boolean'],
             'notify_when_achieve' => ['boolean'],
         ]);

@@ -18,7 +18,7 @@ it('shows my profile with photo, logged time and projects', function () {
     TaskTimer::create(['task_id' => $task->id, 'user_id' => $admin->id, 'start_time' => now()->subHour(), 'end_time' => now()]);
 
     $this->getJson('/api/profile')->assertOk()
-        ->assertJsonPath('data.photo_url', 'http://127.0.0.1:8002/storage/profile_photos/me.jpg')
+        ->assertJsonPath('data.photo_url', rtrim(config('services.hrms.storage_url'), '/').'/profile_photos/me.jpg')
         ->assertJsonPath('data.logged_time.total', 3600)
         ->assertJsonPath('data.projects.0.id', $project->id);
 });
@@ -31,10 +31,10 @@ it('hides another member\'s logged time from non-admins', function () {
 });
 
 it('saves the name in HRMS with the user\'s token and keeps social links here', function () {
-    $admin = signIn(companyAdmin());
+    $admin = companyAdmin();
     Http::fake(['hrms.test/*' => Http::response(['status' => true, 'message' => 'Profile updated successfully.'])]);
 
-    $this->withToken('hrms-token')->putJson('/api/profile', [
+    $this->withToken(crmToken($admin, 'hrms-token'))->putJson('/api/profile', [
         'first_name' => 'Suyash', 'last_name' => 'Kore', 'mobile' => '9999999999', 'linkedin' => 'https://linkedin.com/in/x',
     ])->assertOk();
 
@@ -44,7 +44,7 @@ it('saves the name in HRMS with the user\'s token and keeps social links here', 
 });
 
 it('relays HRMS errors when changing the password', function () {
-    signIn(companyAdmin());
+    $this->withToken(crmToken(companyAdmin(), 'hrms-token'));
     Http::fake(['hrms.test/*' => Http::response(['status' => false, 'message' => 'Old password is incorrect.'], 400)]);
 
     $this->postJson('/api/profile/password', ['old_password' => 'x', 'new_password' => 'newpass123', 'new_password_confirmation' => 'newpass123'])
@@ -54,7 +54,7 @@ it('relays HRMS errors when changing the password', function () {
 });
 
 it('sends a new photo to HRMS as base64', function () {
-    signIn(companyAdmin());
+    $this->withToken(crmToken(companyAdmin(), 'hrms-token'));
     Http::fake(['hrms.test/*' => Http::response(['status' => true, 'data' => ['photo_path' => 'profile_photos/a.png']])]);
 
     $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('me.png', 50, 50)], ['Accept' => 'application/json'])->assertOk();
@@ -76,4 +76,22 @@ it('lists my timesheets for a range and everyone\'s with the reports permission'
     signIn($admin);
     $this->getJson('/api/my-timesheets?range=this_month&view_all=1')->assertJsonCount(2, 'data')->assertJsonPath('meta.total_seconds', 10800);
     $this->getJson('/api/my-timesheets?range=this_month&view_all=1&group_by_task=1')->assertJsonCount(2, 'data');
+});
+
+it('keeps the profile, password and photo of a CRM account in the CRM', function () {
+    Illuminate\Support\Facades\Storage::fake('public');
+    Http::fake();
+    $user = App\Models\User::factory()->companyAdmin()->create(['source' => 'crm', 'password' => Illuminate\Support\Facades\Hash::make('old-pass-1')]);
+    $this->withToken(crmToken($user));
+
+    $this->putJson('/api/profile', ['first_name' => 'Ravi', 'last_name' => 'Patil', 'mobile' => '9876543210'])->assertOk()->assertJsonPath('data.full_name', 'Ravi Patil');
+    $this->postJson('/api/profile/password', ['old_password' => 'wrong', 'new_password' => 'new-pass-1', 'new_password_confirmation' => 'new-pass-1'])->assertJsonValidationErrors('old_password');
+    $this->postJson('/api/profile/password', ['old_password' => 'old-pass-1', 'new_password' => 'new-pass-1', 'new_password_confirmation' => 'new-pass-1'])->assertOk();
+    $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('me.png', 50, 50)], ['Accept' => 'application/json'])->assertOk();
+
+    $user->refresh();
+    expect(Illuminate\Support\Facades\Hash::check('new-pass-1', $user->password))->toBeTrue()
+        ->and($user->profile_photo)->toStartWith('crm-staff/');
+    Illuminate\Support\Facades\Storage::disk('public')->assertExists($user->profile_photo);
+    Http::assertNothingSent();
 });

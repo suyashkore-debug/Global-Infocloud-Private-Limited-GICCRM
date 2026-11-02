@@ -53,7 +53,7 @@ class LeadImportController extends Controller
             'file' => ['required', 'file', 'max:10240', 'mimes:csv,txt'],
             'status_id' => ['required', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'source_id' => ['required', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
-            'assigned_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
+            'assigned_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'simulate' => ['boolean'],
         ], [
             'file.mimes' => 'Choose a .csv file.',

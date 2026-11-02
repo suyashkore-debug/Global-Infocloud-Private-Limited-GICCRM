@@ -68,3 +68,38 @@ function chatCustomerLogin($test): array
 {
     return ['Authorization' => 'Bearer '.$test->postJson('/api/portal/login', ['email' => 'asha@acme.test', 'password' => 'secret123'])->assertOk()->json('data.token')];
 }
+
+/**
+ * A CRM login token for the user; for an HRMS login it also keeps the HRMS token.
+ */
+function crmToken(User $user, ?string $hrmsToken = null): string
+{
+    $token = $user->createToken('projects');
+    if ($hrmsToken) {
+        $token->accessToken->forceFill(['hrms_token' => $hrmsToken])->save();
+    }
+    app('auth')->forgetGuards();
+
+    return $token->plainTextToken;
+}
+
+/**
+ * A user and company in the HRMS stand-in tables (not yet in the CRM), and an HRMS token for them.
+ *
+ * @return array{id: int, token: string}
+ */
+function hrmsAccount(array $user = []): array
+{
+    $hrms = Illuminate\Support\Facades\DB::connection('hrms');
+    $companyId = $hrms->table('companies')->insertGetId(['company_name' => 'HRMS Co', 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+    $id = $hrms->table('users')->insertGetId([
+        'company_id' => $companyId, 'first_name' => 'Priya', 'last_name' => 'Shah', 'full_name' => 'Priya Shah', 'email' => 'priya@example.com',
+        'password' => Illuminate\Support\Facades\Hash::make('secret123'), 'is_active' => true, 'created_at' => now(), 'updated_at' => now(), ...$user,
+    ]);
+    $plain = Illuminate\Support\Str::random(40);
+    $tokenId = $hrms->table('personal_access_tokens')->insertGetId([
+        'tokenable_type' => 'App\Models\User', 'tokenable_id' => $id, 'name' => 'projects', 'token' => hash('sha256', $plain), 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    return ['id' => $id, 'token' => "{$tokenId}|{$plain}"];
+}

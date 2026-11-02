@@ -163,7 +163,7 @@ class ProjectController extends Controller
 
         $data = $request->validate([
             'members' => ['present', 'array'],
-            'members.*' => ['integer', Rule::exists('hrms.users', 'id')->where('company_id', $request->user()->company_id)->where('is_active', true)],
+            'members.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $request->user()->company_id)->where('is_active', true)],
         ]);
 
         $this->projects->syncMembers($project, $data['members']);

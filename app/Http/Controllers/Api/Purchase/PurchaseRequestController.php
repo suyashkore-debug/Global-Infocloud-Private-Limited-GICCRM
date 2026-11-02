@@ -123,7 +123,7 @@ class PurchaseRequestController extends Controller
             'name' => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:10000'],
             'department' => ['nullable', 'string', 'max:191'],
-            'requester_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)],
+            'requester_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
             'request_date' => ['nullable', 'date'],
             'project_id' => ['nullable', 'integer', Rule::exists('projects', 'id')->where('company_id', $company)],
             'currency_id' => ['nullable', 'integer', Rule::exists('currencies', 'id')->where('company_id', $company)],

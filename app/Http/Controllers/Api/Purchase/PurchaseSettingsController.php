@@ -29,7 +29,7 @@ class PurchaseSettingsController extends Controller
             'name' => ['required', 'string', 'max:191'],
             'related' => ['required', Rule::in(['pur_request', 'pur_order']), Rule::unique('purchase_approval_settings', 'related')->where('company_id', $company)->ignore($setting?->id)],
             'approver_ids' => ['required', 'array', 'min:1', 'max:20'],
-            'approver_ids.*' => ['integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)],
+            'approver_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
         ]);
         $setting ? $setting->update($data) : $setting = PurchaseApprovalSetting::create($data);
 

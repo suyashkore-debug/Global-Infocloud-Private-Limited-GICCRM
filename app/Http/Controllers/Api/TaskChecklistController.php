@@ -41,7 +41,7 @@ class TaskChecklistController extends Controller
         $data = $request->validate([
             'description' => ['sometimes', 'string', 'max:5000'],
             'finished' => ['sometimes', 'boolean'],
-            'assigned_to' => ['sometimes', 'nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $request->user()->company_id)],
+            'assigned_to' => ['sometimes', 'nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $request->user()->company_id)],
         ]);
 
         if (array_key_exists('finished', $data)) {

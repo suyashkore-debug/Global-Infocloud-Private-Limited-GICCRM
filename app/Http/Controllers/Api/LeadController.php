@@ -150,7 +150,7 @@ class LeadController extends Controller
             'mass_delete' => ['boolean'],
             'lead_status_id' => ['nullable', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'lead_source_id' => ['nullable', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
-            'assigned_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
+            'assigned_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'last_contact_at' => ['nullable', 'date'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:100'],
@@ -296,7 +296,10 @@ class LeadController extends Controller
             : [];
 
         return $request->validate([
-            'name' => ['required', 'string', 'max:300'],
+            // First and last name (the form), or the full name (API, older clients).
+            'first_name' => ['required_without:name', 'nullable', 'string', 'max:191'],
+            'last_name' => ['nullable', 'string', 'max:191'],
+            'name' => ['required_without:first_name', 'nullable', 'string', 'max:300'],
             'title' => ['nullable', 'string', 'max:100'],
             'company' => ['nullable', 'string', 'max:300', ...$unique('company')],
             'description' => ['nullable', 'string', 'max:65000'],
@@ -311,7 +314,7 @@ class LeadController extends Controller
             'default_language' => ['nullable', 'string', 'max:40'],
             'lead_status_id' => ['required', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'lead_source_id' => ['required', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
-            'assigned_id' => ['nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $company)->where('is_active', true)],
+            'assigned_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'lead_value' => ['nullable', 'numeric', 'min:0'],
             'is_public' => ['boolean'],
             'last_contact_at' => ['nullable', 'date'],

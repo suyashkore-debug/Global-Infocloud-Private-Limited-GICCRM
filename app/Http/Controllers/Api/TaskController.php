@@ -284,7 +284,7 @@ class TaskController extends Controller
             'action' => ['required', Rule::in(['delete', 'status', 'priority', 'assign', 'milestone', 'billable'])],
             'status' => ['required_if:action,status', 'nullable', Rule::enum(TaskStatus::class)],
             'priority' => ['required_if:action,priority', 'nullable', Rule::enum(TaskPriority::class)],
-            'user_id' => ['required_if:action,assign', 'nullable', 'integer', Rule::exists('hrms.users', 'id')->where('company_id', $request->user()->company_id)],
+            'user_id' => ['required_if:action,assign', 'nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $request->user()->company_id)],
             'milestone_id' => ['nullable', 'integer'],
             'billable' => ['boolean'],
         ]);
