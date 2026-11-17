@@ -26,6 +26,7 @@ class Options
         'company_country' => '',
         'company_phone' => '',
         'company_vat' => '',
+        'company_pan' => '',
         'company_email' => '',
         // Numbering.
         'number_padding_prefixes' => '6',

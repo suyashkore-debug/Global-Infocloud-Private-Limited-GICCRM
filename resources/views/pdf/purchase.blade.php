@@ -23,7 +23,8 @@
                 {{ collect([$options['company_city'], $options['company_state']])->filter()->implode(', ') }}
                 {{ collect([$options['company_country'], $options['company_zip']])->filter()->implode(' ') }}<br>
                 @if ($options['company_phone']){{ $options['company_phone'] }}<br>@endif
-                @if ($options['company_vat'])GSTIN: {{ $options['company_vat'] }}@endif
+                @if ($options['company_vat'])GSTIN: {{ $options['company_vat'] }}<br>@endif
+                @if ($options['company_pan'] ?? '')PAN: {{ $options['company_pan'] }}@endif
             </div>
         </td>
         <td width="2%"></td>

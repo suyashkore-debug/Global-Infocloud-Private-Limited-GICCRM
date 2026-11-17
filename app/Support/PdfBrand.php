@@ -6,6 +6,7 @@ use App\Models\Company;
 use Barryvdh\DomPDF\PDF;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 /**
@@ -26,7 +27,14 @@ class PdfBrand
      */
     public static function logo(int $companyId): ?string
     {
-        $url = Company::find($companyId)?->logoUrl();
+        $company = Company::find($companyId);
+        // A logo uploaded in the CRM is read from disk (no web request needed).
+        if ($company?->crm_logo && Storage::disk('public')->exists($company->crm_logo)) {
+            $type = (string) Storage::disk('public')->mimeType($company->crm_logo);
+
+            return in_array($type, self::IMAGE_TYPES, true) ? 'data:'.$type.';base64,'.base64_encode(Storage::disk('public')->get($company->crm_logo)) : null;
+        }
+        $url = $company?->logoUrl();
         if (! $url) {
             return null;
         }

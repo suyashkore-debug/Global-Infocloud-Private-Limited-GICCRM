@@ -65,7 +65,8 @@
         @if ($options['company_city'] || $options['company_state']){{ collect([$options['company_city'], $options['company_state']])->filter()->implode(', ') }}<br>@endif
         @if ($options['company_country'] || $options['company_zip']){{ collect([$options['company_country'], $options['company_zip']])->filter()->implode(' ') }}<br>@endif
         @if ($options['company_phone']){{ $options['company_phone'] }}<br>@endif
-        @if ($options['company_vat'])GSTIN: {{ $options['company_vat'] }}@endif
+        @if ($options['company_vat'])GSTIN: {{ $options['company_vat'] }}<br>@endif
+        @if ($options['company_pan'] ?? '')PAN: {{ $options['company_pan'] }}@endif
     </div>
 @php $companyBlock = ob_get_clean(); ob_start(); @endphp
     <div class="label">{{ $billToLabel ?? 'Bill To' }}</div>

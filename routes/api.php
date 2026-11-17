@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\BulkPdfController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\CompanyLogoController;
+use App\Http\Controllers\Api\CompanySignupController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\CreditNoteController;
@@ -100,6 +102,9 @@ Route::middleware('throttle:600,1')->group(function () {
 });
 
 // Forgot password (HRMS's reset, relayed): a few tries per minute.
+// New company sign-up (/newcompany): a CRM-only company and its first admin.
+Route::post('/company-signup', [CompanySignupController::class, 'store'])->middleware('throttle:5,60');
+
 Route::post('/forgot-password/send-otp', [PasswordResetController::class, 'sendOtp'])->middleware('throttle:3,1');
 Route::post('/forgot-password/verify-otp', [PasswordResetController::class, 'verifyOtp'])->middleware('throttle:10,1');
 Route::post('/forgot-password/reset', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1');
@@ -442,6 +447,8 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     // Setup lists (currencies, taxes, payment modes, item / customer groups) and options
     Route::get('/setup/options', [SetupController::class, 'options']);
     Route::get('/app-options', [SetupController::class, 'appOptions']);
+    Route::post('/setup/company-logo', [CompanyLogoController::class, 'store']);
+    Route::delete('/setup/company-logo', [CompanyLogoController::class, 'destroy']);
     Route::apiResource('tags', TagController::class)->only(['index', 'update', 'destroy']);
     Route::put('/setup/options', [SetupController::class, 'saveOptions']);
     Route::get('/setup/backups', [BackupController::class, 'index']);

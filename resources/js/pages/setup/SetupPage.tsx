@@ -45,6 +45,7 @@ import type { Currency, PaymentMode, Tax } from '../../types';
 import PermissionsPage from '../SettingsPage';
 import BackupSetup from './BackupSetup';
 import CallsSetup from './CallsSetup';
+import CompanyLogoSetup from './CompanyLogoSetup';
 import RecaptchaSetup from './RecaptchaSetup';
 import StaffMembersSetup from './StaffMembersSetup';
 import CustomFieldsSetup from './CustomFieldsSetup';
@@ -271,6 +272,7 @@ export default function SetupPage() {
                         {current.label}
                     </h3>
 
+            {tab === 'company' && <CompanyLogoSetup />}
             {tab === 'company' && (
                 <OptionsForm
                     sections={[
@@ -278,7 +280,8 @@ export default function SetupPage() {
                             title: 'Company Information (printed on PDFs)',
                             fields: [
                                 { name: 'company_name', label: 'Company Name' },
-                                { name: 'company_vat', label: 'GST / VAT Number' },
+                                { name: 'company_vat', label: 'GSTIN (GST Number)' },
+                                { name: 'company_pan', label: 'PAN' },
                                 { name: 'company_address', label: 'Address', type: 'textarea' },
                                 { name: 'company_city', label: 'City' },
                                 { name: 'company_state', label: 'State' },

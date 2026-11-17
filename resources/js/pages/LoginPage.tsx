@@ -358,6 +358,12 @@ export default function LoginPage() {
                                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Sign in
                             </button>
 
+                            <p className="text-center text-sm text-gray-500">
+                                New company?{' '}
+                                <a href="/newcompany" className="font-semibold text-brand hover:underline">
+                                    Create a company account
+                                </a>
+                            </p>
                         </form>
                     )}
                         <p className="mt-8 flex items-center justify-center gap-1.5 text-xs text-gray-400">

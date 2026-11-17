@@ -6,6 +6,7 @@ use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * A company (tenant): a copy of the HRMS company, kept in step by HrmsSync.
@@ -44,10 +45,14 @@ class Company extends Model
     }
 
     /**
-     * The company logo uploaded in HRMS (companies.logo), served from HRMS storage.
+     * The company logo: the one uploaded in the CRM, else the HRMS one (companies.logo, served
+     * from HRMS storage).
      */
     public function logoUrl(): ?string
     {
+        if ($this->crm_logo) {
+            return Storage::disk('public')->url($this->crm_logo);
+        }
         $path = $this->getAttributes()['logo'] ?? null;
         if (! $path) {
             return null;

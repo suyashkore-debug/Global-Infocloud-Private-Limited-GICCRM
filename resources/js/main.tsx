@@ -62,6 +62,7 @@ import AnnouncementsPage from './pages/utilities/AnnouncementsPage';
 import BulkPdfPage from './pages/utilities/BulkPdfPage';
 import CsvExportPage from './pages/utilities/CsvExportPage';
 import CalendarPage from './pages/utilities/CalendarPage';
+import CompanySignupPage from './pages/CompanySignupPage';
 import GoalsPage from './pages/utilities/GoalsPage';
 import MediaPage from './pages/utilities/MediaPage';
 import CustomerPage from './pages/customers/CustomerPage';
@@ -96,6 +97,8 @@ createRoot(document.getElementById('app')!).render(
                 <AuthProvider>
                     <Routes>
                         <Route path="/login" element={<LoginPage />} />
+                        <Route path="/newcompany" element={<CompanySignupPage />} />
+                        <Route path="/newcompnya" element={<Navigate to="/newcompany" replace />} />
                         <Route path="/forms/quote/:key" element={<PublicQuoteFormPage />} />
                         <Route path="/forms/wtl/:key" element={<PublicLeadFormPage />} />
                         <Route path="/survey/:id/:hash" element={<PublicSurveyPage />} />
