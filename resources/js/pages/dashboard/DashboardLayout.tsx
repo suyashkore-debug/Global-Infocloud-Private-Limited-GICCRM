@@ -14,12 +14,40 @@ export interface DashWidget {
 
 type Layout = { order: string[]; hidden: string[] };
 
-const SPANS: Record<Span, string> = {
-    full: 'lg:col-span-6',
-    two: 'lg:col-span-4',
-    half: 'lg:col-span-3',
-    third: 'lg:col-span-2',
+/** How many columns a widget wants: on the 6-column desktop grid and the 2-column tablet grid. */
+const WIDTH: Record<Span, { lg: number; md: number }> = {
+    full: { lg: 6, md: 2 },
+    two: { lg: 4, md: 2 },
+    half: { lg: 3, md: 1 },
+    third: { lg: 2, md: 1 },
 };
+// Written out in full so the stylesheet has them.
+const LG = ['', 'lg:col-span-1', 'lg:col-span-2', 'lg:col-span-3', 'lg:col-span-4', 'lg:col-span-5', 'lg:col-span-6'];
+const MD = ['', 'md:col-span-1', 'md:col-span-2'];
+
+/**
+ * Each widget's width in a grid of `cols` columns, rows filled to the end: when the next widget
+ * does not fit in what is left of a row, the row's last widget takes the rest (so no row ends in a
+ * gap, whichever widgets a person may see, hides or moves).
+ */
+function fillRows(wants: number[], cols: number): number[] {
+    const out = [...wants];
+    let used = 0;
+    out.forEach((w, i) => {
+        if (used > 0 && used + w > cols) {
+            out[i - 1] += cols - used;
+            used = 0;
+        }
+        used += w;
+        if (used >= cols) {
+            used = 0;
+        }
+    });
+    if (used > 0 && out.length) {
+        out[out.length - 1] += cols - used;
+    }
+    return out;
+}
 
 /** The user's own widget order and hidden widgets (Perfex lets each staff member arrange the dashboard), kept in this browser. */
 export function useDashboardLayout(userId: number | undefined) {
@@ -71,11 +99,20 @@ function arrange(widgets: DashWidget[], order: string[]): DashWidget[] {
 
 export function WidgetGrid({ widgets, layout }: { widgets: DashWidget[]; layout: Layout }) {
     const shown = arrange(widgets, layout.order).filter((w) => w.node && !layout.hidden.includes(w.id));
+    const lg = fillRows(
+        shown.map((w) => WIDTH[w.span].lg),
+        6,
+    );
+    const md = fillRows(
+        shown.map((w) => WIDTH[w.span].md),
+        2,
+    );
 
+    // Phones: one column; tablets: two; desktops: six. The widgets of a row are as tall as its tallest.
     return (
-        <div className="grid grid-flow-row-dense grid-cols-1 gap-5 lg:grid-cols-6">
-            {shown.map((w) => (
-                <div key={w.id} className={`min-w-0 ${SPANS[w.span]}`}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6 lg:gap-5">
+            {shown.map((w, i) => (
+                <div key={w.id} className={`flex min-w-0 flex-col [&>*]:flex-1 [&>.rounded-2xl]:flex [&>.rounded-2xl]:flex-col ${MD[md[i]]} ${LG[lg[i]]}`}>
                     {w.node}
                 </div>
             ))}

@@ -18,6 +18,7 @@ import LeadsPage from './pages/crm/LeadsPage';
 import LeadImportPage from './pages/crm/LeadImportPage';
 import LeadFormsPage from './pages/crm/LeadFormsPage';
 import PublicLeadFormPage from './pages/crm/PublicLeadFormPage';
+import LeadsDashboardPage from './pages/crm/LeadsDashboardPage';
 import TicketFormPage from './pages/crm/TicketFormPage';
 import TicketsPage from './pages/crm/TicketsPage';
 import TicketViewPage from './pages/crm/TicketViewPage';
@@ -162,6 +163,7 @@ createRoot(document.getElementById('app')!).render(
                                 <Route path="contracts/:id/edit" element={<ContractFormPage />} />
                                 <Route path="leads" element={<LeadsPage />} />
                                 <Route path="leads/import" element={<LeadImportPage />} />
+                                <Route path="leads/dashboard" element={<LeadsDashboardPage />} />
                                 <Route path="leads/forms" element={<LeadFormsPage />} />
                                 <Route path="knowledge-base" element={<KnowledgeBasePage />} />
                                 <Route path="utilities/media" element={<MediaPage />} />

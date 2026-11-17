@@ -9,12 +9,15 @@ use App\Models\CalendarEvent;
 use App\Models\Contract;
 use App\Models\Estimate;
 use App\Models\Invoice;
+use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Reminder;
 use App\Models\Task;
 use App\Services\Options;
+use App\Support\CompanyTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
  * Utilities → Calendar: own and public events, plus (like Perfex) due tasks, invoices, estimates,
@@ -43,10 +46,28 @@ class CalendarController extends Controller
         $show = fn (string $option) => Options::get($option) === '1';
 
         if ($show('show_tasks_on_calendar')) {
-            Task::visibleTo($user)->where('status', '!=', TaskStatus::Complete)->whereBetween('due_date', [$from, $to])
+            // On its due date; a task without one on its start date.
+            Task::visibleTo($user)->where('status', '!=', TaskStatus::Complete)
+                ->where(fn ($q) => $q->whereBetween('due_date', [$from, $to])->orWhere(fn ($s) => $s->whereNull('due_date')->whereBetween('start_date', [$from, $to])))
                 ->when($show('calendar_only_assigned_tasks'), fn ($q) => $q->whereHas('assignees', fn ($a) => $a->where('user_id', $user->id)))
-                ->get(['id', 'name', 'due_date', 'project_id'])
-                ->each(fn ($t) => $items->push(['id' => 'task-'.$t->id, 'type' => 'task', 'title' => 'Task: '.$t->name, 'start' => $t->due_date->toDateString(), 'color' => '#3b82f6', 'link' => "?task={$t->id}"]));
+                ->get(['id', 'name', 'due_date', 'start_date', 'project_id'])
+                ->each(fn ($t) => $items->push(['id' => 'task-'.$t->id, 'type' => 'task', 'title' => 'Task: '.$t->name, 'start' => ($t->due_date ?? $t->start_date)->toDateString(), 'color' => '#3b82f6', 'link' => "?task={$t->id}"]));
+        }
+        // Lead follow-ups on their day and time (the company's), overdue ones in red.
+        if ($show('show_lead_follow_ups_on_calendar')) {
+            $zone = CompanyTime::zone();
+            Lead::visibleTo($user)->whereNotNull('next_follow_up_at')
+                ->where('next_follow_up_at', '>=', Carbon::parse($from, $zone)->startOfDay()->utc())
+                ->where('next_follow_up_at', '<=', Carbon::parse($to, $zone)->endOfDay()->utc())
+                ->get(['id', 'name', 'company', 'next_follow_up_at', 'follow_up_note'])
+                ->each(fn ($l) => $items->push([
+                    'id' => 'follow-up-'.$l->id,
+                    'type' => 'follow_up',
+                    'title' => 'Follow-up: '.$l->name.($l->follow_up_note ? " ({$l->follow_up_note})" : ''),
+                    'start' => $l->next_follow_up_at->copy()->setTimezone($zone)->format('Y-m-d H:i:s'),
+                    'color' => $l->next_follow_up_at->isPast() ? '#dc2626' : '#ea580c',
+                    'link' => "/leads?lead={$l->id}",
+                ]));
         }
 
         if ($show('show_invoices_on_calendar') && ($user->hasPermission('invoices', 'view') || $user->hasPermission('invoices', 'view_own'))) {

@@ -137,6 +137,7 @@ class DashboardController extends Controller
             'converted_this_month' => Lead::visibleTo($user)->where('converted_at', '>=', self::today()->startOfMonth()->utc())->count(),
             'daily' => $this->newLeadsPerDay(clone $leads),
             'hot' => $this->hotLeads(clone $leads),
+            'to_call' => $this->leadsToCall(clone $leads),
         ];
     }
 
@@ -172,6 +173,25 @@ class DashboardController extends Controller
                 'id' => $l->id, 'name' => $l->name, 'company' => $l->company, 'phone' => $l->phone, 'rating' => $l->rating(),
                 'last_contact_at' => $l->last_contact_at, 'status' => $l->status?->only(['name', 'color']),
             ])->values()->all();
+    }
+
+    /**
+     * Open leads to call next (shown when no lead is rated hot): the soonest follow-ups first, then
+     * the newest leads nobody has contacted yet.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function leadsToCall(Builder $leads): array
+    {
+        $open = fn () => (clone $leads)->whereNull('customer_id')->where('lost', false)->where('junk', false);
+        $rows = $open()->whereNotNull('next_follow_up_at')->orderBy('next_follow_up_at')->limit(5)->get()
+            ->concat($open()->whereNull('next_follow_up_at')->whereNull('last_contact_at')->latest('id')->limit(5)->get())
+            ->unique('id')->take(5);
+
+        return $rows->map(fn (Lead $l) => [
+            'id' => $l->id, 'name' => $l->name, 'company' => $l->company, 'phone' => $l->phone, 'rating' => $l->rating(),
+            'last_contact_at' => $l->last_contact_at, 'next_follow_up_at' => $l->next_follow_up_at,
+        ])->values()->all();
     }
 
     /** @return array<int, array{name: string, color: ?string, count: int}> */

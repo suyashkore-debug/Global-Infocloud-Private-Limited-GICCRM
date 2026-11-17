@@ -1,6 +1,6 @@
 import { useEffect, useState, type DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowUp, ArrowUpDown, Check, Clock, Columns3, Filter, Globe, List, Paperclip, Plus, RefreshCw, Save, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, Clock, Columns3, Filter, Globe, List, Paperclip, Plus, RefreshCw, Save, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { money } from '../../lib/sales';
@@ -243,6 +243,9 @@ export default function LeadsPage() {
                             </button>
                         ))}
                     </div>
+                    <Button variant="secondary" onClick={() => navigate('/leads/dashboard')}>
+                        <BarChart3 className="h-4 w-4" /> Dashboard
+                    </Button>
                     {canImport && (
                         <Button variant="secondary" onClick={() => navigate('/leads/import')}>
                             <Upload className="h-4 w-4" /> Import

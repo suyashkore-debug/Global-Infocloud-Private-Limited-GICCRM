@@ -90,7 +90,7 @@ it('drops the follow-up of a lost lead, and keeps it to people who may edit the 
     expect($lead->refresh()->next_follow_up_at)->toBeNull();
 
     // A new lead can get its first follow-up straight away.
-    $id = $this->postJson('/api/leads', ['name' => 'New one', 'lead_status_id' => LeadStatus::value('id'), 'lead_source_id' => LeadSource::value('id'), 'next_follow_up_at' => now()->addDay()->toIso8601String(), 'follow_up_note' => 'Intro call'])
+    $id = $this->postJson('/api/leads', ['email' => uniqid('lead', true).'@lead.test', 'name' => 'New one', 'lead_status_id' => LeadStatus::value('id'), 'lead_source_id' => LeadSource::value('id'), 'next_follow_up_at' => now()->addDay()->toIso8601String(), 'follow_up_note' => 'Intro call'])
         ->assertCreated()->json('data.id');
     expect(Lead::find($id)->follow_up_by)->toBe($admin->id);
 

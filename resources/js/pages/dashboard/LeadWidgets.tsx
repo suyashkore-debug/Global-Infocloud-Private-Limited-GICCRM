@@ -23,6 +23,8 @@ export interface LeadInsights {
     converted_this_month: number;
     daily: number[];
     hot: HotLead[];
+    /** Open leads to call next (soonest follow-ups, then new and never contacted). */
+    to_call?: (Omit<HotLead, 'status'> & { next_follow_up_at: string | null })[];
 }
 
 const rupees = (n: number) => money(n).replace(/\.00$/, '');
@@ -153,17 +155,45 @@ export function Funnel({ statuses }: { statuses: LeadInsights['statuses'] }) {
 }
 
 /** 4-5 star leads not yet converted, the longest without contact first, with a call button. */
-export function HotLeads({ rows }: { rows: HotLead[] }) {
+export function HotLeads({ rows, toCall = [] }: { rows: HotLead[]; toCall?: LeadInsights['to_call'] }) {
     return (
         <Card className="p-5">
             <Head title="Hot leads · call today" icon={<Flame className="h-[18px] w-[18px] text-accent" />} linkLabel="All" />
-            {rows.length === 0 ? (
-                <div className="flex flex-col items-center py-6 text-center">
+            {rows.length === 0 && toCall && toCall.length > 0 ? (
+                <div className="flex flex-1 flex-col">
+                    <p className="-mt-1 mb-2 text-[12px] text-slate-500">No hot leads yet (rate leads 4–5 ★). Next to call:</p>
+                    <ul className="-mx-2 space-y-1">
+                        {toCall.map((l) => (
+                            <li key={l.id} className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-slate-50">
+                                <Link to={`/leads?lead=${l.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-[12px] font-bold text-brand">{l.name.slice(0, 2).toUpperCase()}</span>
+                                    <span className="min-w-0">
+                                        <span className="block truncate text-[13.5px] font-semibold text-slate-800">{l.name}</span>
+                                        <span className="block truncate text-[11.5px] text-slate-500">
+                                            {l.next_follow_up_at ? `Follow-up ${timeAgo(l.next_follow_up_at)}` : l.last_contact_at ? `Contacted ${timeAgo(l.last_contact_at)}` : <span className="font-semibold text-red-600">Never contacted</span>}
+                                            {l.company ? ` · ${l.company}` : ''}
+                                        </span>
+                                    </span>
+                                </Link>
+                                {l.phone && (
+                                    <a href={`tel:${l.phone}`} title={`Call ${l.phone}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100 transition hover:bg-emerald-500 hover:text-white">
+                                        <Phone className="h-3.5 w-3.5" />
+                                    </a>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ) : rows.length === 0 ? (
+                <div className="flex flex-1 flex-col items-center justify-center py-6 text-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-50 text-accent">
                         <Flame className="h-6 w-6" />
                     </span>
                     <p className="mt-2 text-sm font-semibold text-slate-700">No hot leads yet</p>
                     <p className="mt-0.5 max-w-[15rem] text-xs text-slate-500">Rate your leads with 4 or 5 stars and they show up here.</p>
+                    <Link to="/leads" className="mt-3 rounded-lg bg-accent-50 px-3 py-1.5 text-[12.5px] font-semibold text-accent hover:bg-accent hover:text-white">
+                        Open leads
+                    </Link>
                 </div>
             ) : (
                 <ul className="-mx-2 space-y-1">

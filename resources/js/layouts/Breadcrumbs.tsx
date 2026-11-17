@@ -39,6 +39,7 @@ const EXTRA: CrumbLink[] = [
     { label: 'Mail Lists', to: '/utilities/mail-lists', section: 'Utilities' },
     { label: 'Forms', to: '/estimate-requests/forms', section: 'Estimate Request' },
     { label: 'Import Leads', to: '/leads/import', section: 'Leads' },
+    { label: 'Leads Dashboard', to: '/leads/dashboard', section: 'Leads' },
     { label: 'Web to Lead', to: '/leads/forms', section: 'Leads' },
 ];
 

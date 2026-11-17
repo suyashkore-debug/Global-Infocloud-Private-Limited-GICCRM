@@ -355,7 +355,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                         <Field label="Company">
                                             <IconInput icon={Building2} value={form.company} onChange={set('company')} placeholder="Company name" />
                                         </Field>
-                                        <Field label="Email Address" error={errors.email}>
+                                        <Field label="Email Address" required error={errors.email} hint="Each lead needs its own e-mail address.">
                                             <IconInput icon={Mail} type="email" value={form.email} onChange={set('email')} placeholder="name@company.com" />
                                         </Field>
                                         <Field label="Phone" error={errors.phone}>

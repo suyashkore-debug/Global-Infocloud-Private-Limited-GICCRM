@@ -382,7 +382,15 @@ class LeadController extends Controller
             'title' => ['nullable', 'string', 'max:100'],
             'company' => ['nullable', 'string', 'max:300', ...$unique('company')],
             'description' => ['nullable', 'string', 'max:65000'],
-            'email' => ['nullable', 'email', 'max:150', ...$unique('email')],
+            // Every lead has its own e-mail: required for a new lead (and once a lead has one), never
+            // the same as another lead's (any case).
+            'email' => [$current === null || $current->email ? 'required' : 'nullable', 'email', 'max:150', function (string $attribute, mixed $value, \Closure $fail) use ($current) {
+                $twin = Lead::query()->whereRaw('lower(email) = ?', [mb_strtolower(trim((string) $value))])
+                    ->when($current, fn (Builder $q) => $q->whereKeyNot($current->id))->first(['id', 'name']);
+                if ($twin) {
+                    $fail("Lead #{$twin->id} {$twin->name} already has this e-mail address.");
+                }
+            }],
             // Phones compared by their digits: "+91 98765 43210" repeats "9876543210".
             'phone' => ['nullable', 'string', 'max:50', ...(in_array('phone', explode(',', Options::get('lead_unique_validation')), true) ? [function (string $attribute, mixed $value, \Closure $fail) use ($current) {
                 $key = PhoneNumber::key((string) $value);

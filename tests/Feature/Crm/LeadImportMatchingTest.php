@@ -78,7 +78,7 @@ it('compares phones by their digits for duplicates: import, new leads and web fo
     $data = $this->post('/api/leads/import', importRequest(csvFile(['Name', 'Phone'], [['Twin', '+91-9876543210'], ['New', '9123456780']])), ['Accept' => 'application/json'])->json('data');
     expect($data['imported'])->toBe(1)->and($data['skipped'][0])->toMatchArray(['row' => 2, 'name' => 'Twin']);
 
-    $this->postJson('/api/leads', ['name' => 'Again', 'phone' => '0 98765 43210', 'lead_status_id' => LeadStatus::value('id'), 'lead_source_id' => LeadSource::value('id')])
+    $this->postJson('/api/leads', ['email' => uniqid('lead', true).'@lead.test', 'name' => 'Again', 'phone' => '0 98765 43210', 'lead_status_id' => LeadStatus::value('id'), 'lead_source_id' => LeadSource::value('id')])
         ->assertJsonValidationErrors(['phone' => "Lead #{$old->id} Existing already has this phone number."]);
 
     $form = LeadForm::create(['name' => 'Site', 'form_key' => 'k-'.uniqid(), 'fields' => [['type' => 'text', 'name' => 'name', 'label' => 'Name', 'required' => true], ['type' => 'text', 'name' => 'phone', 'label' => 'Phone']],

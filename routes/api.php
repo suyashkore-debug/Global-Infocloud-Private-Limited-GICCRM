@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\KnowledgeBaseController;
 use App\Http\Controllers\Api\LeadCallController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\LeadDashboardController;
 use App\Http\Controllers\Api\LeadFormController;
 use App\Http\Controllers\Api\LeadImportController;
 use App\Http\Controllers\Api\MailListController;
@@ -246,6 +247,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::get('/leads/import', [LeadImportController::class, 'show']);
     Route::get('/leads/import/sample', [LeadImportController::class, 'sample']);
     Route::get('/leads/follow-ups', [LeadController::class, 'followUpSummary']);
+    Route::get('/leads/dashboard', LeadDashboardController::class);
     Route::post('/leads/import', [LeadImportController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/leads/move', [LeadController::class, 'move']);
     Route::post('/leads/bulk', [LeadController::class, 'bulk']);

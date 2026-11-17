@@ -17,7 +17,7 @@ it('e-mails the staff member a lead is assigned to', function () {
     $admin = signIn(companyAdmin());
     $agent = staffMember($admin->company);
     DefaultLookups::ensureLeadLists();
-    $this->postJson('/api/leads', [
+    $this->postJson('/api/leads', ['email' => uniqid('lead', true).'@lead.test', 
         'name' => 'Ravi Patil', 'email' => 'ravi@patil.test', 'assigned_id' => $agent->id,
         'lead_status_id' => LeadStatus::where('name', 'New Lead')->value('id'), 'lead_source_id' => LeadSource::where('name', 'Google')->value('id'),
     ])->assertCreated();

@@ -62,9 +62,12 @@ export default function DashboardPage() {
     const myTasks = stats && (
         <>
             {stats.upcoming_tasks.length === 0 ? (
-                <div className="flex flex-col items-center py-8 text-center">
+                <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
                     <span className="text-3xl">🎉</span>
                     <p className="mt-2 text-sm text-slate-500">No open tasks assigned to you.</p>
+                    <button type="button" onClick={() => newTask()} className="mt-3 inline-flex items-center gap-1 rounded-lg bg-brand-50 px-3 py-1.5 text-[12.5px] font-semibold text-brand hover:bg-brand hover:text-white">
+                        <Plus className="h-3.5 w-3.5" /> New task
+                    </button>
                 </div>
             ) : (
                 <ul className="-mx-2 divide-y divide-slate-100">
@@ -143,7 +146,7 @@ export default function DashboardPage() {
               { id: 'quick_stats', label: 'Quick stats', span: 'full', node: w && <QuickStats stats={w.quick_stats} /> },
               { id: 'leads_kpi', label: 'Leads KPI', span: 'third', node: more?.leads && <LeadsKpi leads={more.leads} /> },
               { id: 'funnel', label: 'Leads funnel', span: 'third', node: more?.leads && <Funnel statuses={more.leads.statuses} /> },
-              { id: 'hot_leads', label: 'Hot leads', span: 'third', node: more?.leads && <HotLeads rows={more.leads.hot} /> },
+              { id: 'hot_leads', label: 'Hot leads', span: 'third', node: more?.leads && <HotLeads rows={more.leads.hot} toCall={more.leads.to_call} /> },
               { id: 'finance_overview', label: 'Finance overview', span: 'full', node: w?.finance_overview && <FinanceOverview finance={w.finance_overview} /> },
               { id: 'business_pulse', label: 'Business pulse', span: 'full', node: more?.finance && <BusinessPulse finance={more.finance} /> },
               {
@@ -189,11 +192,11 @@ export default function DashboardPage() {
                       <Card className="p-5">
                           <CardHead title="Team hours this week" link="/reports/timesheets" />
                           <p className="-mt-2 mb-4 text-xs text-slate-500">Logged on tasks since Monday, top {Math.max(1, more.team_hours.length)}</p>
-                          {more.team_hours.length === 0 ? <p className="py-6 text-center text-sm text-slate-400">No time logged yet this week.</p> : <BarList rows={more.team_hours.map((m) => ({ label: m.name, value: m.seconds }))} format={(v) => `${formatDuration(v)} h`} />}
+                          {more.team_hours.length === 0 ? <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-sm text-slate-400"><Clock className="h-7 w-7 text-slate-300" />No time logged yet this week.</div> : <BarList rows={more.team_hours.map((m) => ({ label: m.name, value: m.seconds }))} format={(v) => `${formatDuration(v)} h`} />}
                       </Card>
                   ),
               },
-              { id: 'projects', label: 'Projects by status', span: 'third', node: projectsCard },
+              { id: 'projects', label: 'Projects by status', span: 'half', node: projectsCard },
               { id: 'todos', label: 'My to do items', span: 'two', node: <MyTodos /> },
           ];
 
@@ -379,7 +382,7 @@ function Deadlines({ rows }: { rows: Insights['deadlines'] }) {
         <Card className="p-5">
             <CardHead title="Upcoming deadlines" link="/projects" />
             {rows.length === 0 ? (
-                <div className="flex flex-col items-center py-8 text-center">
+                <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
                     <CalendarCheck className="h-8 w-8 text-slate-300" />
                     <p className="mt-2 text-sm text-slate-500">No project deadlines in the next 30 days.</p>
                 </div>

@@ -128,6 +128,7 @@ class Options
         'show_estimates_on_calendar' => '1',
         'show_contracts_on_calendar' => '1',
         'show_reminders_on_calendar' => '1',
+        'show_lead_follow_ups_on_calendar' => '1',
         // PDF (Perfex Settings → PDF).
         'pdf_format' => 'A4-PORTRAIT',
         'pdf_font_size' => '10',

@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, CalendarDays, ChevronLeft, ChevronRight, FileSignature, FolderKanban, ListChecks, Receipt, Target } from 'lucide-react';
+import { Bell, CalendarDays, Inbox, ChevronLeft, ChevronRight, FileSignature, FolderKanban, ListChecks, Receipt, Target } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { ACTIVITY_LABELS, PROJECT_STATUSES, optionById } from '../../lib/constants';
 import { ESTIMATE_STATUSES, INVOICE_STATUSES, PROPOSAL_STATUSES, money } from '../../lib/sales';
@@ -105,7 +105,12 @@ export function WidgetHead({ title, link, linkLabel = 'View all', children }: { 
     );
 }
 
-const Empty = ({ text }: { text: string }) => <p className="py-6 text-center text-sm text-slate-400">{text}</p>;
+const Empty = ({ text }: { text: string }) => (
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-sm text-slate-400">
+        <Inbox className="h-7 w-7 text-slate-300" />
+        {text}
+    </div>
+);
 
 /** Perfex "Quick Stats": x of y with a progress bar for each. */
 export function QuickStats({ stats }: { stats: Widgets['quick_stats'] }) {
@@ -635,6 +640,7 @@ export function PaymentRecords() {
                         values: s.values,
                     }))}
                     format={(n) => money(n).replace(/\.00$/, '')}
+                    height={330}
                 />
             )}
         </Card>
@@ -643,7 +649,9 @@ export function PaymentRecords() {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-/** A month of the calendar on the dashboard; a day opens the full calendar. */
+type CalendarItem = { id: string; type?: string; title: string; start: string; color: string; link?: string };
+
+/** A month of the calendar on the dashboard; an item opens what it is about, a day the full calendar. */
 export function CalendarWidget() {
     const navigate = useNavigate();
     const [month, setMonth] = useState(() => {
@@ -656,10 +664,12 @@ export function CalendarWidget() {
         return Array.from({ length: 42 }, (_, i) => new Date(first.getFullYear(), first.getMonth(), first.getDate() + i));
     }, [month]);
     const { data } = useApi<{
-        data: { id: string; title: string; start: string; color: string }[];
+        data: CalendarItem[];
     }>('/calendar', { start: toIsoDate(days[0]), end: toIsoDate(days[41]) });
+    // An item opens what it is about: the lead of a follow-up, the task, the invoice …
+    const openItem = (item: CalendarItem) => (item.link?.startsWith('?') ? navigate(`/tasks${item.link}`) : item.link ? navigate(item.link) : navigate('/utilities/calendar'));
     const byDay = useMemo(() => {
-        const map = new Map<string, { id: string; title: string; color: string }[]>();
+        const map = new Map<string, CalendarItem[]>();
         for (const item of data?.data ?? []) {
             const key = item.start.slice(0, 10);
             map.set(key, [...(map.get(key) ?? []), item]);
@@ -699,33 +709,51 @@ export function CalendarWidget() {
                     const inMonth = d.getMonth() === month.getMonth();
 
                     return (
-                        <button
+                        <div
                             key={key}
-                            type="button"
+                            role="button"
+                            tabIndex={0}
                             onClick={() => navigate('/utilities/calendar')}
+                            onKeyDown={(e) => e.key === 'Enter' && navigate('/utilities/calendar')}
                             title={items.map((i) => i.title).join('\n') || undefined}
-                            className={`flex min-h-[64px] flex-col items-stretch gap-0.5 p-1 text-left transition hover:bg-brand-50 ${inMonth ? 'bg-white' : 'bg-slate-50/70 text-slate-400'}`}
+                            className={`flex min-h-[64px] cursor-pointer flex-col items-stretch gap-0.5 p-1 text-left transition hover:bg-brand-50 ${inMonth ? 'bg-white' : 'bg-slate-50/70 text-slate-400'}`}
                         >
                             <span className={`self-end rounded-full px-1.5 text-[11.5px] font-semibold ${key === today ? 'bg-accent text-white' : ''}`}>{d.getDate()}</span>
                             {items.slice(0, 2).map((i) => (
-                                <span
+                                <button
                                     key={i.id}
-                                    className="truncate rounded px-1 text-[10.5px] font-medium text-white"
+                                    type="button"
+                                    onClick={(e) => (e.stopPropagation(), openItem(i))}
+                                    title={i.title}
+                                    className="truncate rounded px-1 text-left text-[10.5px] font-medium text-white transition hover:brightness-110"
                                     style={{
                                         backgroundColor: i.color || '#28B8DA',
                                     }}
                                 >
                                     {i.title}
-                                </span>
+                                </button>
                             ))}
                             {items.length > 2 && <span className="px-1 text-[10px] font-semibold text-slate-500">+{items.length - 2} more</span>}
-                        </button>
+                        </div>
                     );
                 })}
             </div>
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
-                <CalendarDays className="h-3.5 w-3.5" /> Events, task due dates, reminders and more — click a day to open the full calendar.
-            </p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-slate-500">
+                {[
+                    ['#ea580c', 'Lead follow-up'],
+                    ['#dc2626', 'Overdue follow-up'],
+                    ['#3b82f6', 'Task'],
+                    ['#28B8DA', 'Event'],
+                ].map(([color, label]) => (
+                    <span key={label} className="inline-flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+                        {label}
+                    </span>
+                ))}
+                <span className="ml-auto inline-flex items-center gap-1 text-slate-400">
+                    <CalendarDays className="h-3.5 w-3.5" /> Click an item to open it, a day for the full calendar
+                </span>
+            </div>
         </Card>
     );
 }

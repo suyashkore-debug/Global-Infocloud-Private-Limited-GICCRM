@@ -1,4 +1,4 @@
-import { isValidElement, useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { isValidElement, useEffect, useLayoutEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { BriefcaseBusiness, Building2, Check, ChevronDown, Clock, Globe, Hash, Inbox, IndianRupee, Loader2, Lock, Mail, MapPin, PenLine, Phone, Search, UserRound, X, type LucideIcon } from 'lucide-react';
 import type { Option } from '../../lib/constants';
 import type { Staff } from '../../types';
@@ -671,12 +671,28 @@ export function Menu({
     up?: boolean;
 }) {
     const { open, setOpen, ref } = usePopover();
+    const panel = useRef<HTMLDivElement>(null);
+    // Kept on screen: moved sideways when it would go under the sidebar or past the window's edge.
+    const [shift, setShift] = useState(0);
+    useLayoutEffect(() => {
+        if (!open || !panel.current) {
+            setShift(0);
+            return;
+        }
+        const rect = panel.current.getBoundingClientRect();
+        const main = document.querySelector('main')?.getBoundingClientRect();
+        const minLeft = Math.max(8, (main?.left ?? 0) + 8);
+        const maxRight = window.innerWidth - 8;
+        setShift(rect.left < minLeft ? minLeft - rect.left : rect.right > maxRight ? maxRight - rect.right : 0);
+    }, [open]);
 
     return (
         <div className={`relative ${block ? 'block w-full' : 'inline-block'}`} ref={ref}>
             {trigger(() => setOpen(!open))}
             {open && (
                 <div
+                    ref={panel}
+                    style={shift ? (align === 'right' ? { right: -shift } : { left: shift }) : undefined}
                     className={`pop-in absolute z-30 min-w-[12rem] rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-[0_20px_44px_-16px_rgba(8,33,63,0.35)] ${up ? 'bottom-full mb-2' : 'mt-2'} ${align === 'right' ? 'right-0' : 'left-0'}`}
                 >
                     {children(() => setOpen(false))}

@@ -32,7 +32,7 @@ function companyWithSecrets(): array
     $invoice = Invoice::factory()->for($customer)->create(['client_note' => 'ZXQ-SECRET note']);
     $contract = Contract::create(['subject' => 'ZXQ-SECRET Contract', 'customer_id' => $customer->id, 'start_date' => today(), 'end_date' => today()->addDays(2), 'hash' => Str::random(32), 'created_by' => $admin->id]);
     DefaultLookups::ensureLeadLists();
-    $lead = Lead::find(test()->postJson('/api/leads', [
+    $lead = Lead::find(test()->postJson('/api/leads', ['email' => uniqid('lead', true).'@lead.test', 
         'name' => 'ZXQ-SECRET Lead', 'email' => 'lead@secret.test', 'lead_status_id' => App\Models\LeadStatus::value('id'), 'lead_source_id' => App\Models\LeadSource::value('id'),
     ])->assertCreated()->json('data.id'));
     DefaultLookups::ensureTicketLists();
@@ -101,7 +101,7 @@ it('keeps each company\'s settings, country, tax number, lists, web forms and ve
     $tax = $this->postJson('/api/setup/taxes', ['name' => 'ZXQ-SECRET Tax', 'rate' => 5])->assertCreated()->json('data.id');
     $form = $this->postJson('/api/lead-forms', secretWebForm('ZXQ-SECRET Form'))->assertCreated()->json('data.id');
     $vendor = $this->postJson('/api/purchase/vendors', ['name' => 'ZXQ-SECRET Vendor', 'vat' => '27ABCDE1234F1Z5'])->assertCreated()->json('data.id');
-    $this->putJson("/api/leads/{$a['lead']->id}", ['name' => 'ZXQ-SECRET Lead edited', 'lead_status_id' => $a['lead']->lead_status_id, 'lead_source_id' => $a['lead']->lead_source_id])->assertOk();
+    $this->putJson("/api/leads/{$a['lead']->id}", ['email' => $a['lead']->email, 'name' => 'ZXQ-SECRET Lead edited', 'lead_status_id' => $a['lead']->lead_status_id, 'lead_source_id' => $a['lead']->lead_source_id])->assertOk();
 
     // Company B, in the UAE.
     signIn(companyAdmin(Company::factory()->create()));
@@ -138,7 +138,7 @@ it('rejects another company\'s ids when saving records', function () {
     DefaultLookups::ensureLeadLists();
     $base = ['lead_status_id' => App\Models\LeadStatus::value('id'), 'lead_source_id' => App\Models\LeadSource::value('id')];
 
-    $this->postJson('/api/leads', [...$base, 'name' => 'Mine', 'assigned_id' => $a['staff']->id])->assertJsonValidationErrors('assigned_id');
+    $this->postJson('/api/leads', ['email' => uniqid('lead', true).'@lead.test', ...$base, 'name' => 'Mine', 'assigned_id' => $a['staff']->id])->assertJsonValidationErrors('assigned_id');
     $this->postJson('/api/tasks', ['name' => 'Mine', 'project_id' => $a['project']->id, 'start_date' => today()->toDateString()])->assertJsonValidationErrors('project_id');
     $this->postJson('/api/projects', ['name' => 'Mine', 'customer_id' => $a['customer']->id, 'start_date' => today()->toDateString(), 'billing_type' => 1, 'status' => 1])->assertJsonValidationErrors('customer_id');
     $this->postJson('/api/lead-forms', ['name' => 'F', 'fields' => [['type' => 'text', 'name' => 'name', 'label' => 'Name']], 'notify_ids' => [$a['staff']->id]])->assertJsonValidationErrors('notify_ids.0');

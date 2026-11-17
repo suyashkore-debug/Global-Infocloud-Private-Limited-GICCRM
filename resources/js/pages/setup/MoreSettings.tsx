@@ -145,6 +145,7 @@ export function CalendarSettings() {
                     fields: [
                         { name: 'calendar_first_day', label: 'First day of the week', type: 'select', options: days.map((d, i) => ({ value: String(i), label: d })) },
                         { name: 'show_tasks_on_calendar', label: 'Show tasks', type: yes },
+                        { name: 'show_lead_follow_ups_on_calendar', label: 'Show lead follow-ups', type: yes },
                         { name: 'calendar_only_assigned_tasks', label: 'Show only tasks assigned to the viewer', type: yes },
                         { name: 'show_projects_on_calendar', label: 'Show project deadlines', type: yes },
                         { name: 'show_invoices_on_calendar', label: 'Show invoice due dates', type: yes },
