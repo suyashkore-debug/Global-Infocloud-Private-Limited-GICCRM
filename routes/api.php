@@ -247,6 +247,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::post('/leads/move', [LeadController::class, 'move']);
     Route::post('/leads/bulk', [LeadController::class, 'bulk']);
     Route::apiResource('lead-forms', LeadFormController::class)->except('show');
+    Route::patch('/lead-forms/{leadForm}/active', [LeadFormController::class, 'toggle']);
     Route::apiResource('leads', LeadController::class);
     Route::post('/leads/{lead}/flag', [LeadController::class, 'flag']);
     Route::post('/leads/{lead}/qualification', [LeadController::class, 'qualify']);

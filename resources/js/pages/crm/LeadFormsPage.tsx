@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowUp, Bell, Code2, Copy, ExternalLink, FileText, Globe, Plus, Settings2, Trash2, Wand2 } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Bell, Code2, Copy, ExternalLink, FileText, Globe, Plus, Settings2, Share2, Trash2, Wand2 } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { formatDate } from '../../lib/format';
 import { COUNTRIES, LANGUAGES } from '../../lib/countries';
 import { useApi } from '../../hooks/useApi';
 import { useAuth } from '../../auth/AuthContext';
 import { useStaff } from '../../hooks/useStaff';
+import { useAppOptions } from '../../hooks/useAppOptions';
 import { Button, Checkbox, EmptyState, ErrorNote, Field, FormSection, Input, Modal, Select, Spinner, StaffMultiSelect, Tabs, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { fetchDefinitions, type CustomFieldDef } from '../../components/customfields/CustomFields';
@@ -87,10 +88,42 @@ const DEFAULT_FIELDS: FormField[] = [
     { type: 'textarea', name: 'description', label: 'How can we help you?' },
 ];
 
-const publicUrl = (key: string) => `${window.location.origin}/forms/wtl/${key}`;
-const embedCode = (key: string) => `<iframe width="600" height="850" src="${publicUrl(key)}" frameborder="0" sandbox="allow-top-navigation allow-forms allow-scripts allow-same-origin allow-popups" allowfullscreen></iframe>`;
+const publicUrl = (key: string, source?: string) => `${window.location.origin}/forms/wtl/${key}${source ? `?source=${source}` : ''}`;
+
+/** Where a form can be shared; each gets its own link, so its leads get that source. */
+const CHANNELS: { key: string; label: string; color: string }[] = [
+    { key: 'facebook', label: 'Facebook', color: '#1877f2' },
+    { key: 'instagram', label: 'Instagram', color: '#e1306c' },
+    { key: 'whatsapp', label: 'WhatsApp', color: '#16a34a' },
+    { key: 'linkedin', label: 'LinkedIn', color: '#0a66c2' },
+    { key: 'youtube', label: 'YouTube', color: '#ff0000' },
+    { key: 'twitter', label: 'Twitter (X)', color: '#0f172a' },
+    { key: 'googleads', label: 'Google Ads', color: '#f59e0b' },
+    { key: 'email', label: 'Email', color: '#64748b' },
+    { key: 'sms', label: 'SMS', color: '#64748b' },
+    { key: 'qr', label: 'QR Code / print', color: '#64748b' },
+];
+const embedCode = (key: string) => `<iframe width="600" height="850" src="${publicUrl(key, 'website')}" frameborder="0" sandbox="allow-top-navigation allow-forms allow-scripts allow-same-origin allow-popups" allowfullscreen></iframe>`;
 
 /** What a field fills on the lead, for the builder's badges. */
+type Named = { id: number; name: string };
+
+/**
+ * Status and source lists, and which one a form on "default" gives its leads: Setup → Leads, else
+ * the first status (in kanban order) and the first source added, as the server does.
+ */
+function useLeadLists() {
+    const options = useAppOptions();
+    const statuses = useApi<{ data: Named[] }>('/setup/lead-statuses');
+    const sources = useApi<{ data: Named[] }>('/setup/lead-sources');
+    const statusList = statuses.data?.data ?? [];
+    const sourceList = sources.data?.data ?? [];
+    const defaultStatus = statusList.find((s) => String(s.id) === options?.leads_default_status) ?? statusList[0];
+    const defaultSource = sourceList.find((s) => String(s.id) === options?.leads_default_source) ?? [...sourceList].sort((a, b) => a.id - b.id)[0];
+
+    return { statusList, sourceList, defaultStatus, defaultSource };
+}
+
 function fillsLabel(name: string, custom: CustomFieldDef[]): string {
     const lead = LEAD_FIELDS.find((f) => f.name === name);
     if (lead) {
@@ -112,6 +145,9 @@ export default function LeadFormsPage() {
     const { user } = useAuth();
     const toast = useToast();
     const { data, reload } = useApi<{ data: LeadWebForm[] }>(user?.is_admin ? '/lead-forms' : null);
+    const lists = useLeadLists();
+    const named = (list: Named[], id: number | null, fallback: Named | undefined) =>
+        id ? (list.find((x) => x.id === id)?.name ?? `#${id}`) : <span className="text-slate-500">Default{fallback ? ` (${fallback.name})` : ''}</span>;
     const [editing, setEditing] = useState<LeadWebForm | 'new' | null>(null);
 
     if (!user?.is_admin) {
@@ -128,6 +164,17 @@ export default function LeadFormsPage() {
     }
 
     const copy = (text: string) => navigator.clipboard.writeText(text).then(() => toast('Copied.'));
+    const [sharing, setSharing] = useState<LeadWebForm | null>(null);
+
+    async function toggleActive(form: LeadWebForm) {
+        try {
+            await api.patch(`/lead-forms/${form.id}/active`, { active: !form.active });
+            toast(form.active ? 'Form deactivated: it no longer accepts submissions.' : 'Form activated.');
+            reload();
+        } catch (e) {
+            toast(errorMessage(e), 'error');
+        }
+    }
 
     return (
         <div className="w-full space-y-4">
@@ -162,6 +209,8 @@ export default function LeadFormsPage() {
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Status</th>
+                                <th>Source</th>
                                 <th className="text-right">Total Submissions</th>
                                 <th>Active</th>
                                 <th>Date Created</th>
@@ -177,8 +226,24 @@ export default function LeadFormsPage() {
                                             {f.name}
                                         </button>
                                     </td>
+                                    <td>{named(lists.statusList, f.lead_status_id, lists.defaultStatus)}</td>
+                                    <td>{named(lists.sourceList, f.lead_source_id, lists.defaultSource)}</td>
                                     <td className="text-right">{f.leads_count ?? 0}</td>
-                                    <td>{f.active ? 'Yes' : 'No'}</td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={f.active}
+                                            onClick={() => toggleActive(f)}
+                                            title={f.active ? 'Active: click to stop accepting submissions' : 'Inactive: click to accept submissions'}
+                                            className="inline-flex items-center gap-2 text-[12.5px] font-semibold"
+                                        >
+                                            <span className={`relative h-5 w-9 rounded-full transition ${f.active ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                                                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${f.active ? 'left-[18px]' : 'left-0.5'}`} />
+                                            </span>
+                                            <span className={f.active ? 'text-emerald-600' : 'text-slate-400'}>{f.active ? 'Active' : 'Inactive'}</span>
+                                        </button>
+                                    </td>
                                     <td>{formatDate(f.created_at)}</td>
                                     <td>
                                         <div className="flex flex-wrap gap-2 text-xs">
@@ -187,6 +252,9 @@ export default function LeadFormsPage() {
                                             </a>
                                             <button type="button" onClick={() => copy(publicUrl(f.form_key))} className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600 hover:bg-brand hover:text-white">
                                                 <Copy className="h-3 w-3" /> Link
+                                            </button>
+                                            <button type="button" onClick={() => setSharing(f)} className="inline-flex items-center gap-1 rounded-md bg-accent-50 px-1.5 py-0.5 font-semibold text-accent hover:bg-accent hover:text-white">
+                                                <Share2 className="h-3 w-3" /> Share links
                                             </button>
                                             <button type="button" onClick={() => copy(embedCode(f.form_key))} className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600 hover:bg-brand hover:text-white">
                                                 <Code2 className="h-3 w-3" /> Embed code
@@ -204,6 +272,7 @@ export default function LeadFormsPage() {
                     </table>
                 </div>
             )}
+            {sharing && <ShareLinks form={sharing} onClose={() => setSharing(null)} onCopy={copy} />}
             {editing && (
                 <FormEditor
                     form={editing === 'new' ? null : editing}
@@ -230,8 +299,7 @@ type Tab = 'build' | 'info' | 'notify' | 'code';
 function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onClose: () => void; onSaved: (form: LeadWebForm) => void }) {
     const toast = useToast();
     const staff = useStaff();
-    const statuses = useApi<{ data: { id: number; name: string }[] }>('/setup/lead-statuses');
-    const sources = useApi<{ data: { id: number; name: string }[] }>('/setup/lead-sources');
+    const lists = useLeadLists();
     const [custom, setCustom] = useState<CustomFieldDef[]>([]);
     const [tab, setTab] = useState<Tab>('build');
     const [state, setState] = useState({
@@ -379,7 +447,8 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                                     const isLead = LEAD_FIELDS.some((l) => l.name === f.name);
                                     const isCustom = /^cf_\d+$/.test(f.name);
                                     return (
-                                        <div key={f.name + i} className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                                        // Keyed by position: a new question's name follows its label as it is typed.
+                                        <div key={i} className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${isLead ? 'bg-brand-50 text-brand' : isCustom ? 'bg-accent-50 text-accent' : 'bg-slate-100 text-slate-500'}`}>{fillsLabel(f.name, custom)}</span>
                                                 <span className="ml-auto flex items-center gap-1">
@@ -429,7 +498,7 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                                         <p className="mb-1 text-[12.5px] font-semibold text-slate-600">
                                             {f.label || 'Untitled'} {f.required && <span className="text-red-500">*</span>}
                                         </p>
-                                        <div className={`rounded-xl border border-slate-200 bg-white px-3 text-[13px] text-slate-400 ${f.type === 'textarea' ? 'h-16 py-2' : 'py-2'}`}>
+                                        <div className={`min-h-[38px] rounded-xl border border-slate-200 bg-white px-3 text-[13px] text-slate-400 ${f.type === 'textarea' ? 'h-16 py-2' : 'py-2'}`}>
                                             {f.type === 'select' ? 'Choose…' : f.type === 'file' ? 'Choose files' : ['radio', 'checkbox'].includes(f.type) ? (f.options ?? []).join(' · ') || 'Options' : f.placeholder || ' '}
                                         </div>
                                     </div>
@@ -473,8 +542,8 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                             </Field>
                             <Field label="Status">
                                 <Select value={state.lead_status_id} onChange={(e) => set({ lead_status_id: e.target.value })}>
-                                    <option value="">Default status (Setup → Leads)</option>
-                                    {(statuses.data?.data ?? []).map((s) => (
+                                    <option value="">Default{lists.defaultStatus ? ` (${lists.defaultStatus.name})` : ''} · Setup → Leads</option>
+                                    {lists.statusList.map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.name}
                                         </option>
@@ -483,8 +552,8 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                             </Field>
                             <Field label="Source">
                                 <Select value={state.lead_source_id} onChange={(e) => set({ lead_source_id: e.target.value })}>
-                                    <option value="">Default source (Setup → Leads)</option>
-                                    {(sources.data?.data ?? []).map((s) => (
+                                    <option value="">Default{lists.defaultSource ? ` (${lists.defaultSource.name})` : ''} · Setup → Leads</option>
+                                    {lists.sourceList.map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.name}
                                         </option>
@@ -622,6 +691,44 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                         </div>
                     </FormSection>
                 )}
+            </div>
+        </Modal>
+    );
+}
+
+/**
+ * One link per channel (Facebook, Instagram, WhatsApp, ...): a lead that comes through a link gets
+ * that channel as its source (added to the sources if missing), whatever the form's own source is.
+ */
+function ShareLinks({ form, onClose, onCopy }: { form: LeadWebForm; onClose: () => void; onCopy: (text: string) => void }) {
+    return (
+        <Modal open size="lg" title={`Share "${form.name}"`} onClose={onClose}>
+            <div className="space-y-4">
+                <p className="text-[13px] text-slate-500">
+                    Post the link of each channel there. Leads that come through a link get that channel as their <b>Source</b> (Facebook, Instagram, WhatsApp, …), so you can see where each lead came from.
+                    Visitors coming from a Facebook or Instagram post are recognised even with the plain link.
+                </p>
+                {!form.active && <p className="rounded-xl bg-amber-50 px-3 py-2 text-[13px] font-semibold text-amber-800">This form is inactive: turn it on in the list to accept submissions.</p>}
+                <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
+                    {CHANNELS.map((ch) => {
+                        const url = publicUrl(form.form_key, ch.key);
+                        return (
+                            <li key={ch.key} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                                <span className="inline-flex w-36 items-center gap-2 text-[13.5px] font-semibold text-slate-800">
+                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: ch.color }} />
+                                    {ch.label}
+                                </span>
+                                <code className="min-w-0 flex-1 truncate rounded-lg bg-slate-50 px-2 py-1 text-[12px] text-slate-600">{url}</code>
+                                <Button size="sm" variant="secondary" onClick={() => onCopy(url)}>
+                                    <Copy className="h-3.5 w-3.5" /> Copy
+                                </Button>
+                            </li>
+                        );
+                    })}
+                </ul>
+                <p className="text-[12px] text-slate-400">
+                    Running a campaign? Add <code>&amp;campaign=diwali-offer</code> to a link; the campaign is noted on the lead's activity. The embed code (for your website) already marks leads as "Website".
+                </p>
             </div>
         </Modal>
     );

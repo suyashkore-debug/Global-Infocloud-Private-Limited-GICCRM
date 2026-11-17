@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\CustomField;
+use App\Models\CustomFieldValue;
+use App\Models\Lead;
 use App\Services\CustomFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,9 +84,22 @@ class CustomFieldController extends Controller
 
     public function save(Request $request, string $fieldTo, int $id): JsonResponse
     {
-        CustomFields::record($fieldTo, $id, $request->user(), true);
+        $record = CustomFields::record($fieldTo, $id, $request->user(), true);
         $data = $request->validate(['custom_fields' => ['present', 'array']]);
+        $before = CustomFieldValue::where('rel_id', $id)->whereIn('custom_field_id', CustomField::where('field_to', $fieldTo)->select('id'))->pluck('value', 'custom_field_id');
         CustomFields::save($fieldTo, $id, $data['custom_fields'], $request->user());
+
+        // A lead's Activity Log shows each custom field that changed.
+        if ($record instanceof Lead) {
+            $after = CustomFieldValue::where('rel_id', $id)->whereIn('custom_field_id', CustomField::where('field_to', $fieldTo)->select('id'))->pluck('value', 'custom_field_id');
+            foreach (CustomField::where('field_to', $fieldTo)->whereIn('id', $after->keys()->merge($before->keys()))->get() as $field) {
+                $old = (string) ($before[$field->id] ?? '');
+                $new = (string) ($after[$field->id] ?? '');
+                if ($old !== $new) {
+                    $record->logActivity("{$field->name} changed from ".($old !== '' ? $old : '—').' to '.($new !== '' ? $new : '—'));
+                }
+            }
+        }
 
         return response()->json(['data' => (object) (CustomFields::values($fieldTo, [$id], $request->user())[$id] ?? [])]);
     }

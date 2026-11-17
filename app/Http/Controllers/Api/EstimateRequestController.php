@@ -218,7 +218,7 @@ class EstimateRequestController extends Controller
             'notify_request_submitted' => ['boolean'],
             'notify_type' => ['nullable', Rule::in(['specific_staff', 'roles', 'assigned'])],
             'notify_ids' => ['nullable', 'array'],
-            'notify_ids.*' => ['integer'],
+            'notify_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
             'active' => ['boolean'],
             'recaptcha' => ['boolean'],
         ]);

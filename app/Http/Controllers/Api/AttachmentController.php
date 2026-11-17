@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AttachmentResource;
 use App\Models\Attachment;
 use App\Models\DiscussionComment;
+use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\TicketReply;
@@ -104,6 +105,9 @@ class AttachmentController extends Controller
 
         if ($attachment->attachable instanceof Project) {
             $attachment->attachable->logActivity('project_activity_project_file_removed', $attachment->original_name);
+        }
+        if ($attachment->attachable instanceof Lead) {
+            $attachment->attachable->logActivity('Deleted attachment: '.$attachment->original_name);
         }
         $attachment->delete();
 

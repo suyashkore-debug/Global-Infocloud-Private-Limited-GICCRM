@@ -32,7 +32,7 @@ class LeadCall extends Model
 
     protected $fillable = [
         'company_id', 'lead_id', 'user_id', 'source', 'provider_call_id', 'provider_status', 'lead_number', 'agent_number',
-        'direction', 'outcome', 'called_at', 'duration_minutes', 'talk_seconds', 'recording_url', 'notes',
+        'direction', 'outcome', 'called_at', 'duration_minutes', 'talk_seconds', 'recording_url', 'notes', 'seen_at',
     ];
 
     /**
@@ -47,6 +47,7 @@ class LeadCall extends Model
     {
         return [
             'called_at' => 'datetime',
+            'seen_at' => 'datetime',
             'duration_minutes' => 'integer',
             'talk_seconds' => 'integer',
         ];

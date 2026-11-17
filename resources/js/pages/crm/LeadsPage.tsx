@@ -1,15 +1,16 @@
 import { useEffect, useState, type DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Check, Clock, Columns3, Globe, List, Paperclip, Plus, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Clock, Columns3, Filter, Globe, List, Paperclip, Plus, RefreshCw, Save, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { money } from '../../lib/sales';
 import { useApi } from '../../hooks/useApi';
-import { useStaff } from '../../hooks/useStaff';
 import { useAppOptions } from '../../hooks/useAppOptions';
 import { useAuth } from '../../auth/AuthContext';
-import { Avatar, Button, EmptyState, ErrorNote, Input, Menu, Pagination, Select, Spinner, StatusBadge, Tag } from '../../components/ui';
-import LeadFilters, { type FilterRule } from './LeadFilters';
+import { Avatar, Button, EmptyState, ErrorNote, Input, Menu, Pagination, Spinner, StatusBadge, Tag } from '../../components/ui';
+import { ColumnFilter, FilterPanel, type FilterRule, type LeadSort } from './LeadFilters';
+import { DEFAULT_SORT, useLeadViews, ViewTabs, type LeadView } from './LeadViews';
+import { readStorage, writeStorage } from '../../lib/storage';
 import { useToast } from '../../components/ui/Toast';
 import type { Lead, LeadStatus, Paginated } from '../../types';
 import LeadModal from './LeadModal';
@@ -18,7 +19,6 @@ import { usePermission } from '../../hooks/usePermission';
 import { LeadRatingCell } from './LeadRating';
 import { celebrate } from '../../lib/celebrate';
 import { useCustomFieldColumns } from '../../components/customfields/CustomFields';
-import SavedFilters, { savedIds, savedText } from '../../components/filters/SavedFilters';
 
 /** Columns the list can also show (Perfex's hidden columns), chosen from "Columns". */
 const OPTIONAL_COLUMNS: [string, string][] = [
@@ -37,7 +37,6 @@ type LeadList = Paginated<Lead> & { meta: { summary: LeadStatus[] } };
 /** Perfex Leads: table (default) or kanban by status, with filters and the lead modal. */
 export default function LeadsPage() {
     const toast = useToast();
-    const staff = useStaff();
     const navigate = useNavigate();
     const { user } = useAuth();
     const appOptions = useAppOptions();
@@ -46,13 +45,20 @@ export default function LeadsPage() {
     const [params, setParams] = useSearchParams();
     const [view, setView] = useState<'kanban' | 'list'>('list');
     const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState('');
-    const [assigned, setAssigned] = useState('');
-    // Perfex: click the status summary to filter by those statuses; filter by source.
+    // Perfex: click the status summary to filter by those statuses.
     const [statuses, setStatuses] = useState<number[]>([]);
-    const [source, setSource] = useState('');
     const [selected, setSelected] = useState<number[]>([]);
+    // The open view (built-in or saved): its filter rules and sort, which the panel edits.
+    const leadStatuses = useApi<{ data: LeadStatus[] }>('/setup/lead-statuses');
+    const wonStatusId = leadStatuses.data?.data.find((s) => s.is_default)?.id ?? null;
+    const { views, loaded: viewsLoaded, reload: reloadViews } = useLeadViews(user?.id ?? 0, wonStatusId);
+    const [activeView, setActiveView] = useState(() => readStorage('leads_view') ?? 'active');
     const [rules, setRules] = useState<FilterRule[]>([]);
+    const [listSort, setListSort] = useState<LeadSort>(DEFAULT_SORT);
+    const [ready, setReady] = useState(false);
+    const [pendingView, setPendingView] = useState<string | null>(null);
+    const [saveSignal, setSaveSignal] = useState(0);
+    const [panelOpen, setPanelOpen] = useState(() => readStorage('leads_filter_panel') === '1');
     // Kanban "Sort by" (starts from Setup → Leads) and "Load more" per column.
     const [kanbanSort, setKanbanSort] = useState<{ by: string; dir: 'asc' | 'desc' } | null>(null);
     const [more, setMore] = useState<Record<number, number>>({});
@@ -81,17 +87,65 @@ export default function LeadsPage() {
     const [overColumn, setOverColumn] = useState<number | null>(null);
     const leadId = Number(params.get('lead')) || null;
 
-    const { data, loading, error, reload, setData } = useApi<LeadList>('/leads', {
+    function selectView(v: LeadView) {
+        setActiveView(v.id);
+        writeStorage('leads_view', v.id);
+        setRules(v.state.rules);
+        setListSort(v.state.sort);
+        setPage(1);
+        setSelected([]);
+    }
+    // First the views (and the won status, for "All Active Leads"), then the leads of the open view.
+    useEffect(() => {
+        if (!ready && viewsLoaded && leadStatuses.data) {
+            selectView(views.find((v) => v.id === activeView) ?? views.find((v) => v.id === 'active')!);
+            setReady(true);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewsLoaded, leadStatuses.data]);
+    // A view just saved or deleted: open it (or All Leads) once the list of views has reloaded.
+    useEffect(() => {
+        const v = pendingView && views.find((x) => x.id === pendingView);
+        if (v) {
+            selectView(v);
+            setPendingView(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [views, pendingView]);
+    const current = { rules, sort: listSort };
+    const openView = views.find((v) => v.id === activeView);
+    const dirty = !!openView && JSON.stringify(openView.state) !== JSON.stringify(current);
+    const applyRules = (r: FilterRule[]) => (setRules(r), setPage(1), setSelected([]));
+    const togglePanel = () => setPanelOpen((o) => (writeStorage('leads_filter_panel', o ? '0' : '1'), !o));
+    const toggleSort = (key: string) => (setListSort((s) => ({ sort: key, dir: s.sort === key && s.dir === 'desc' ? 'asc' : 'desc' })), setPage(1));
+
+    const { data, loading, error, reload, setData } = useApi<LeadList>(ready ? '/leads' : null, {
         search,
         kanban: view === 'kanban' ? 1 : undefined,
         page: view === 'list' ? page : undefined,
-        assigned_id: assigned || undefined,
-        source_id: source || undefined,
         rules: rules.length ? JSON.stringify(rules) : undefined,
+        ...(view === 'list' ? { sort: listSort.sort, dir: listSort.dir } : {}),
         ...(view === 'kanban' ? { kanban_sort: sort.by, kanban_dir: sort.dir, more } : {}),
         ...(view === 'list' && statuses.length ? { status: statuses } : {}),
-        ...(filter ? { [filter]: 1 } : {}),
     });
+    const filterCtx = { statuses: data?.meta.summary ?? leadStatuses.data?.data ?? [], sources: sources.data?.data ?? [] };
+    const total = data ? (view === 'list' ? data.meta.total : data.meta.summary.reduce((a, s) => a + (s.count ?? 0), 0)) : null;
+    // A column header: click the name to sort (server side), the funnel to filter by the column.
+    const head = (label: string, opts: { sortKey?: string; field?: string; className?: string } = {}) => (
+        <th className={opts.className}>
+            <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                {opts.sortKey ? (
+                    <button type="button" onClick={() => toggleSort(opts.sortKey!)} className="inline-flex items-center gap-1 uppercase tracking-[inherit] hover:text-brand" title="Sort by this column">
+                        {label}
+                        {listSort.sort === opts.sortKey && (listSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+                    </button>
+                ) : (
+                    label
+                )}
+                {opts.field && <ColumnFilter field={opts.field} rules={rules} onRules={applyRules} ctx={filterCtx} />}
+            </span>
+        </th>
+    );
     const toggleStatus = (id: number) => (setStatuses((list) => (list.includes(id) ? list.filter((s) => s !== id) : [...list, id])), setPage(1), setView('list'));
     const pageIds = data?.data.map((l) => l.id) ?? [];
     const allTicked = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
@@ -161,51 +215,71 @@ export default function LeadsPage() {
                         <List className="h-4 w-4" />
                     </button>
                 </div>
-                <Select value={filter} onChange={(e) => (setFilter(e.target.value), setPage(1))} className="w-auto">
-                    <option value="">All leads</option>
-                    <option value="my_leads">My leads</option>
-                    <option value="not_assigned">Not assigned</option>
-                    <option value="public">Public</option>
-                    <option value="contacted_today">Contacted today</option>
-                    <option value="created_today">Created today</option>
-                    <option value="lost">Lost</option>
-                    <option value="junk">Junk</option>
-                </Select>
-                <Select value={assigned} onChange={(e) => (setAssigned(e.target.value), setPage(1))} className="w-auto">
-                    <option value="">Any staff</option>
-                    {staff.map((s) => (
-                        <option key={s.id} value={s.id}>
-                            {s.full_name}
-                        </option>
-                    ))}
-                </Select>
-                <Select value={source} onChange={(e) => (setSource(e.target.value), setPage(1))} className="w-auto">
-                    <option value="">Any source</option>
-                    {(sources.data?.data ?? []).map((s) => (
-                        <option key={s.id} value={s.id}>
-                            {s.name}
-                        </option>
-                    ))}
-                </Select>
-                <span className="ml-auto" />
-                <LeadFilters rules={rules} onApply={(r) => (setRules(r), setPage(1))} statuses={data?.meta.summary ?? []} sources={sources.data?.data ?? []} />
-                <SavedFilters
-                    identifier="leads"
-                    current={{ search, filter, assigned, source, statuses, rules }}
-                    onApply={(f) => {
-                        setSearch(savedText(f.search));
-                        setFilter(savedText(f.filter));
-                        setAssigned(savedText(f.assigned));
-                        setSource(savedText(f.source));
-                        setStatuses(savedIds(f.statuses));
-                        setRules(Array.isArray(f.rules) ? (f.rules as FilterRule[]) : []);
-                        setPage(1);
-                    }}
-                />
-                <div className="relative w-full sm:w-64">
+            </div>
+
+            <ViewTabs
+                views={views}
+                active={activeView}
+                current={current}
+                dirty={dirty}
+                saveSignal={saveSignal}
+                onSelect={selectView}
+                onChanged={async (id) => {
+                    // Open the view only once the list of views has the saved version.
+                    await reloadViews();
+                    setPendingView(id ?? activeView);
+                }}
+            />
+
+            <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" onClick={togglePanel} className={rules.length ? '!border-brand !text-brand' : ''}>
+                    <Filter className={`h-4 w-4 ${rules.length ? 'text-accent' : ''}`} />
+                    {panelOpen ? 'Hide filters' : 'Filters'}
+                    {rules.length > 0 && <span className="rounded-full bg-accent px-1.5 text-[11px] font-bold text-white">{rules.length}</span>}
+                </Button>
+                <div className="relative w-full sm:w-72">
                     <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input value={search} onChange={(e) => (setSearch(e.target.value), setPage(1))} placeholder="Search leads..." className="pl-9" />
                 </div>
+                {total !== null && (
+                    <span className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-slate-600">
+                        {total} lead{total === 1 ? '' : 's'}
+                        <button type="button" onClick={reload} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-brand" title="Refresh">
+                            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
+                    </span>
+                )}
+                <span className="ml-auto" />
+                {view === 'list' && (
+                    <Menu
+                        trigger={(toggle) => (
+                            <Button variant="secondary" onClick={toggle}>
+                                <Settings2 className="h-4 w-4" /> Columns
+                                <span className="rounded-full bg-slate-100 px-1.5 text-[11px] font-bold text-slate-600">{columns.length}</span>
+                            </Button>
+                        )}
+                    >
+                        {() => (
+                            <div className="w-56">
+                                <p className="px-2.5 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">More columns</p>
+                                {OPTIONAL_COLUMNS.map(([key, label]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setColumns((cols) => (cols.includes(key) ? cols.filter((c) => c !== key) : [...cols, key]))}
+                                        className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[13px] text-slate-700 hover:bg-brand-50"
+                                    >
+                                        <span className={`flex h-4 w-4 items-center justify-center rounded border ${show(key) ? 'border-brand bg-brand text-white' : 'border-slate-300'}`}>{show(key) && <Check className="h-3 w-3" strokeWidth={3} />}</span>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </Menu>
+                )}
+                <Button variant="secondary" onClick={() => setSaveSignal((n) => n + 1)} title={openView?.saved?.can_manage ? 'Save changes to this view' : 'Save as a new view'} className={dirty ? '!border-accent !text-accent' : ''}>
+                    <Save className="h-4 w-4" />
+                </Button>
             </div>
 
             {data && (
@@ -236,8 +310,11 @@ export default function LeadsPage() {
                 </div>
             )}
 
+            <div className={panelOpen ? 'grid items-start gap-4 lg:grid-cols-[340px_minmax(0,1fr)]' : ''}>
+            {panelOpen && <FilterPanel rules={rules} onRules={applyRules} sort={listSort} onSort={(s) => (setListSort(s), setPage(1))} ctx={filterCtx} onClose={togglePanel} />}
+            <div className="min-w-0 space-y-4">
             <ErrorNote message={error} />
-            {loading && !data ? (
+            {(loading || !ready) && !data ? (
                 <Spinner />
             ) : !data ? null : view === 'kanban' ? (
                 <div className="space-y-3">
@@ -366,32 +443,6 @@ export default function LeadsPage() {
                 <EmptyState icon={Target} title="No leads found" text="Leads you add, or that come in from your forms and calls, show up here. Try another filter, or add your first lead." action={<Button onClick={() => setNewOpen({})}><Plus className="h-4 w-4" /> Add a lead</Button>} />
             ) : (
                 <div className="panel_s overflow-hidden">
-                    <div className="flex justify-end border-b border-slate-100 px-4 py-2">
-                        <Menu
-                            trigger={(toggle) => (
-                                <button type="button" onClick={toggle} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[12.5px] font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800">
-                                    <Settings2 className="h-4 w-4" /> Columns
-                                </button>
-                            )}
-                        >
-                            {() => (
-                                <div className="w-56">
-                                    <p className="px-2.5 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">More columns</p>
-                                    {OPTIONAL_COLUMNS.map(([key, label]) => (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            onClick={() => setColumns((cols) => (cols.includes(key) ? cols.filter((c) => c !== key) : [...cols, key]))}
-                                            className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[13px] text-slate-700 hover:bg-brand-50"
-                                        >
-                                            <span className={`flex h-4 w-4 items-center justify-center rounded border ${show(key) ? 'border-brand bg-brand text-white' : 'border-slate-300'}`}>{show(key) && <Check className="h-3 w-3" strokeWidth={3} />}</span>
-                                            {label}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </Menu>
-                    </div>
                     {selected.length > 0 && (
                         <div className="fade-in flex flex-wrap items-center gap-3 border-b border-brand-100 bg-brand-50 px-5 py-2.5 text-[13px]">
                             <span className="font-semibold text-brand">
@@ -406,30 +457,30 @@ export default function LeadsPage() {
                         </div>
                     )}
                     <div className="table-scroll overflow-x-auto">
-                        <table className="table-perfex">
+                        <table className="table-perfex" data-nosort>
                             <thead>
                                 <tr>
                                     <th className="w-10">
                                         <input type="checkbox" aria-label="Select all on this page" checked={allTicked} onChange={(e) => setSelected(e.target.checked ? [...new Set([...selected, ...pageIds])] : selected.filter((id) => !pageIds.includes(id)))} />
                                     </th>
                                     <th>#</th>
-                                    <th>Name</th>
-                                    <th>Company</th>
-                                    {show('email') && <th>Email</th>}
-                                    <th>Phone</th>
-                                    {show('lead_value') && <th className="text-right">Value</th>}
+                                    {head('Name', { sortKey: 'name', field: 'name' })}
+                                    {head('Company', { sortKey: 'company', field: 'company' })}
+                                    {show('email') && head('Email', { field: 'email' })}
+                                    {head('Phone', { field: 'phone' })}
+                                    {show('lead_value') && head('Value', { sortKey: 'lead_value', field: 'lead_value', className: 'text-right' })}
                                     <th>Tags</th>
-                                    <th>Assigned</th>
-                                    <th>Status</th>
-                                    <th>Source</th>
+                                    {head('Assigned', { field: 'assigned_id' })}
+                                    {head('Status', { field: 'lead_status_id' })}
+                                    {head('Source', { field: 'lead_source_id' })}
                                     <th>Rating</th>
-                                    <th>Last Contact</th>
-                                    <th>Created</th>
-                                    {show('city') && <th>City</th>}
-                                    {show('state') && <th>State</th>}
-                                    {show('country') && <th>Country</th>}
-                                    {show('zip') && <th>Zip Code</th>}
-                                    {show('assigned_at') && <th>Date Assigned</th>}
+                                    {head('Last Contact', { sortKey: 'last_contact_at', field: 'last_contact_at' })}
+                                    {head('Created', { sortKey: 'created_at', field: 'created_at' })}
+                                    {show('city') && head('City', { field: 'city' })}
+                                    {show('state') && head('State', { field: 'state' })}
+                                    {show('country') && head('Country', { field: 'country' })}
+                                    {show('zip') && head('Zip Code', { field: 'zip' })}
+                                    {show('assigned_at') && head('Date Assigned', { sortKey: 'assigned_at', field: 'assigned_at' })}
                                     {show('customer') && <th>Converted to customer</th>}
                                     {cfCols.columns.map((cfc) => (
                                         <th key={`cf${cfc.id}`}>{cfc.name}</th>
@@ -493,6 +544,9 @@ export default function LeadsPage() {
                     </div>
                 </div>
             )}
+
+            </div>
+            </div>
 
             {bulkOpen && data && (
                 <LeadBulkActions

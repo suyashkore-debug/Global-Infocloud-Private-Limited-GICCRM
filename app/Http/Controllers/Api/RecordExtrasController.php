@@ -17,6 +17,7 @@ use App\Services\LeadService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -73,6 +74,7 @@ class RecordExtrasController extends Controller
     {
         abort_unless((int) $note->created_by === (int) $request->user()->id || $request->user()->isAdmin(), 403);
         $note->delete();
+        self::leadOf($note->notable_type, $note->notable_id)?->logActivity('Deleted note: '.Str::limit(strip_tags((string) $note->description), 80));
 
         return response()->json(['message' => 'Note deleted.']);
     }
@@ -104,6 +106,10 @@ class RecordExtrasController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
+        if ($record instanceof Lead) {
+            $record->logActivity('Added reminder for '.$reminder->remind_at->setTimezone('Asia/Kolkata')->format('d M Y, h:i A').' ('.($reminder->user?->full_name ?? '—').')');
+        }
+
         return new ReminderResource($reminder->load('user'));
     }
 
@@ -111,6 +117,7 @@ class RecordExtrasController extends Controller
     {
         abort_unless(in_array((int) $request->user()->id, [(int) $reminder->user_id, (int) $reminder->created_by], true) || $request->user()->isAdmin(), 403);
         $reminder->delete();
+        self::leadOf($reminder->remindable_type, $reminder->remindable_id)?->logActivity('Deleted reminder for '.$reminder->remind_at->setTimezone('Asia/Kolkata')->format('d M Y, h:i A'));
 
         return response()->json(['message' => 'Reminder deleted.']);
     }
@@ -133,7 +140,7 @@ class RecordExtrasController extends Controller
         ]));
 
         if ($record instanceof Lead) {
-            $record->logActivity('Uploaded attachment');
+            $record->logActivity('Uploaded attachment: '.$saved->pluck('original_name')->implode(', '));
         }
 
         return AttachmentResource::collection($saved->each->load('user'))->response()->setStatusCode(201);
@@ -165,6 +172,12 @@ class RecordExtrasController extends Controller
         $zip->close();
 
         return response()->download($zipPath, "{$type}-{$record->id}-files.zip", ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
+    /** The lead a note or reminder belongs to, for its Activity Log. */
+    private static function leadOf(?string $type, mixed $id): ?Lead
+    {
+        return $type === Lead::class ? Lead::find($id) : null;
     }
 
     private function record(string $type, int $id, string $ability): Model

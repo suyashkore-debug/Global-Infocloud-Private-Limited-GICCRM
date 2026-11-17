@@ -39,6 +39,15 @@ class LeadFormController extends Controller
         return response()->json(['data' => $leadForm]);
     }
 
+    /** The list's Active switch: the form takes submissions or not. */
+    public function toggle(Request $request, LeadForm $leadForm): JsonResponse
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $leadForm->update(['active' => $request->validate(['active' => ['required', 'boolean']])['active']]);
+
+        return response()->json(['data' => $leadForm->loadCount('leads')]);
+    }
+
     public function destroy(Request $request, LeadForm $leadForm): JsonResponse
     {
         abort_unless($request->user()->isAdmin(), 403);
@@ -82,7 +91,7 @@ class LeadFormController extends Controller
             'notify_lead_imported' => ['boolean'],
             'notify_type' => ['nullable', Rule::in(['specific_staff', 'roles', 'assigned'])],
             'notify_ids' => ['nullable', 'array'],
-            'notify_ids.*' => ['integer'],
+            'notify_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $company)],
             'active' => ['boolean'],
             'recaptcha' => ['boolean'],
         ], [

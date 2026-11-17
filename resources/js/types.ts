@@ -553,6 +553,10 @@ export interface Lead {
     notes_count?: number;
     attachments_count?: number;
     tasks_count?: number;
+    whatsapp_count?: number;
+    whatsapp_unread_count?: number;
+    calls_count?: number;
+    calls_new_count?: number;
     lead_value: string | null;
     qualification: string[];
     rating: number;

@@ -17,7 +17,10 @@ class LeadFilterRules
 
     public const BOOLEAN = ['is_public', 'lost', 'junk'];
 
-    public const DATE = ['last_contact_at', 'created_at', 'assigned_at'];
+    public const DATE = ['last_contact_at', 'created_at', 'assigned_at', 'updated_at', 'last_status_change_at'];
+
+    /** Staff fields: who the lead is assigned to, who added it. */
+    public const STAFF = ['assigned_id', 'created_by'];
 
     public const NUMBER = ['lead_value'];
 
@@ -67,11 +70,13 @@ class LeadFilterRules
             } elseif (in_array($field, self::MULTI, true)) {
                 $ids = array_map('intval', (array) $rule['value']);
                 $ids && ($rule['op'] === 'not_in' ? $query->whereNotIn($field, $ids) : $query->whereIn($field, $ids));
-            } elseif ($field === 'assigned_id') {
+            } elseif (in_array($field, self::STAFF, true)) {
+                $ids = array_map('intval', (array) $rule['value']);
                 match ($rule['op']) {
-                    'empty' => $query->whereNull('assigned_id'),
-                    'is_not' => $query->where(fn ($q) => $q->whereNull('assigned_id')->orWhere('assigned_id', '!=', (int) $rule['value'])),
-                    default => $query->where('assigned_id', (int) $rule['value']),
+                    'empty' => $query->whereNull($field),
+                    'not_empty' => $query->whereNotNull($field),
+                    'is_not' => $query->where(fn ($q) => $q->whereNull($field)->orWhereNotIn($field, $ids)),
+                    default => $query->whereIn($field, $ids),
                 };
             }
         }
@@ -79,7 +84,7 @@ class LeadFilterRules
 
     private static function knows(string $field): bool
     {
-        return in_array($field, [...self::TEXT, ...self::BOOLEAN, ...self::DATE, ...self::NUMBER, ...self::MULTI, 'assigned_id'], true)
+        return in_array($field, [...self::TEXT, ...self::BOOLEAN, ...self::DATE, ...self::NUMBER, ...self::MULTI, ...self::STAFF], true)
             || preg_match('/^cf_\d+$/', $field) === 1;
     }
 
@@ -97,10 +102,26 @@ class LeadFilterRules
         };
     }
 
-    /** Dates are compared as calendar days in India time (the app clock is UTC). */
+    /**
+     * Dates are compared as calendar days in India time (the app clock is UTC). Besides fixed dates,
+     * a rule can name a range relative to today (today, yesterday, this week, last 7 days, ...).
+     */
     private static function date(Builder $query, string $column, string $op, mixed $value, mixed $value2): void
     {
         $day = fn (mixed $d) => $d ? Carbon::parse((string) $d, 'Asia/Kolkata')->startOfDay() : null;
+        $today = Carbon::today('Asia/Kolkata');
+        $range = match ($op) {
+            'today' => [$today, $today],
+            'yesterday' => [$today->copy()->subDay(), $today->copy()->subDay()],
+            'this_week' => [$today->copy()->startOfWeek(), $today->copy()->endOfWeek()->startOfDay()],
+            'last_7_days' => [$today->copy()->subDays(6), $today],
+            'this_month' => [$today->copy()->startOfMonth(), $today->copy()->endOfMonth()->startOfDay()],
+            'last_30_days' => [$today->copy()->subDays(29), $today],
+            default => null,
+        };
+        if ($range) {
+            [$op, $value, $value2] = ['between', $range[0]->toDateString(), $range[1]->toDateString()];
+        }
         $from = $day($value);
         $to = $day($value2);
         // assigned_at is a plain date; the others are UTC timestamps.

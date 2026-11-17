@@ -26,6 +26,8 @@ class LeadCallController extends Controller
     public function index(Request $request, Lead $lead): JsonResponse
     {
         $this->authorize('view', $lead);
+        // Opening the Call tab: the new calls are seen.
+        $lead->calls()->whereNull('seen_at')->update(['seen_at' => now()]);
 
         $company = (int) $lead->company_id;
 
@@ -54,6 +56,8 @@ class LeadCallController extends Controller
         $call = $lead->calls()->create([
             ...collect($data)->except('follow_up_at')->all(),
             'user_id' => $request->user()->id,
+            // Logged by hand: nothing new to point out.
+            'seen_at' => now(),
         ]);
 
         // A call that reached the lead counts as contact (Leads → "Last Contact").

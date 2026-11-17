@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasTags;
+use App\Support\LeadChangeLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +30,13 @@ class Lead extends Model
      */
     protected static function booted(): void
     {
+        // Every change of a field shows on the lead's Activity Log.
+        static::updated(function (Lead $lead) {
+            foreach (LeadChangeLog::lines($lead) as $line) {
+                $lead->logActivity($line);
+            }
+        });
+
         static::saving(function (Lead $lead) {
             if (($lead->isDirty('first_name') || $lead->isDirty('last_name')) && trim((string) $lead->first_name) !== '') {
                 $lead->name = mb_substr(trim(trim((string) $lead->first_name).' '.trim((string) $lead->last_name)), 0, 300);
@@ -135,6 +143,14 @@ class Lead extends Model
     /**
      * @return HasMany<LeadCall, $this>
      */
+    /**
+     * @return HasMany<WhatsappMessage, $this>
+     */
+    public function whatsappMessages(): HasMany
+    {
+        return $this->hasMany(WhatsappMessage::class);
+    }
+
     public function calls(): HasMany
     {
         return $this->hasMany(LeadCall::class)->latest('called_at')->latest('id');

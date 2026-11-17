@@ -130,3 +130,34 @@ it('asks for reCAPTCHA on forms that use it once the keys are saved', function (
     Http::assertSent(fn ($r) => $r['secret'] === 'secret-456' && $r['response'] === 'good');
     expect(Lead::where('email', 'human@x.test')->exists())->toBeTrue();
 });
+
+it('gives a lead the channel of the link it came through, and lets admins switch a form off', function () {
+    $admin = signIn(companyAdmin());
+    $form = $this->postJson('/api/lead-forms', webForm())->assertCreated()->json('data');
+    $key = $form['form_key'];
+    $send = function (string $email, array $extra) use ($key) {
+        auth()->forgetGuards();
+        $this->postJson("/api/public/lead-forms/{$key}", ['name' => 'Visitor', 'email' => $email, ...$extra])->assertCreated();
+
+        return Lead::where('email', $email)->first();
+    };
+
+    $fb = $send('fb@x.test', ['_source' => 'facebook', '_utm_campaign' => 'diwali']);
+    $wa = $send('wa@x.test', ['_source' => 'WA']);
+    $ig = $send('ig@x.test', ['_referrer' => 'https://l.instagram.com/?u=abc']);
+    $plain = $send('plain@x.test', ['_source' => 'not-a-channel']);
+
+    expect($fb->source->name)->toBe('Facebook')
+        ->and($wa->source->name)->toBe('WhatsApp')
+        ->and($ig->source->name)->toBe('Instagram')
+        ->and($plain->source->name)->toBe('Google') // the form's own source
+        ->and(LeadSource::where('name', 'WhatsApp')->count())->toBe(1) // created once, then reused
+        ->and($fb->activities()->value('description'))->toBe('Created lead from the web form "Website enquiry" (via Facebook, campaign: diwali)');
+    $send('wa2@x.test', ['_source' => 'whatsapp']);
+    expect(LeadSource::where('name', 'WhatsApp')->count())->toBe(1);
+
+    signIn($admin);
+    $this->patchJson("/api/lead-forms/{$form['id']}/active", ['active' => false])->assertOk()->assertJsonPath('data.active', false);
+    auth()->forgetGuards();
+    $this->postJson("/api/public/lead-forms/{$key}", ['name' => 'Late', 'email' => 'late@x.test'])->assertNotFound();
+});

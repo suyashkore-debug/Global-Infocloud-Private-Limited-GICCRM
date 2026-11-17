@@ -262,12 +262,21 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                     { id: 'attachments', label: 'Attachments', count: lead.attachments?.length ?? 0 },
                                     { id: 'reminders', label: 'Reminders', count: lead.reminders?.length ?? 0 },
                                     { id: 'notes', label: 'Notes', count: lead.notes?.length ?? 0 },
-                                    { id: 'activity', label: 'Activity Log' },
-                                    { id: 'whatsapp', label: 'WhatsApp' },
-                                    { id: 'calls', label: 'Call' },
+                                    { id: 'activity', label: 'Activity Log', count: lead.activities?.length ?? 0 },
+                                    { id: 'whatsapp', label: 'WhatsApp', count: lead.whatsapp_count ?? 0, alert: { count: lead.whatsapp_unread_count ?? 0, color: '#16a34a' } },
+                                    { id: 'calls', label: 'Call', count: lead.calls_count ?? 0, alert: { count: lead.calls_new_count ?? 0, color: '#ea580c' } },
                                 ]}
                                 active={tab}
-                                onChange={setTab}
+                                onChange={(next) => {
+                                    setTab(next);
+                                    // Opening the tab reads the messages / sees the calls (the server marks them).
+                                    if (next === 'whatsapp' && lead.whatsapp_unread_count) {
+                                        setLead({ ...lead, whatsapp_unread_count: 0 });
+                                    }
+                                    if (next === 'calls' && lead.calls_new_count) {
+                                        setLead({ ...lead, calls_new_count: 0 });
+                                    }
+                                }}
                             />
                         )}
 

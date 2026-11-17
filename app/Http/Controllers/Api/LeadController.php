@@ -19,6 +19,9 @@ use Illuminate\Validation\Rule;
 
 class LeadController extends Controller
 {
+    /** Columns the list can be sorted by. */
+    private const SORTABLE = ['created_at', 'updated_at', 'last_contact_at', 'last_status_change_at', 'assigned_at', 'name', 'company', 'lead_value'];
+
     public function __construct(private LeadService $leads) {}
 
     /**
@@ -65,7 +68,7 @@ class LeadController extends Controller
         $base->when($request->has('status'), fn (Builder $q) => $q->whereIn('lead_status_id', array_map('intval', (array) $request->input('status'))));
         $base->with(['status', 'source', 'assigned', 'tags', 'customer:id,name'])->withCount(['notes', 'attachments']);
 
-        $leads = $request->boolean('kanban') ? $this->kanbanColumns($base, $request) : (clone $base)->orderBy('id', 'desc')->paginate($request->integer('per_page', 25));
+        $leads = $request->boolean('kanban') ? $this->kanbanColumns($base, $request) : $this->sorted(clone $base, $request)->paginate(min(100, max(10, $request->integer('per_page', 25))));
 
         return LeadResource::collection($leads)->additional(['meta' => [
             'summary' => LeadStatus::orderBy('status_order')->get()->map(fn (LeadStatus $s) => [
@@ -99,6 +102,22 @@ class LeadController extends Controller
             ->where('lead_status_id', $statusId)
             ->orderBy($column, $direction)->orderBy('id', $direction)
             ->limit(min(2000, $limit + max(0, $more[$statusId] ?? 0)))->get());
+    }
+
+    /**
+     * The list's "Sort by" (sort, dir); newest first by default.
+     *
+     * @param  Builder<Lead>  $query
+     * @return Builder<Lead>
+     */
+    private function sorted(Builder $query, Request $request): Builder
+    {
+        $column = in_array($request->input('sort'), self::SORTABLE, true) ? $request->input('sort') : 'created_at';
+        $direction = $request->input('dir') === 'asc' ? 'asc' : 'desc';
+        // Empty values last either way (e.g. never contacted).
+        $query->orderByRaw("{$column} is null")->orderBy($column, $direction);
+
+        return $query->orderBy('id', $direction);
     }
 
     public function store(Request $request): LeadResource
@@ -325,6 +344,12 @@ class LeadController extends Controller
 
     private function loadForView(Lead $lead): Lead
     {
-        return $lead->loadCount('tasks')->load(['status', 'source', 'leadForm:id,name', 'assigned', 'tags', 'customer:id,name', 'activities.user', 'notes.creator', 'reminders.user', 'attachments.user', 'proposals']);
+        return $lead->loadCount([
+            'tasks',
+            'whatsappMessages as whatsapp_count',
+            'whatsappMessages as whatsapp_unread_count' => fn (Builder $q) => $q->where('direction', 'in')->whereNull('read_at'),
+            'calls as calls_count',
+            'calls as calls_new_count' => fn (Builder $q) => $q->whereNull('seen_at'),
+        ])->load(['status', 'source', 'leadForm:id,name', 'assigned', 'tags', 'customer:id,name', 'activities.user', 'notes.creator', 'reminders.user', 'attachments.user', 'proposals']);
     }
 }

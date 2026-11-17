@@ -48,6 +48,7 @@ class TaskService
             foreach ($data['followers'] ?? [] as $userId) {
                 $this->addFollower($task, (int) $userId);
             }
+            $task->lead?->logActivity('Created task: '.$task->name);
 
             return $task;
         });

@@ -61,19 +61,18 @@ class LeadService
             if (array_key_exists('assigned_id', $fields) && (int) $fields['assigned_id'] !== (int) $oldAssigned) {
                 $fields['assigned_at'] = $fields['assigned_id'] ? today() : null;
             }
+            // Field changes are logged by the lead itself (LeadChangeLog).
             $lead->update($fields);
             if (array_key_exists('tags', $data)) {
-                $lead->syncTagNames($data['tags'] ?? []);
+                $this->syncTagsLogged($lead, $data['tags'] ?? []);
             }
 
             if ((int) $lead->lead_status_id !== (int) $oldStatus) {
-                $this->logStatusChange($lead, $oldStatus);
+                $this->touchStatusChange($lead);
             }
             if ((int) $lead->assigned_id !== (int) $oldAssigned) {
-                $lead->logActivity('Assigned to '.($lead->assigned?->full_name ?? 'nobody'));
                 $this->notifyAssigned($lead);
             }
-            $lead->logActivity('Updated lead');
 
             return $lead;
         });
@@ -94,7 +93,7 @@ class LeadService
             $old = $lead->lead_status_id;
             $lead->update(['lead_status_id' => $status->id, 'lead_order' => $position + 1]);
             if ((int) $old !== (int) $status->id) {
-                $this->logStatusChange($lead, $old);
+                $this->touchStatusChange($lead);
             }
         }
     }
@@ -102,7 +101,6 @@ class LeadService
     public function setFlag(Lead $lead, string $flag, bool $on): void
     {
         $lead->update([$flag => $on]);
-        $lead->logActivity(($on ? 'Marked as ' : 'Unmarked as ').$flag);
     }
 
     /**
@@ -210,11 +208,27 @@ class LeadService
         $lead->logActivity('Added note');
     }
 
-    private function logStatusChange(Lead $lead, ?int $oldStatusId): void
+    /** The status changed (logged by the lead): note when. */
+    private function touchStatusChange(Lead $lead): void
     {
-        $from = LeadStatus::find($oldStatusId)?->name ?? '—';
         $lead->update(['last_status_change_at' => now()]);
-        $lead->logActivity("Status changed from {$from} to {$lead->status()->value('name')}");
+    }
+
+    /**
+     * Set the lead's tags and log what was added or removed.
+     *
+     * @param  array<int, string>  $names
+     */
+    private function syncTagsLogged(Lead $lead, array $names): void
+    {
+        $before = $lead->tags()->pluck('name')->all();
+        $lead->syncTagNames($names);
+        $after = $lead->tags()->pluck('name')->all();
+        $added = array_diff($after, $before);
+        $removed = array_diff($before, $after);
+        if ($added || $removed) {
+            $lead->logActivity('Tags changed:'.($added ? ' added '.implode(', ', $added) : '').($added && $removed ? ';' : '').($removed ? ' removed '.implode(', ', $removed) : ''));
+        }
     }
 
     private function notifyAssigned(Lead $lead): void

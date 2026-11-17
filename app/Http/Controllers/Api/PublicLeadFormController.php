@@ -16,6 +16,7 @@ use App\Services\Emails;
 use App\Services\Notifier;
 use App\Services\Options;
 use App\Services\Recaptcha;
+use App\Support\LeadChannel;
 use App\Support\PublicFormFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,7 +63,11 @@ class PublicLeadFormController extends Controller
             return $done;
         }
 
-        $lead = DB::transaction(function () use ($form, $fields, $custom, $extra, $request) {
+        // The channel the visitor came from: the link's ?source= / utm_source, else the referring site.
+        $channel = LeadChannel::name(mb_substr((string) ($request->input('_source') ?: $request->input('_utm_source')), 0, 50), mb_substr((string) $request->input('_referrer'), 0, 500));
+        $campaign = trim(mb_substr((string) $request->input('_utm_campaign'), 0, 100));
+
+        $lead = DB::transaction(function () use ($form, $fields, $custom, $extra, $request, $channel, $campaign) {
             DefaultLookups::ensureLeadLists();
             $description = trim(implode("\n", array_filter([$fields['description'] ?? null, ...array_map(fn ($e) => "{$e['label']}: {$e['value']}", $extra)])));
             $name = $fields['name'] ?? $fields['company'] ?? $fields['email'] ?? $form->name;
@@ -73,7 +78,7 @@ class PublicLeadFormController extends Controller
                 'name' => mb_substr(trim(($form->lead_name_prefix ? "{$form->lead_name_prefix} " : '').$name), 0, 300),
                 'description' => $description !== '' ? $description : null,
                 'lead_status_id' => $form->lead_status_id ?? ((int) Options::get('leads_default_status') ?: LeadStatus::orderBy('status_order')->value('id')),
-                'lead_source_id' => $form->lead_source_id ?? ((int) Options::get('leads_default_source') ?: LeadSource::orderBy('id')->value('id')),
+                'lead_source_id' => $channel ? LeadChannel::source($channel, $form->company_id)->id : ($form->lead_source_id ?? ((int) Options::get('leads_default_source') ?: LeadSource::orderBy('id')->value('id'))),
                 'assigned_id' => $form->responsible_id,
                 'assigned_at' => $form->responsible_id ? today() : null,
                 'is_public' => $form->mark_public,
@@ -100,7 +105,8 @@ class PublicLeadFormController extends Controller
                     ]);
                 }
             }
-            $lead->logActivity("Created lead from the web form \"{$form->name}\"");
+            $via = collect([$channel ? "via {$channel}" : null, $campaign !== '' ? "campaign: {$campaign}" : null])->filter()->implode(', ');
+            $lead->logActivity("Created lead from the web form \"{$form->name}\"".($via !== '' ? " ({$via})" : ''));
 
             return $lead;
         });

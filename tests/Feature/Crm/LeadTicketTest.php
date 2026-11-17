@@ -310,3 +310,83 @@ it('saves a lead by first and last name and keeps the full name in step', functi
         ->assertJsonPath('data.first_name', 'Anita')->assertJsonPath('data.last_name', 'Rao Deshmukh');
     $this->postJson('/api/leads', $base)->assertJsonValidationErrors('first_name');
 });
+
+it('sorts the list on the server and filters by who created a lead and by date ranges', function () {
+    $me = signIn(companyAdmin());
+    $other = staffMember($me->company);
+    App\Services\DefaultLookups::ensureLeadLists();
+    $base = ['lead_status_id' => App\Models\LeadStatus::value('id'), 'lead_source_id' => App\Models\LeadSource::value('id')];
+    $old = $this->postJson('/api/leads', [...$base, 'name' => 'Zed Old', 'lead_value' => 500])->json('data.id');
+    App\Models\Lead::whereKey($old)->update(['created_at' => now()->subDays(20), 'created_by' => $other->id]);
+    $this->postJson('/api/leads', [...$base, 'name' => 'Amy New', 'lead_value' => 100]);
+
+    $names = fn (array $q) => collect($this->getJson('/api/leads?'.http_build_query($q))->json('data'))->pluck('name')->all();
+    expect($names([]))->toBe(['Amy New', 'Zed Old'])
+        ->and($names(['sort' => 'created_at', 'dir' => 'asc']))->toBe(['Zed Old', 'Amy New'])
+        ->and($names(['sort' => 'name', 'dir' => 'asc']))->toBe(['Amy New', 'Zed Old'])
+        ->and($names(['sort' => 'lead_value', 'dir' => 'desc']))->toBe(['Zed Old', 'Amy New'])
+        ->and($names(['sort' => 'drop table', 'dir' => 'x']))->toBe(['Amy New', 'Zed Old'])
+        ->and($names(['rules' => json_encode([['field' => 'created_by', 'op' => 'is', 'value' => [(string) $me->id]]])]))->toBe(['Amy New'])
+        ->and($names(['rules' => json_encode([['field' => 'created_at', 'op' => 'last_7_days']])]))->toBe(['Amy New'])
+        ->and($names(['rules' => json_encode([['field' => 'created_at', 'op' => 'last_30_days']])]))->toHaveCount(2)
+        ->and($names(['rules' => json_encode([['field' => 'assigned_id', 'op' => 'empty']])]))->toHaveCount(2);
+});
+
+it('writes every change of a lead to its activity log, once, saying what changed', function () {
+    $me = signIn(companyAdmin());
+    $sales = staffMember($me->company);
+    App\Services\DefaultLookups::ensureLeadLists();
+    $new = App\Models\LeadStatus::where('name', 'New Lead')->value('id');
+    $demo = App\Models\LeadStatus::where('name', 'Demo Done')->value('id');
+    $google = App\Models\LeadSource::where('name', 'Google')->value('id');
+    $id = $this->postJson('/api/leads', ['first_name' => 'Ravi', 'phone' => '111', 'city' => 'Pune', 'lead_status_id' => $new, 'lead_source_id' => $google, 'tags' => ['hot']])->json('data.id');
+    $lead = App\Models\Lead::find($id);
+    $log = fn () => App\Models\LeadActivity::where('lead_id', $id)->orderBy('id')->pluck('description')->all();
+
+    $this->putJson("/api/leads/{$id}", ['first_name' => 'Ravi', 'last_name' => 'Patil', 'phone' => '222', 'city' => 'Pune', 'lead_status_id' => $demo, 'lead_source_id' => $google, 'assigned_id' => $sales->id, 'lead_value' => 5000, 'tags' => ['hot', 'vip']])->assertOk();
+    $this->postJson('/api/leads/move', ['lead_status_id' => $new, 'order' => [$id]])->assertOk();
+    $this->postJson("/api/leads/{$id}/flag", ['flag' => 'lost', 'value' => true])->assertOk();
+    $field = App\Models\CustomField::create(['company_id' => $me->company_id, 'field_to' => 'leads', 'name' => 'Industry', 'slug' => 'leads_industry', 'type' => 'input']);
+    $this->putJson("/api/custom-field-values/leads/{$id}", ['custom_fields' => [$field->id => 'Packaging']])->assertOk();
+    $reminder = $this->postJson("/api/records/lead/{$id}/reminders", ['remind_at' => now()->addDay()->toIso8601String(), 'description' => 'Call'])->assertCreated()->json('data.id');
+    $this->deleteJson("/api/reminders/{$reminder}")->assertOk();
+    $this->postJson('/api/tasks', ['name' => 'Send brochure', 'lead_id' => $id, 'priority' => 2, 'start_date' => today()->toDateString()])->assertCreated();
+
+    $lines = $log();
+    expect($lines)->toContain('Created lead')
+        ->toContain('Name changed from Ravi to Ravi Patil')
+        ->toContain('Phone changed from 111 to 222')
+        ->toContain('Status changed from New Lead to Demo Done')
+        ->toContain("Assigned to {$sales->full_name}")
+        ->toContain('Lead Value changed from — to 5,000.00')
+        ->toContain('Tags changed: added vip')
+        ->toContain('Status changed from Demo Done to New Lead')
+        ->toContain('Marked as lost')
+        ->toContain('Industry changed from — to Packaging')
+        ->toContain('Created task: Send brochure')
+        ->not->toContain('Updated lead')
+        ->and(collect($lines)->filter(fn ($l) => str_starts_with($l, 'Status changed from New Lead to Demo Done')))->toHaveCount(1)
+        ->and(collect($lines)->filter(fn ($l) => str_starts_with($l, 'Added reminder for')))->toHaveCount(1)
+        ->and(collect($lines)->filter(fn ($l) => str_starts_with($l, 'Deleted reminder for')))->toHaveCount(1)
+        ->and(collect($lines)->filter(fn ($l) => str_contains($l, 'City')))->toBeEmpty();
+});
+
+it('counts WhatsApp messages and calls on the lead, and what is new until the tab is opened', function () {
+    $me = signIn(companyAdmin());
+    App\Services\DefaultLookups::ensureLeadLists();
+    $id = $this->postJson('/api/leads', ['name' => 'Ravi', 'phone' => '9876543210', 'lead_status_id' => App\Models\LeadStatus::value('id'), 'lead_source_id' => App\Models\LeadSource::value('id')])->json('data.id');
+    $msg = fn (string $dir, ?string $read) => App\Models\WhatsappMessage::create(['company_id' => $me->company_id, 'lead_id' => $id, 'direction' => $dir, 'wa_id' => '919876543210', 'type' => 'text', 'body' => 'hi', 'status' => 'delivered', 'read_at' => $read]);
+    $msg('out', null);
+    $msg('in', now()->toDateTimeString());
+    $msg('in', null);
+    $msg('in', null);
+    App\Models\LeadCall::create(['company_id' => $me->company_id, 'lead_id' => $id, 'source' => 'exotel', 'direction' => 'in', 'outcome' => 'answered', 'called_at' => now()]);
+    $this->postJson("/api/leads/{$id}/calls", ['direction' => 'out', 'outcome' => array_key_first(App\Models\LeadCall::OUTCOMES), 'called_at' => now()->toDateTimeString()])->assertCreated();
+
+    $this->getJson("/api/leads/{$id}")->assertJsonPath('data.whatsapp_count', 4)->assertJsonPath('data.whatsapp_unread_count', 2)
+        ->assertJsonPath('data.calls_count', 2)->assertJsonPath('data.calls_new_count', 1);
+
+    $this->getJson("/api/leads/{$id}/whatsapp")->assertOk();
+    $this->getJson("/api/leads/{$id}/calls")->assertOk();
+    $this->getJson("/api/leads/{$id}")->assertJsonPath('data.whatsapp_unread_count', 0)->assertJsonPath('data.calls_new_count', 0)->assertJsonPath('data.calls_count', 2);
+});

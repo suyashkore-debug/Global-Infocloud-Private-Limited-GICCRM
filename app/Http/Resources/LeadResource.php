@@ -71,6 +71,11 @@ class LeadResource extends JsonResource
             'notes_count' => $this->whenCounted('notes'),
             'attachments_count' => $this->whenCounted('attachments'),
             'tasks_count' => $this->whenCounted('tasks'),
+            // WhatsApp and Call tabs: totals, and what is new (unread messages, unseen calls).
+            'whatsapp_count' => $this->whenCounted('whatsapp_count'),
+            'whatsapp_unread_count' => $this->whenCounted('whatsapp_unread_count'),
+            'calls_count' => $this->whenCounted('calls_count'),
+            'calls_new_count' => $this->whenCounted('calls_new_count'),
             'created_at' => $this->created_at,
             'can' => [
                 'update' => $request->user()->can('update', $this->resource),

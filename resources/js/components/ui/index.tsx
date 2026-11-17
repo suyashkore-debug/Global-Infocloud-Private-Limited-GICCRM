@@ -476,12 +476,17 @@ export function Pagination({ page, lastPage, total, onChange }: { page: number; 
 
 /* ── Tabs ────────────────────────────────────────────────────────────── */
 
-export function Tabs<T extends string>({ tabs, active, onChange }: { tabs: { id: T; label: string; count?: number }[]; active: T; onChange: (id: T) => void }) {
+/**
+ * Segmented tabs. A tab's count shows beside its label; an alert (how many new items, and a colour)
+ * tints the tab and adds a pulsing dot until the tab is opened.
+ */
+export function Tabs<T extends string>({ tabs, active, onChange }: { tabs: { id: T; label: string; count?: number; alert?: { count: number; color: string } }[]; active: T; onChange: (id: T) => void }) {
     return (
         <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <div className="inline-flex min-w-max gap-1 rounded-2xl bg-slate-100/80 p-1 ring-1 ring-inset ring-slate-200/70">
                 {tabs.map((tab) => {
                     const on = active === tab.id;
+                    const alert = !on && tab.alert && tab.alert.count > 0 ? tab.alert : null;
                     return (
                         <button
                             key={tab.id}
@@ -489,14 +494,28 @@ export function Tabs<T extends string>({ tabs, active, onChange }: { tabs: { id:
                             role="tab"
                             aria-selected={on}
                             onClick={() => onChange(tab.id)}
-                            className={`inline-flex items-center rounded-xl px-3.5 py-1.5 text-[13.5px] font-semibold transition ${
+                            title={alert ? `${alert.count} new` : undefined}
+                            style={alert ? { color: alert.color, backgroundColor: `${alert.color}14`, boxShadow: `inset 0 0 0 1px ${alert.color}55` } : undefined}
+                            className={`relative inline-flex items-center rounded-xl px-3.5 py-1.5 text-[13.5px] font-semibold transition ${
                                 on ? 'bg-white text-brand shadow-[0_2px_8px_-2px_rgba(16,24,40,0.15)] ring-1 ring-slate-200/80' : 'text-slate-500 hover:bg-white/60 hover:text-slate-800'
                             }`}
                         >
+                            {alert && (
+                                <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" style={{ backgroundColor: alert.color }} />
+                                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: alert.color }} />
+                                </span>
+                            )}
                             {tab.label}
                             {tab.count !== undefined && (
-                                <span className={`ml-1.5 rounded-full px-1.5 text-[11.5px] font-bold ${on ? 'bg-accent-50 text-accent' : 'bg-slate-200/70 text-slate-500'}`}>{tab.count}</span>
+                                <span
+                                    className={`ml-1.5 rounded-full px-1.5 text-[11.5px] font-bold ${alert ? 'text-white' : on ? 'bg-accent-50 text-accent' : 'bg-slate-200/70 text-slate-500'}`}
+                                    style={alert ? { backgroundColor: alert.color } : undefined}
+                                >
+                                    {tab.count}
+                                </span>
                             )}
+                            {alert && <span className="ml-1 text-[11px] font-bold">{alert.count} new</span>}
                         </button>
                     );
                 })}

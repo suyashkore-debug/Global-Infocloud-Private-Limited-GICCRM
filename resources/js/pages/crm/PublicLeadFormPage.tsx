@@ -32,7 +32,14 @@ export default function PublicLeadFormPage() {
         setSending(true);
         setErrors({});
         try {
-            const res = await axios.post<{ message: string; redirect_url: string | null }>(`/api/public/lead-forms/${key}`, new FormData(e.currentTarget), { headers: { Accept: 'application/json' } });
+            const body = new FormData(e.currentTarget);
+            // The channel: ?source= (or utm_source) on the shared link, else the page that sent the visitor.
+            const query = new URLSearchParams(window.location.search);
+            body.append('_source', query.get('source') ?? '');
+            body.append('_utm_source', query.get('utm_source') ?? '');
+            body.append('_utm_campaign', query.get('utm_campaign') ?? query.get('campaign') ?? '');
+            body.append('_referrer', document.referrer);
+            const res = await axios.post<{ message: string; redirect_url: string | null }>(`/api/public/lead-forms/${key}`, body, { headers: { Accept: 'application/json' } });
             if (res.data.redirect_url) {
                 // Leave the iframe too when the form is embedded.
                 (window.top ?? window).location.href = res.data.redirect_url;

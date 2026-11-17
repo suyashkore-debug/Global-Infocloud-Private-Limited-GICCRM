@@ -81,6 +81,10 @@ class WhatsAppController extends Controller
         if ($message->status === 'failed') {
             return response()->json(['message' => 'WhatsApp did not send the message: '.$message->error], 422);
         }
+        // The opening template is logged where it is sent.
+        if (! $template) {
+            $lead->logActivity('Sent WhatsApp message');
+        }
 
         return response()->json(['message' => 'Message sent.'], 201);
     }
