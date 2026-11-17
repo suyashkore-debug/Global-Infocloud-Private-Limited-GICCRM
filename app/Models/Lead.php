@@ -21,7 +21,7 @@ class Lead extends Model
     protected $fillable = [
         'company_id', 'name', 'first_name', 'last_name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state',
         'zip', 'country', 'default_language', 'lead_status_id', 'lead_source_id', 'lead_form_id', 'assigned_id', 'assigned_at', 'lead_value', 'qualification', 'is_public',
-        'lost', 'junk', 'last_contact_at', 'last_status_change_at', 'customer_id', 'converted_at', 'lead_order', 'created_by',
+        'lost', 'junk', 'last_contact_at', 'next_follow_up_at', 'follow_up_note', 'follow_up_by', 'follow_up_notified_at', 'last_status_change_at', 'customer_id', 'converted_at', 'lead_order', 'created_by',
     ];
 
     /**
@@ -38,6 +38,10 @@ class Lead extends Model
         });
 
         static::saving(function (Lead $lead) {
+            // A new follow-up time gets its own reminder.
+            if ($lead->isDirty('next_follow_up_at')) {
+                $lead->follow_up_notified_at = null;
+            }
             if (($lead->isDirty('first_name') || $lead->isDirty('last_name')) && trim((string) $lead->first_name) !== '') {
                 $lead->name = mb_substr(trim(trim((string) $lead->first_name).' '.trim((string) $lead->last_name)), 0, 300);
             } elseif ($lead->isDirty('name')) {
@@ -58,6 +62,8 @@ class Lead extends Model
             'lost' => 'boolean',
             'junk' => 'boolean',
             'last_contact_at' => 'datetime',
+            'next_follow_up_at' => 'datetime',
+            'follow_up_notified_at' => 'datetime',
             'last_status_change_at' => 'datetime',
             'converted_at' => 'datetime',
         ];

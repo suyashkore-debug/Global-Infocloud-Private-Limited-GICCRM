@@ -567,6 +567,9 @@ export interface Lead {
     junk: boolean;
     lead_order: number;
     last_contact_at: string | null;
+    /** When to get back to the lead, and what about. */
+    next_follow_up_at?: string | null;
+    follow_up_note?: string | null;
     last_status_change_at: string | null;
     assigned_at: string | null;
     converted_at: string | null;

@@ -64,18 +64,16 @@ class LeadCallController extends Controller
         if (in_array($call->outcome, ['answered', 'callback'], true) && (! $lead->last_contact_at || $call->called_at->gt($lead->last_contact_at))) {
             $lead->update(['last_contact_at' => $call->called_at]);
         }
-        $lead->logActivity('Logged a call: '.LeadCall::OUTCOMES[$call->outcome].($call->duration_minutes ? " ({$call->duration_minutes} min)" : ''));
-
+        // "Follow up on": the lead's next follow-up (its reminder goes to the caller and the assignee).
         if (! empty($data['follow_up_at'])) {
-            Reminder::create([
-                'remindable_type' => Lead::class,
-                'remindable_id' => $lead->id,
-                'user_id' => $request->user()->id,
-                'remind_at' => Carbon::parse($data['follow_up_at']),
-                'description' => "Follow-up call with {$lead->name}",
-                'created_by' => $request->user()->id,
+            $lead->update([
+                'next_follow_up_at' => Carbon::parse($data['follow_up_at']),
+                'follow_up_note' => "Follow-up call with {$lead->name}",
+                'follow_up_by' => $request->user()->id,
             ]);
         }
+        // Logged last, so the call heads the Activity Log.
+        $lead->logActivity('Logged a call: '.LeadCall::OUTCOMES[$call->outcome].($call->duration_minutes ? " ({$call->duration_minutes} min)" : ''));
 
         return response()->json(['data' => $this->row($call->load('user'), $request)], 201);
     }

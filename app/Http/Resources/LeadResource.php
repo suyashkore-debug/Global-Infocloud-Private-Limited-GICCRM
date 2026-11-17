@@ -41,6 +41,8 @@ class LeadResource extends JsonResource
             'junk' => $this->junk,
             'lead_order' => $this->lead_order,
             'last_contact_at' => $this->last_contact_at,
+            'next_follow_up_at' => $this->next_follow_up_at,
+            'follow_up_note' => $this->follow_up_note,
             'last_status_change_at' => $this->last_status_change_at,
             'assigned_at' => $this->assigned_at?->toDateString(),
             'converted_at' => $this->converted_at,

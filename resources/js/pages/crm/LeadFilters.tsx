@@ -33,7 +33,10 @@ const OPS: Record<Kind, { value: string; label: string }[]> = {
     ],
     boolean: [{ value: 'is', label: 'Is' }],
     date: [
+        { value: 'overdue', label: 'Overdue (before now)' },
         { value: 'today', label: 'Today' },
+        { value: 'tomorrow', label: 'Tomorrow' },
+        { value: 'next_7_days', label: 'Next 7 days' },
         { value: 'yesterday', label: 'Yesterday' },
         { value: 'this_week', label: 'This week' },
         { value: 'last_7_days', label: 'Last 7 days' },
@@ -88,6 +91,7 @@ const BASE_FIELDS: { field: string; label: string; kind: Kind }[] = [
     { field: 'created_at', label: 'Created On', kind: 'date' },
     { field: 'updated_at', label: 'Updated On', kind: 'date' },
     { field: 'last_contact_at', label: 'Last Contact', kind: 'date' },
+    { field: 'next_follow_up_at', label: 'Next Follow-up', kind: 'date' },
     { field: 'last_status_change_at', label: 'Status Changed On', kind: 'date' },
     { field: 'assigned_at', label: 'Date Assigned', kind: 'date' },
     { field: 'is_public', label: 'Public', kind: 'boolean' },
@@ -100,6 +104,7 @@ export const SORTS: { value: string; label: string; desc: string; asc: string }[
     { value: 'created_at', label: 'Created On', desc: 'Newest First', asc: 'Oldest First' },
     { value: 'updated_at', label: 'Updated On', desc: 'Newest First', asc: 'Oldest First' },
     { value: 'last_contact_at', label: 'Last Contact', desc: 'Newest First', asc: 'Oldest First' },
+    { value: 'next_follow_up_at', label: 'Next Follow-up', desc: 'Latest First', asc: 'Soonest First' },
     { value: 'last_status_change_at', label: 'Status Changed On', desc: 'Newest First', asc: 'Oldest First' },
     { value: 'assigned_at', label: 'Date Assigned', desc: 'Newest First', asc: 'Oldest First' },
     { value: 'name', label: 'Name', desc: 'Z → A', asc: 'A → Z' },
@@ -107,7 +112,7 @@ export const SORTS: { value: string; label: string; desc: string; asc: string }[
     { value: 'lead_value', label: 'Lead Value', desc: 'Highest First', asc: 'Lowest First' },
 ];
 
-const needsNoValue = (op: string) => ['empty', 'not_empty', 'today', 'yesterday', 'this_week', 'last_7_days', 'this_month', 'last_30_days'].includes(op);
+const needsNoValue = (op: string) => ['empty', 'not_empty', 'today', 'yesterday', 'this_week', 'last_7_days', 'this_month', 'last_30_days', 'overdue', 'tomorrow', 'next_7_days'].includes(op);
 
 const asList = (v: FilterRule['value']) => (Array.isArray(v) ? v : v ? [String(v)] : []);
 

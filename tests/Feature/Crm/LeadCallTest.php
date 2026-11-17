@@ -25,7 +25,7 @@ function callLead(User $by, array $overrides = []): Lead
     ]);
 }
 
-it('logs a call, marks the lead contacted, logs activity and sets a follow-up reminder', function () {
+it('logs a call, marks the lead contacted, logs activity and sets the next follow-up', function () {
     $admin = companyAdmin();
     $lead = callLead($admin);
 
@@ -39,7 +39,9 @@ it('logs a call, marks the lead contacted, logs activity and sets a follow-up re
     ])->assertCreated()->assertJsonPath('data.outcome', 'answered');
 
     expect($lead->refresh()->last_contact_at)->not->toBeNull()
-        ->and(Reminder::where('remindable_id', $lead->id)->value('description'))->toBe('Follow-up call with Ravi Patil');
+        ->and($lead->next_follow_up_at)->not->toBeNull()
+        ->and($lead->follow_up_note)->toBe('Follow-up call with Ravi Patil')
+        ->and($lead->follow_up_by)->toBe($admin->id);
 
     $this->getJson("/api/leads/{$lead->id}/calls")
         ->assertJsonPath('data.0.notes', 'Interested, wants a demo on Friday.')

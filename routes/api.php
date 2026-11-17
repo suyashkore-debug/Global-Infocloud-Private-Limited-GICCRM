@@ -245,6 +245,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     // Leads
     Route::get('/leads/import', [LeadImportController::class, 'show']);
     Route::get('/leads/import/sample', [LeadImportController::class, 'sample']);
+    Route::get('/leads/follow-ups', [LeadController::class, 'followUpSummary']);
     Route::post('/leads/import', [LeadImportController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/leads/move', [LeadController::class, 'move']);
     Route::post('/leads/bulk', [LeadController::class, 'bulk']);
@@ -252,6 +253,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::patch('/lead-forms/{leadForm}/active', [LeadFormController::class, 'toggle']);
     Route::apiResource('leads', LeadController::class);
     Route::get('/leads/{lead}/emails', [LeadController::class, 'emails']);
+    Route::post('/leads/{lead}/follow-up', [LeadController::class, 'followUp']);
     Route::post('/leads/{lead}/flag', [LeadController::class, 'flag']);
     Route::post('/leads/{lead}/qualification', [LeadController::class, 'qualify']);
     Route::post('/leads/{lead}/activities', [LeadController::class, 'addActivity']);

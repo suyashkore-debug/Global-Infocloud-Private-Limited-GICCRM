@@ -26,9 +26,9 @@ export default function LeadBulkActions({
 }) {
     const toast = useToast();
     const staff = useStaff();
-    const [form, setForm] = useState({ lost: false, lead_status_id: '', lead_source_id: '', last_contact_at: '', assigned_id: '', tags: [] as string[], visibility: '', mass_delete: false });
+    const [form, setForm] = useState({ lost: false, lead_status_id: '', lead_source_id: '', last_contact_at: '', next_follow_up_at: '', assigned_id: '', tags: [] as string[], visibility: '', mass_delete: false });
     const [saving, setSaving] = useState(false);
-    const nothing = !form.mass_delete && !form.lost && !form.lead_status_id && !form.lead_source_id && !form.last_contact_at && !form.assigned_id && form.tags.length === 0 && !form.visibility;
+    const nothing = !form.mass_delete && !form.lost && !form.lead_status_id && !form.lead_source_id && !form.last_contact_at && !form.next_follow_up_at && !form.assigned_id && form.tags.length === 0 && !form.visibility;
 
     async function confirm() {
         if (form.mass_delete && !window.confirm(`Delete ${ids.length} lead${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) {
@@ -45,6 +45,7 @@ export default function LeadBulkActions({
                       lead_source_id: form.lead_source_id ? Number(form.lead_source_id) : null,
                       assigned_id: form.assigned_id ? Number(form.assigned_id) : null,
                       last_contact_at: form.last_contact_at ? new Date(form.last_contact_at).toISOString() : null,
+                      next_follow_up_at: form.next_follow_up_at ? new Date(form.next_follow_up_at).toISOString() : null,
                       tags: form.tags,
                       visibility: form.visibility || null,
                   };
@@ -105,6 +106,9 @@ export default function LeadBulkActions({
                         </Field>
                         <Field label="Last Contact">
                             <Input type="datetime-local" value={form.last_contact_at} onChange={(e) => setForm({ ...form, last_contact_at: e.target.value })} />
+                        </Field>
+                        <Field label="Next Follow-up">
+                            <Input type="datetime-local" value={form.next_follow_up_at} onChange={(e) => setForm({ ...form, next_follow_up_at: e.target.value })} />
                         </Field>
                         <Field label="Assigned">
                             <Select value={form.assigned_id} onChange={(e) => setForm({ ...form, assigned_id: e.target.value })}>

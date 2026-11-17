@@ -22,6 +22,7 @@ import TasksBoard from '../../components/tasks/TasksBoard';
 import { COUNTRIES, LANGUAGES } from '../../lib/countries';
 import { celebrate } from '../../lib/celebrate';
 import LeadEmails from './LeadEmails';
+import { FollowUpPanel } from './LeadFollowUp';
 /** Setup → Leads "Modal Width Class" → the lead panel size. */
 const LEAD_WIDTHS: Record<string, 'lg' | 'xl' | 'xxl'> = { 'modal-lg': 'lg', 'modal-xl': 'xl', 'modal-xxl': 'xxl' };
 const appOptionsLoad = () => api.get<{ data: Record<string, string> }>('/app-options').then((r) => r.data.data).catch(() => ({}) as Record<string, string>);
@@ -73,6 +74,9 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
     // New lead: "Contacted Today" (default) sets the last contact to now; untick it to give the date.
     const [contactedToday, setContactedToday] = useState(true);
     const [contactedAt, setContactedAt] = useState('');
+    // A new lead's first follow-up (later ones are set from the lead's window).
+    const [followUpAt, setFollowUpAt] = useState('');
+    const [followUpNote, setFollowUpNote] = useState('');
     const [activity, setActivity] = useState('');
     const cf = useCustomFields('leads', lead?.id);
     const [convertOpen, setConvertOpen] = useState(false);
@@ -143,6 +147,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
             last_contact_at: form.last_contact_at ? new Date(form.last_contact_at).toISOString() : null,
             default_language: form.default_language || null,
             ...(lead ? {} : { last_contact_at: contactedToday ? new Date().toISOString() : contactedAt ? new Date(contactedAt).toISOString() : null }),
+            ...(lead || !followUpAt ? {} : { next_follow_up_at: new Date(followUpAt).toISOString(), follow_up_note: followUpNote || null }),
             // Perfex: the e-mail changed on a lead with proposals → ask whether they move to it too.
             ...(lead && lead.email && form.email !== lead.email && (lead.proposals?.length ?? 0) > 0
                 ? { update_proposal_emails: window.confirm('The e-mail changed. Also update it on the proposals of this lead?') }
@@ -253,6 +258,8 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                 </div>
                             </div>
                         )}
+
+                        {lead && !editing && <FollowUpPanel lead={lead} canEdit={lead.can.update} onChanged={(l) => (setLead(l), onChanged())} />}
 
                         {lead && !editing && (
                             <Tabs
@@ -418,6 +425,16 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                                 </label>
                                             )}
                                         </div>
+                                        {!lead && (
+                                            <div className="grid gap-3 sm:col-span-3 sm:grid-cols-[230px_minmax(0,1fr)]">
+                                                <Field label="Next follow-up" error={errors.next_follow_up_at} hint="Optional. You get a reminder at this time.">
+                                                    <Input type="datetime-local" value={followUpAt} onChange={(e) => setFollowUpAt(e.target.value)} />
+                                                </Field>
+                                                <Field label="Follow-up about" error={errors.follow_up_note}>
+                                                    <Input value={followUpNote} onChange={(e) => setFollowUpNote(e.target.value)} placeholder="e.g. Share the price list" maxLength={500} disabled={!followUpAt} />
+                                                </Field>
+                                            </div>
+                                        )}
                                     </div>
                                 </FormSection>
 
@@ -560,6 +577,7 @@ function LeadProfile({ lead, onChanged }: { lead: Lead; onChanged: (lead: Lead) 
         ['Tags', lead.tags?.join(', ')],
         ['Created', formatDateTime(lead.created_at)],
         ['Last Contact', lead.last_contact_at ? formatDateTime(lead.last_contact_at) : null],
+        ['Next Follow-up', lead.next_follow_up_at ? `${formatDateTime(lead.next_follow_up_at)}${lead.follow_up_note ? ` · ${lead.follow_up_note}` : ''}` : null],
         ['Public', lead.is_public ? 'Yes' : 'No'],
         ['Default Language', lead.default_language || 'System Default'],
         ['Date Assigned', lead.assigned_at ? formatDate(lead.assigned_at) : null],

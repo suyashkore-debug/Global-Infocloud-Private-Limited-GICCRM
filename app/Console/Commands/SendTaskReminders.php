@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\AppNotification;
 use App\Models\CalendarEvent;
+use App\Models\Lead;
 use App\Models\Reminder;
 use App\Models\TaskReminder;
 use App\Models\User;
@@ -12,7 +13,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
 /**
- * Turns due task reminders into notifications (runs every minute).
+ * Turns due task reminders, record reminders and lead follow-ups into notifications (runs every minute).
  */
 class SendTaskReminders extends Command
 {
@@ -69,6 +70,29 @@ class SendTaskReminders extends Command
                     },
                 ]);
                 $reminder->update(['is_notified' => true]);
+            });
+
+        // Lead follow-ups that are due: the assignee and whoever set it are told (in the app and by e-mail).
+        Lead::withoutGlobalScopes()
+            ->whereNotNull('next_follow_up_at')
+            ->whereNull('follow_up_notified_at')
+            ->where('next_follow_up_at', '<=', now())
+            ->where('lost', false)->where('junk', false)
+            ->each(function (Lead $lead) {
+                $link = "/leads?lead={$lead->id}";
+                $text = "Follow-up due: {$lead->name}".($lead->follow_up_note ? " ({$lead->follow_up_note})" : '');
+                foreach (collect([$lead->assigned_id, $lead->follow_up_by ?: $lead->created_by])->filter()->unique() as $userId) {
+                    AppNotification::create([
+                        'company_id' => $lead->company_id,
+                        'user_id' => $userId,
+                        'from_user_id' => $lead->follow_up_by,
+                        'description' => $text,
+                        'link' => $link,
+                    ]);
+                    self::email((int) $lead->company_id, (int) $userId, $text, $lead->next_follow_up_at, "Lead #{$lead->id} {$lead->name}", Emails::url($link));
+                }
+                // Saved quietly: not a change of the lead for its Activity Log.
+                $lead->forceFill(['follow_up_notified_at' => now()])->saveQuietly();
             });
 
         // Calendar events with "notify before" (Perfex event reminders).

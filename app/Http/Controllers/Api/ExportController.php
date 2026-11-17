@@ -167,7 +167,7 @@ class ExportController extends Controller
                     'Phone' => fn ($l) => $l->phone, 'Website' => fn ($l) => $l->website, 'City' => fn ($l) => $l->city, 'State' => fn ($l) => $l->state, 'Country' => fn ($l) => $l->country,
                     'Status' => fn ($l) => $l->status?->name, 'Source' => fn ($l) => $l->source?->name, 'Assigned' => fn ($l) => $staff($l->assigned_id),
                     'Lead value' => fn ($l) => $l->lead_value, 'Lost' => fn ($l) => (bool) $l->lost, 'Junk' => fn ($l) => (bool) $l->junk,
-                    'Last contact' => fn ($l) => $l->last_contact_at, 'Date created' => fn ($l) => $l->created_at,
+                    'Last contact' => fn ($l) => $l->last_contact_at, 'Next follow-up' => fn ($l) => $l->next_follow_up_at, 'Follow-up note' => fn ($l) => $l->follow_up_note, 'Date created' => fn ($l) => $l->created_at,
                 ],
             ],
             'expenses' => [

@@ -23,10 +23,34 @@ class LeadService
 {
     private const FIELDS = [
         'name', 'first_name', 'last_name', 'title', 'company', 'description', 'email', 'phone', 'website', 'address', 'city', 'state', 'zip', 'country', 'default_language',
-        'lead_status_id', 'lead_source_id', 'assigned_id', 'lead_value', 'is_public', 'last_contact_at',
+        'lead_status_id', 'lead_source_id', 'assigned_id', 'lead_value', 'is_public', 'last_contact_at', 'next_follow_up_at', 'follow_up_note',
     ];
 
     public function __construct(private Notifier $notifier) {}
+
+    /**
+     * Set, move or finish a lead's follow-up. Finishing it counts as contact (Last Contact = now)
+     * and can set the next one at once.
+     *
+     * @param  array{next_follow_up_at?: ?string, follow_up_note?: ?string, done?: bool, outcome?: ?string}  $data
+     */
+    public function followUp(Lead $lead, array $data): Lead
+    {
+        return DB::transaction(function () use ($lead, $data) {
+            if (! empty($data['done'])) {
+                $lead->logActivity('Follow-up done'.(! empty($data['outcome']) ? ': '.$data['outcome'] : ''));
+                $lead->last_contact_at = now();
+            }
+            $next = $data['next_follow_up_at'] ?? null;
+            $lead->fill([
+                'next_follow_up_at' => $next,
+                'follow_up_note' => $next ? ($data['follow_up_note'] ?? null) : null,
+                'follow_up_by' => $next ? Auth::id() : null,
+            ])->save();
+
+            return $lead;
+        });
+    }
 
     /**
      * @param  array<string, mixed>  $data
@@ -36,6 +60,7 @@ class LeadService
         return DB::transaction(function () use ($data) {
             $lead = Lead::create([
                 ...Arr::only($data, self::FIELDS),
+                'follow_up_by' => ! empty($data['next_follow_up_at']) ? Auth::id() : null,
                 'assigned_at' => ! empty($data['assigned_id']) ? today() : null,
                 'last_status_change_at' => now(),
                 'created_by' => Auth::id(),
@@ -60,6 +85,9 @@ class LeadService
 
             if (array_key_exists('assigned_id', $fields) && (int) $fields['assigned_id'] !== (int) $oldAssigned) {
                 $fields['assigned_at'] = $fields['assigned_id'] ? today() : null;
+            }
+            if (array_key_exists('next_follow_up_at', $fields) && (string) $fields['next_follow_up_at'] !== (string) $lead->next_follow_up_at) {
+                $fields['follow_up_by'] = $fields['next_follow_up_at'] ? Auth::id() : null;
             }
             // Field changes are logged by the lead itself (LeadChangeLog).
             $lead->update($fields);
@@ -100,7 +128,8 @@ class LeadService
 
     public function setFlag(Lead $lead, string $flag, bool $on): void
     {
-        $lead->update([$flag => $on]);
+        // A lost or junk lead needs no more follow-ups.
+        $lead->update([$flag => $on, ...($on ? ['next_follow_up_at' => null, 'follow_up_note' => null] : [])]);
     }
 
     /**

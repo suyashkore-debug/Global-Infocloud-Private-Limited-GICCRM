@@ -18,7 +18,7 @@ class LeadFilterRules
 
     public const BOOLEAN = ['is_public', 'lost', 'junk'];
 
-    public const DATE = ['last_contact_at', 'created_at', 'assigned_at', 'updated_at', 'last_status_change_at'];
+    public const DATE = ['last_contact_at', 'next_follow_up_at', 'created_at', 'assigned_at', 'updated_at', 'last_status_change_at'];
 
     /** Staff fields: who the lead is assigned to, who added it. */
     public const STAFF = ['assigned_id', 'created_by'];
@@ -118,8 +118,16 @@ class LeadFilterRules
             'last_7_days' => [$today->copy()->subDays(6), $today],
             'this_month' => [$today->copy()->startOfMonth(), $today->copy()->endOfMonth()->startOfDay()],
             'last_30_days' => [$today->copy()->subDays(29), $today],
+            'tomorrow' => [$today->copy()->addDay(), $today->copy()->addDay()],
+            'next_7_days' => [$today, $today->copy()->addDays(6)],
             default => null,
         };
+        // Past due: earlier than this moment (a follow-up later today is not overdue yet).
+        if ($op === 'overdue') {
+            $query->where($column, '<', now());
+
+            return;
+        }
         if ($range) {
             [$op, $value, $value2] = ['between', $range[0]->toDateString(), $range[1]->toDateString()];
         }

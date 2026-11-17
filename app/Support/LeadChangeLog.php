@@ -32,6 +32,8 @@ class LeadChangeLog
         'lead_source_id' => 'Source',
         'lead_value' => 'Lead Value',
         'last_contact_at' => 'Last Contact',
+        'next_follow_up_at' => 'Next Follow-up',
+        'follow_up_note' => 'Follow-up note',
         'is_public' => 'Public',
     ];
 
@@ -89,7 +91,7 @@ class LeadChangeLog
             'lead_source_id' => LeadSource::find($value)?->name ?? "#{$value}",
             'is_public' => $value ? 'Yes' : 'No',
             'lead_value' => number_format((float) $value, 2),
-            'last_contact_at' => Carbon::parse($value)->setTimezone(CompanyTime::zone())->format('d M Y, h:i A'),
+            'last_contact_at', 'next_follow_up_at' => Carbon::parse($value)->setTimezone(CompanyTime::zone())->format('d M Y, h:i A'),
             default => (string) $value,
         };
     }

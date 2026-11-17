@@ -19,6 +19,7 @@ import { usePermission } from '../../hooks/usePermission';
 import { LeadRatingCell } from './LeadRating';
 import { celebrate } from '../../lib/celebrate';
 import { useCustomFieldColumns } from '../../components/customfields/CustomFields';
+import { FollowUpBar, FollowUpChip, type FollowUpFilter } from './LeadFollowUp';
 
 /** Columns the list can also show (Perfex's hidden columns), chosen from "Columns". */
 const OPTIONAL_COLUMNS: [string, string][] = [
@@ -116,6 +117,14 @@ export default function LeadsPage() {
     const openView = views.find((v) => v.id === activeView);
     const dirty = !!openView && JSON.stringify(openView.state) !== JSON.stringify(current);
     const applyRules = (r: FilterRule[]) => (setRules(r), setPage(1), setSelected([]));
+    // Follow-ups bar: one follow-up rule at a time, soonest first.
+    const followUpFilter = (rules.find((r) => r.field === 'next_follow_up_at')?.op ?? null) as FollowUpFilter | null;
+    const pickFollowUp = (f: FollowUpFilter | null) => {
+        applyRules([...rules.filter((r) => r.field !== 'next_follow_up_at'), ...(f ? [{ field: 'next_follow_up_at', op: f } as FilterRule] : [])]);
+        if (f) {
+            setListSort({ sort: 'next_follow_up_at', dir: 'asc' });
+        }
+    };
     const togglePanel = () => setPanelOpen((o) => (writeStorage('leads_filter_panel', o ? '0' : '1'), !o));
     const toggleSort = (key: string) => (setListSort((s) => ({ sort: key, dir: s.sort === key && s.dir === 'desc' ? 'asc' : 'desc' })), setPage(1));
 
@@ -128,6 +137,9 @@ export default function LeadsPage() {
         ...(view === 'kanban' ? { kanban_sort: sort.by, kanban_dir: sort.dir, more } : {}),
         ...(view === 'list' && statuses.length ? { status: statuses } : {}),
     });
+    // The follow-up counts are fetched again whenever the list is.
+    const [followUpKey, setFollowUpKey] = useState(0);
+    useEffect(() => setFollowUpKey((k) => k + 1), [data]);
     const filterCtx = { statuses: data?.meta.summary ?? leadStatuses.data?.data ?? [], sources: sources.data?.data ?? [] };
     const total = data ? (view === 'list' ? data.meta.total : data.meta.summary.reduce((a, s) => a + (s.count ?? 0), 0)) : null;
     // A column header: click the name to sort (server side), the funnel to filter by the column.
@@ -230,6 +242,8 @@ export default function LeadsPage() {
                     setPendingView(id ?? activeView);
                 }}
             />
+
+            <FollowUpBar active={followUpFilter} onPick={pickFollowUp} refreshKey={followUpKey} />
 
             <div className="flex flex-wrap items-center gap-2">
                 <Button variant="secondary" onClick={togglePanel} className={rules.length ? '!border-brand !text-brand' : ''}>
@@ -411,6 +425,7 @@ export default function LeadsPage() {
                                                             {lead.attachments_count}
                                                         </span>
                                                     )}
+                                                    {lead.next_follow_up_at && <FollowUpChip at={lead.next_follow_up_at} compact />}
                                                     <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] text-slate-400" title={lead.last_contact_at ? `Last contact ${timeAgo(lead.last_contact_at)}` : undefined}>
                                                         <Clock className="h-3 w-3" />
                                                         {timeAgo(lead.created_at)}
@@ -475,6 +490,7 @@ export default function LeadsPage() {
                                     {head('Source', { field: 'lead_source_id' })}
                                     <th>Rating</th>
                                     {head('Last Contact', { sortKey: 'last_contact_at', field: 'last_contact_at' })}
+                                    {head('Next Follow-up', { sortKey: 'next_follow_up_at', field: 'next_follow_up_at' })}
                                     {head('Created', { sortKey: 'created_at', field: 'created_at' })}
                                     {show('city') && head('City', { field: 'city' })}
                                     {show('state') && head('State', { field: 'state' })}
@@ -514,6 +530,9 @@ export default function LeadsPage() {
                                             <LeadRatingCell lead={lead} onChanged={replaceLead} />
                                         </td>
                                         <td className="whitespace-nowrap">{lead.last_contact_at ? timeAgo(lead.last_contact_at) : ''}</td>
+                                        <td className="whitespace-nowrap" title={lead.follow_up_note ?? undefined}>
+                                            <FollowUpChip at={lead.next_follow_up_at} />
+                                        </td>
                                         <td className="whitespace-nowrap">{formatDate(lead.created_at)}</td>
                                         {show('city') && <td>{lead.city}</td>}
                                         {show('state') && <td>{lead.state}</td>}

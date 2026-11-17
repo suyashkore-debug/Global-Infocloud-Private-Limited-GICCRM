@@ -13,6 +13,8 @@ use App\Services\DefaultLookups;
 use App\Services\LeadFilterRules;
 use App\Services\LeadService;
 use App\Services\Options;
+use App\Support\CompanyTime;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +24,7 @@ use Illuminate\Validation\Rule;
 class LeadController extends Controller
 {
     /** Columns the list can be sorted by. */
-    private const SORTABLE = ['created_at', 'updated_at', 'last_contact_at', 'last_status_change_at', 'assigned_at', 'name', 'company', 'lead_value'];
+    private const SORTABLE = ['created_at', 'updated_at', 'last_contact_at', 'next_follow_up_at', 'last_status_change_at', 'assigned_at', 'name', 'company', 'lead_value'];
 
     public function __construct(private LeadService $leads) {}
 
@@ -173,6 +175,7 @@ class LeadController extends Controller
             'lead_source_id' => ['nullable', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
             'assigned_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'last_contact_at' => ['nullable', 'date'],
+            'next_follow_up_at' => ['nullable', 'date'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:100'],
             'visibility' => ['nullable', Rule::in(['public', 'private'])],
@@ -197,6 +200,7 @@ class LeadController extends Controller
                 'lead_source_id' => $data['lead_source_id'] ?? null,
                 'assigned_id' => $data['assigned_id'] ?? null,
                 'last_contact_at' => $data['last_contact_at'] ?? null,
+                'next_follow_up_at' => $data['next_follow_up_at'] ?? null,
                 'is_public' => isset($data['visibility']) ? $data['visibility'] === 'public' : null,
             ], fn ($v) => $v !== null);
             if (! empty($data['tags'])) {
@@ -255,6 +259,40 @@ class LeadController extends Controller
             'id' => $m->id, 'subject' => $m->subject, 'to' => $m->to, 'template' => $m->template, 'status' => $m->status,
             'error' => $m->error, 'sent_by' => $m->user_id ? ($names[$m->user_id] ?? null) : null, 'created_at' => $m->created_at,
         ])]);
+    }
+
+    /**
+     * Follow-ups due for the leads this person can see: overdue, later today, and the next 7 days.
+     */
+    public function followUpSummary(Request $request): JsonResponse
+    {
+        $zone = CompanyTime::zone();
+        $startOfToday = Carbon::now($zone)->startOfDay()->utc();
+        $endOfToday = Carbon::now($zone)->endOfDay()->utc();
+        $base = Lead::query()->visibleTo($request->user())->whereNotNull('next_follow_up_at');
+
+        return response()->json(['data' => [
+            'overdue' => (clone $base)->where('next_follow_up_at', '<', now())->count(),
+            'today' => (clone $base)->whereBetween('next_follow_up_at', [$startOfToday, $endOfToday])->count(),
+            'next_7_days' => (clone $base)->whereBetween('next_follow_up_at', [$startOfToday, Carbon::now($zone)->addDays(6)->endOfDay()->utc()])->count(),
+            'mine_overdue' => (clone $base)->where('assigned_id', $request->user()->id)->where('next_follow_up_at', '<', now())->count(),
+        ]]);
+    }
+
+    /**
+     * Set, move or finish the lead's next follow-up.
+     */
+    public function followUp(Request $request, Lead $lead): LeadResource
+    {
+        $this->authorize('update', $lead);
+        $data = $request->validate([
+            'next_follow_up_at' => ['nullable', 'date'],
+            'follow_up_note' => ['nullable', 'string', 'max:500'],
+            'done' => ['boolean'],
+            'outcome' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        return new LeadResource($this->loadForView($this->leads->followUp($lead, $data)));
     }
 
     public function flag(Request $request, Lead $lead): LeadResource
@@ -358,6 +396,8 @@ class LeadController extends Controller
             'lead_value' => ['nullable', 'numeric', 'min:0'],
             'is_public' => ['boolean'],
             'last_contact_at' => ['nullable', 'date'],
+            'next_follow_up_at' => ['nullable', 'date'],
+            'follow_up_note' => ['nullable', 'string', 'max:500'],
             'tags' => ['array'],
             'tags.*' => ['string', 'max:100'],
         ]);
