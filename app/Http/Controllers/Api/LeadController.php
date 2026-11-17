@@ -14,6 +14,7 @@ use App\Services\LeadFilterRules;
 use App\Services\LeadService;
 use App\Services\Options;
 use App\Support\CompanyTime;
+use App\Support\PhoneNumber;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -382,7 +383,18 @@ class LeadController extends Controller
             'company' => ['nullable', 'string', 'max:300', ...$unique('company')],
             'description' => ['nullable', 'string', 'max:65000'],
             'email' => ['nullable', 'email', 'max:150', ...$unique('email')],
-            'phone' => ['nullable', 'string', 'max:50', ...$unique('phone')],
+            // Phones compared by their digits: "+91 98765 43210" repeats "9876543210".
+            'phone' => ['nullable', 'string', 'max:50', ...(in_array('phone', explode(',', Options::get('lead_unique_validation')), true) ? [function (string $attribute, mixed $value, \Closure $fail) use ($current) {
+                $key = PhoneNumber::key((string) $value);
+                if ($key === '') {
+                    return;
+                }
+                $twin = Lead::query()->where('phone', 'like', '%'.substr($key, -4).'%')->when($current, fn (Builder $q) => $q->whereKeyNot($current->id))
+                    ->get(['id', 'name', 'phone'])->first(fn (Lead $l) => PhoneNumber::key($l->phone) === $key);
+                if ($twin) {
+                    $fail("Lead #{$twin->id} {$twin->name} already has this phone number.");
+                }
+            }] : [])],
             'website' => ['nullable', 'string', 'max:150', ...$unique('website')],
             'address' => ['nullable', 'string', 'max:200'],
             'city' => ['nullable', 'string', 'max:100'],

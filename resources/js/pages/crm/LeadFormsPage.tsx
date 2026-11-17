@@ -46,6 +46,8 @@ export type LeadWebForm = {
 /** Lead fields a form field can fill (Perfex web to lead "database fields"), with their usual input. */
 const LEAD_FIELDS: { name: string; label: string; type: FieldType; options?: string[] }[] = [
     { name: 'name', label: 'Name', type: 'text' },
+    { name: 'first_name', label: 'First Name', type: 'text' },
+    { name: 'last_name', label: 'Last Name', type: 'text' },
     { name: 'title', label: 'Position', type: 'text' },
     { name: 'email', label: 'Email Address', type: 'email' },
     { name: 'phone', label: 'Phone', type: 'text' },

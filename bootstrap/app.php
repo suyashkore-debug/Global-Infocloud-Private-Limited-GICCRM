@@ -6,6 +6,13 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\EnsureUserCanUseApp;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Support\Env;
+
+// The .env settings stay with each request ($_ENV / $_SERVER) instead of the process environment:
+// Apache on Windows (XAMPP) runs requests as threads of one process, and there one request's
+// putenv() could hide the settings from another running at the same time, sending it to the
+// wrong database ("Unknown database 'laravel'").
+Env::disablePutenv();
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(

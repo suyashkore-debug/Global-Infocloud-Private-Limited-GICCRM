@@ -48,4 +48,23 @@ class PhoneNumber
             ->get()
             ->first(fn (Lead $l) => self::normalize($l->phone, $defaultCode) === $number);
     }
+
+    /**
+     * A number as compared for duplicates: its last 10 digits (the local part), or all of them when
+     * shorter, so "+91 98765-43210", "098765 43210" and "9876543210" match; "" when none.
+     */
+    public static function key(?string $phone): string
+    {
+        $digits = preg_replace("/\D+/", "", (string) $phone);
+
+        return strlen($digits) > 10 ? substr($digits, -10) : $digits;
+    }
+
+    /** Whether two numbers are the same (by their digits). */
+    public static function same(?string $a, ?string $b): bool
+    {
+        $a = self::key($a);
+
+        return $a !== "" && $a === self::key($b);
+    }
 }

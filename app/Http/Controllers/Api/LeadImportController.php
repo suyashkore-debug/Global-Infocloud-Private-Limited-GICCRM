@@ -27,6 +27,7 @@ class LeadImportController extends Controller
 
         return response()->json(['data' => [
             'headings' => $import->headings(),
+            'fields' => $import->fields(),
             'unique_fields' => array_values(array_filter(explode(',', Options::get('lead_unique_validation')))),
             'default_status_id' => Options::get('leads_default_status'),
             'default_source_id' => Options::get('leads_default_source'),
@@ -54,6 +55,11 @@ class LeadImportController extends Controller
             'status_id' => ['required', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'source_id' => ['required', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
             'assigned_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
+            // Several staff: the leads are shared out among them in turn.
+            'assigned_ids' => ['nullable', 'array', 'max:50'],
+            'assigned_ids.*' => ['integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
+            // What each column of the file fills (JSON: [field key or null, …] by column), else matched by heading.
+            'mapping' => ['nullable', 'json'],
             'simulate' => ['boolean'],
         ], [
             'file.mimes' => 'Choose a .csv file.',
@@ -64,6 +70,8 @@ class LeadImportController extends Controller
                 'status_id' => (int) $data['status_id'],
                 'source_id' => (int) $data['source_id'],
                 'assigned_id' => isset($data['assigned_id']) ? (int) $data['assigned_id'] : null,
+                'assigned_ids' => array_map('intval', $data['assigned_ids'] ?? array_filter([$data['assigned_id'] ?? null])),
+                'mapping' => isset($data['mapping']) ? (array) json_decode($data['mapping'], true) : null,
                 'simulate' => (bool) ($data['simulate'] ?? false),
             ]);
         } catch (LeadImportException $e) {

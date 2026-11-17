@@ -15,7 +15,7 @@ class LeadForm extends Model
     use BelongsToCompany;
 
     /** Lead fields a form field can fill; anything else is added to the lead's description. */
-    public const LEAD_FIELDS = ['name', 'title', 'email', 'phone', 'lead_value', 'company', 'address', 'city', 'state', 'country', 'zip', 'description', 'website'];
+    public const LEAD_FIELDS = ['name', 'first_name', 'last_name', 'title', 'email', 'phone', 'lead_value', 'company', 'address', 'city', 'state', 'country', 'zip', 'description', 'website'];
 
     /** Fields a form may check for duplicates (Perfex "Track duplicate by field"). */
     public const DUPLICATE_FIELDS = ['email', 'phone', 'website', 'company', 'name'];

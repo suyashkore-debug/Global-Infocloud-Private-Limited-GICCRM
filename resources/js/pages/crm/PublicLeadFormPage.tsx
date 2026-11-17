@@ -74,6 +74,8 @@ export default function PublicLeadFormPage() {
                     </div>
                 ) : (
                     <form onSubmit={submit} className="space-y-4" noValidate>
+                        {/* Left empty by people (they never see it); spam bots fill it in. */}
+                        <input type="text" name="_company_site" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
                         {form.fields.map((f) => (
                             <div key={f.name}>
                                 <label className="mb-1.5 block text-[13px] font-semibold text-slate-600">

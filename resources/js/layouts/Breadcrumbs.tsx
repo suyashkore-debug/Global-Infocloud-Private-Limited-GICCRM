@@ -38,6 +38,8 @@ const EXTRA: CrumbLink[] = [
     { label: 'Tasks Overview', to: '/tasks/overview', section: 'Tasks' },
     { label: 'Mail Lists', to: '/utilities/mail-lists', section: 'Utilities' },
     { label: 'Forms', to: '/estimate-requests/forms', section: 'Estimate Request' },
+    { label: 'Import Leads', to: '/leads/import', section: 'Leads' },
+    { label: 'Web to Lead', to: '/leads/forms', section: 'Leads' },
 ];
 
 const APP = 'GIC Folks CRM';

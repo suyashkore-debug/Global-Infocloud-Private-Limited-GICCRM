@@ -30,6 +30,7 @@ const OPTIONAL_COLUMNS: [string, string][] = [
     ['country', 'Country'],
     ['zip', 'Zip Code'],
     ['assigned_at', 'Date Assigned'],
+    ['next_follow_up_at', 'Next Follow-up'],
     ['customer', 'Converted to customer'],
 ];
 
@@ -490,13 +491,13 @@ export default function LeadsPage() {
                                     {head('Source', { field: 'lead_source_id' })}
                                     <th>Rating</th>
                                     {head('Last Contact', { sortKey: 'last_contact_at', field: 'last_contact_at' })}
-                                    {head('Next Follow-up', { sortKey: 'next_follow_up_at', field: 'next_follow_up_at' })}
                                     {head('Created', { sortKey: 'created_at', field: 'created_at' })}
                                     {show('city') && head('City', { field: 'city' })}
                                     {show('state') && head('State', { field: 'state' })}
                                     {show('country') && head('Country', { field: 'country' })}
                                     {show('zip') && head('Zip Code', { field: 'zip' })}
                                     {show('assigned_at') && head('Date Assigned', { sortKey: 'assigned_at', field: 'assigned_at' })}
+                                    {show('next_follow_up_at') && head('Next Follow-up', { sortKey: 'next_follow_up_at', field: 'next_follow_up_at' })}
                                     {show('customer') && <th>Converted to customer</th>}
                                     {cfCols.columns.map((cfc) => (
                                         <th key={`cf${cfc.id}`}>{cfc.name}</th>
@@ -530,15 +531,17 @@ export default function LeadsPage() {
                                             <LeadRatingCell lead={lead} onChanged={replaceLead} />
                                         </td>
                                         <td className="whitespace-nowrap">{lead.last_contact_at ? timeAgo(lead.last_contact_at) : ''}</td>
-                                        <td className="whitespace-nowrap" title={lead.follow_up_note ?? undefined}>
-                                            <FollowUpChip at={lead.next_follow_up_at} />
-                                        </td>
                                         <td className="whitespace-nowrap">{formatDate(lead.created_at)}</td>
                                         {show('city') && <td>{lead.city}</td>}
                                         {show('state') && <td>{lead.state}</td>}
                                         {show('country') && <td>{lead.country}</td>}
                                         {show('zip') && <td>{lead.zip}</td>}
                                         {show('assigned_at') && <td className="whitespace-nowrap">{lead.assigned_at ? formatDate(lead.assigned_at) : ''}</td>}
+                                        {show('next_follow_up_at') && (
+                                            <td className="whitespace-nowrap" title={lead.follow_up_note ?? undefined}>
+                                                <FollowUpChip at={lead.next_follow_up_at} />
+                                            </td>
+                                        )}
                                         {show('customer') && (
                                             <td onClick={(e) => e.stopPropagation()}>
                                                 {lead.customer ? (

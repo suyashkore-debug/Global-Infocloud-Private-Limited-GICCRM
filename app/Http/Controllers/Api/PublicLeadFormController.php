@@ -17,6 +17,7 @@ use App\Services\Notifier;
 use App\Services\Options;
 use App\Services\Recaptcha;
 use App\Support\LeadChannel;
+use App\Support\PhoneNumber;
 use App\Support\PublicFormFields;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,13 +48,17 @@ class PublicLeadFormController extends Controller
         if (Recaptcha::forForm($form->recaptcha, $form->company_id)) {
             Recaptcha::check($request->input('g-recaptcha-response'), $request->ip(), $form->company_id);
         }
-        $data = $request->validate(PublicFormFields::rules($form->fields));
-
-        [$fields, $custom, $extra] = $this->split($form, $data);
         $done = response()->json([
             'message' => $form->success_submit_msg ?: 'Thank you! We have received your details and will get back to you soon.',
             'redirect_url' => $form->submit_action === 'redirect' ? $form->submit_redirect_url : null,
         ], 201);
+        // Spam bots fill the hidden "_company_site" field; people never see it.
+        if (trim((string) $request->input('_company_site')) !== '') {
+            return $done;
+        }
+        $data = $request->validate(PublicFormFields::rules($form->fields));
+
+        [$fields, $custom, $extra] = $this->split($form, $data);
 
         if (! $form->allow_duplicate && ($duplicate = $this->duplicateOf($form, $fields))) {
             if ($form->create_task_on_duplicate) {
@@ -70,12 +75,13 @@ class PublicLeadFormController extends Controller
         $lead = DB::transaction(function () use ($form, $fields, $custom, $extra, $request, $channel, $campaign) {
             DefaultLookups::ensureLeadLists();
             $description = trim(implode("\n", array_filter([$fields['description'] ?? null, ...array_map(fn ($e) => "{$e['label']}: {$e['value']}", $extra)])));
-            $name = $fields['name'] ?? $fields['company'] ?? $fields['email'] ?? $form->name;
+            $person = trim(($fields['first_name'] ?? '').' '.($fields['last_name'] ?? ''));
+            $name = $fields['name'] ?? ($person !== '' ? $person : null) ?? $fields['company'] ?? $fields['email'] ?? $fields['phone'] ?? $form->name;
 
             $lead = Lead::create([
                 ...$fields,
                 'company_id' => $form->company_id,
-                'name' => mb_substr(trim(($form->lead_name_prefix ? "{$form->lead_name_prefix} " : '').$name), 0, 300),
+                'name' => mb_substr($name, 0, 300),
                 'description' => $description !== '' ? $description : null,
                 'lead_status_id' => $form->lead_status_id ?? ((int) Options::get('leads_default_status') ?: LeadStatus::orderBy('status_order')->value('id')),
                 'lead_source_id' => $channel ? LeadChannel::source($channel, $form->company_id)->id : ($form->lead_source_id ?? ((int) Options::get('leads_default_source') ?: LeadSource::orderBy('id')->value('id'))),
@@ -87,6 +93,10 @@ class PublicLeadFormController extends Controller
                 'last_status_change_at' => now(),
                 'created_by' => $form->created_by,
             ]);
+            // Perfex "lead name prefix": on the full name only (not on the first name).
+            if ($form->lead_name_prefix) {
+                $lead->forceFill(['name' => mb_substr(trim("{$form->lead_name_prefix} {$lead->name}"), 0, 300)])->saveQuietly();
+            }
             foreach ($custom as $fieldId => $value) {
                 CustomFieldValue::create(['custom_field_id' => $fieldId, 'rel_id' => $lead->id, 'value' => $value]);
             }
@@ -145,7 +155,7 @@ class PublicLeadFormController extends Controller
             }
             $value = is_array($value) ? implode(', ', $value) : trim((string) $value);
             if (in_array($field['name'], LeadForm::LEAD_FIELDS, true)) {
-                $fields[$field['name']] = $field['name'] === 'lead_value' ? (float) $value : mb_substr($value, 0, $field['name'] === 'description' ? 65000 : 300);
+                $fields[$field['name']] = $field['name'] === 'lead_value' ? (float) $value : mb_substr($value, 0, match ($field['name']) { 'description' => 65000, 'first_name', 'last_name' => 191, default => 300 });
             } elseif (preg_match('/^cf_(\d+)$/', $field['name'], $m) && in_array((int) $m[1], $customIds, true)) {
                 $custom[(int) $m[1]] = $value;
             } else {
@@ -175,8 +185,16 @@ class PublicLeadFormController extends Controller
         if (! $where) {
             return null;
         }
+        $phone = $where['phone'] ?? null;
+        unset($where['phone']);
+        $query = Lead::where($where)->oldest('id');
+        if ($phone === null) {
+            return $query->first();
+        }
+        // "+91 98765 43210" and "9876543210" are the same number.
+        $key = PhoneNumber::key($phone);
 
-        return Lead::where($where)->oldest('id')->first();
+        return $key === '' ? null : $query->where('phone', 'like', '%'.substr($key, -4).'%')->get()->first(fn (Lead $l) => PhoneNumber::key($l->phone) === $key);
     }
 
     /**
