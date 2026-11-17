@@ -13,6 +13,7 @@ import type { Ticket, TicketStatus } from '../../types';
 import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import { useAppOptions } from '../../hooks/useAppOptions';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
 type Option = { id: number; name: string };
 
@@ -22,7 +23,7 @@ export default function TicketViewPage() {
     const toast = useToast();
     const staff = useStaff();
     const { data, error, setData } = useApi<{ data: Ticket }>(`/tickets/${id}`);
-    const [tab, setTab] = useState<'reply' | 'notes' | 'settings'>('reply');
+    const [tab, setTab] = useState<'reply' | 'notes' | 'settings' | 'tasks'>('reply');
     const [statuses, setStatuses] = useState<TicketStatus[]>([]);
     const [lists, setLists] = useState<{ departments: Option[]; priorities: Option[]; services: Option[]; replies: { id: number; name: string; message: string }[] }>({ departments: [], priorities: [], services: [], replies: [] });
     const [message, setMessage] = useState('');
@@ -165,6 +166,7 @@ export default function TicketViewPage() {
                     { id: 'reply', label: 'Add Reply' },
                     { id: 'notes', label: 'Add Note' },
                     { id: 'settings', label: 'Settings' },
+                    { id: 'tasks', label: 'Tasks' },
                 ]}
                 active={tab}
                 onChange={setTab}
@@ -213,6 +215,7 @@ export default function TicketViewPage() {
                         </div>
                     )}
                     {tab === 'notes' && <NotesPanel type="ticket" id={ticket.id} />}
+                    {tab === 'tasks' && <RelatedTasks type="ticket" id={ticket.id} name={`#${ticket.id} · ${ticket.subject}`} />}
                     {tab === 'settings' && (
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Field label="Department">

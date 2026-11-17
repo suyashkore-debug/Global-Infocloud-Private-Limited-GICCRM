@@ -68,6 +68,11 @@ class TaskService
                 $fields += ['cycles' => 0, 'total_cycles' => 0, 'last_recurring_date' => null];
             }
 
+            // A finished task's finish date can be corrected (Perfex "Finished" on edit).
+            if ($task->status === TaskStatus::Complete && ! empty($data['date_finished'])) {
+                $fields['date_finished'] = Carbon::parse($data['date_finished']);
+            }
+
             $task->update($fields);
 
             if (array_key_exists('tags', $data)) {
@@ -381,9 +386,18 @@ class TaskService
     private function taskFields(array $data): array
     {
         $fields = Arr::only($data, [
-            'project_id', 'lead_id', 'milestone_id', 'name', 'description', 'priority', 'status', 'start_date', 'due_date',
+            'project_id', 'lead_id', 'rel_type', 'rel_id', 'milestone_id', 'name', 'description', 'priority', 'status', 'start_date', 'due_date',
             'is_public', 'visible_to_client', 'billable', 'hourly_rate', 'repeat_every', 'recurring_type', 'cycles',
         ]);
+
+        // Related to one thing at a time: a project, a lead, or another record.
+        if (! empty($fields['rel_type']) && ! empty($fields['rel_id'])) {
+            $fields['project_id'] = null;
+            $fields['lead_id'] = null;
+        } elseif (array_key_exists('rel_type', $fields) || ! empty($fields['project_id']) || ! empty($fields['lead_id'])) {
+            $fields['rel_type'] = null;
+            $fields['rel_id'] = null;
+        }
 
         if (empty($fields['project_id'])) {
             $fields['milestone_id'] = null;

@@ -21,11 +21,12 @@ import LeadTimeline from './LeadTimeline';
 import TasksBoard from '../../components/tasks/TasksBoard';
 import { COUNTRIES, LANGUAGES } from '../../lib/countries';
 import { celebrate } from '../../lib/celebrate';
+import LeadEmails from './LeadEmails';
 /** Setup → Leads "Modal Width Class" → the lead panel size. */
 const LEAD_WIDTHS: Record<string, 'lg' | 'xl' | 'xxl'> = { 'modal-lg': 'lg', 'modal-xl': 'xl', 'modal-xxl': 'xxl' };
 const appOptionsLoad = () => api.get<{ data: Record<string, string> }>('/app-options').then((r) => r.data.data).catch(() => ({}) as Record<string, string>);
 
-type Tab = 'profile' | 'proposals' | 'tasks' | 'attachments' | 'reminders' | 'notes' | 'activity' | 'whatsapp' | 'calls';
+type Tab = 'profile' | 'proposals' | 'tasks' | 'attachments' | 'reminders' | 'notes' | 'activity' | 'emails' | 'whatsapp' | 'calls';
 
 const blank = {
     first_name: '',
@@ -263,6 +264,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                     { id: 'reminders', label: 'Reminders', count: lead.reminders?.length ?? 0 },
                                     { id: 'notes', label: 'Notes', count: lead.notes?.length ?? 0 },
                                     { id: 'activity', label: 'Activity Log', count: lead.activities?.length ?? 0 },
+                                    { id: 'emails', label: 'Emails' },
                                     { id: 'whatsapp', label: 'WhatsApp', count: lead.whatsapp_count ?? 0, alert: { count: lead.whatsapp_unread_count ?? 0, color: '#16a34a' } },
                                     { id: 'calls', label: 'Call', count: lead.calls_count ?? 0, alert: { count: lead.calls_new_count ?? 0, color: '#ea580c' } },
                                 ]}
@@ -488,6 +490,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                     {tab === 'notes' && <NotesPanel type="lead" id={lead.id} withContacted onChange={() => (load(lead.id), onChanged())} />}
                                     {tab === 'whatsapp' && <LeadWhatsApp leadId={lead.id} onSent={onChanged} />}
                                     {tab === 'calls' && <LeadCalls leadId={lead.id} onLogged={() => (load(lead.id), onChanged())} />}
+                                    {tab === 'emails' && <LeadEmails leadId={lead.id} />}
                                     {tab === 'activity' && (
                                         <div className="space-y-5">
                                             <form

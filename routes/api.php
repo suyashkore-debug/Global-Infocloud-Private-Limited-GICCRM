@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\RecordExtrasController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SavedFilterController;
 use App\Http\Controllers\Api\SearchController;
+use App\Http\Controllers\Api\MenuSetupController;
 use App\Http\Controllers\Api\SetupController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\StaffMembersController;
@@ -250,6 +251,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::apiResource('lead-forms', LeadFormController::class)->except('show');
     Route::patch('/lead-forms/{leadForm}/active', [LeadFormController::class, 'toggle']);
     Route::apiResource('leads', LeadController::class);
+    Route::get('/leads/{lead}/emails', [LeadController::class, 'emails']);
     Route::post('/leads/{lead}/flag', [LeadController::class, 'flag']);
     Route::post('/leads/{lead}/qualification', [LeadController::class, 'qualify']);
     Route::post('/leads/{lead}/activities', [LeadController::class, 'addActivity']);
@@ -448,6 +450,8 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
 
     // Setup lists (currencies, taxes, payment modes, item / customer groups) and options
     Route::get('/setup/options', [SetupController::class, 'options']);
+    Route::get('/setup/menu', [MenuSetupController::class, 'show']);
+    Route::put('/setup/menu/{menu}', [MenuSetupController::class, 'update']);
     Route::get('/app-options', [SetupController::class, 'appOptions']);
     Route::post('/setup/company-logo', [CompanyLogoController::class, 'store']);
     Route::delete('/setup/company-logo', [CompanyLogoController::class, 'destroy']);
@@ -511,6 +515,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::post('/tasks/reorder', [TaskController::class, 'reorder']);
     Route::post('/tasks/bulk', [TaskController::class, 'bulk']);
     Route::get('/tasks/overview', [TaskController::class, 'overview']);
+    Route::get('/tasks/relations', [TaskController::class, 'relations']);
     Route::get('/checklist-templates', [TaskChecklistController::class, 'templates']);
     Route::delete('/checklist-templates/{checklistTemplate}', [TaskChecklistController::class, 'destroyTemplate']);
     Route::apiResource('tasks', TaskController::class);

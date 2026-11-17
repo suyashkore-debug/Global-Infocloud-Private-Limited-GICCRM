@@ -15,6 +15,7 @@ import {
     Flag,
     History,
     Inbox,
+    LayoutList,
     LifeBuoy,
     ListChecks,
     Mail,
@@ -52,6 +53,9 @@ import CustomFieldsSetup from './CustomFieldsSetup';
 import { EmailLogList, EmailSettingsForm, EmailTemplatesList } from './EmailSetup';
 import ListEditor from './ListEditor';
 import OptionsForm, { type OptionSection } from './OptionsForm';
+import MenuSetup, { type MenuDefault } from './MenuSetup';
+import { useAppOptions } from '../../hooks/useAppOptions';
+import { ALWAYS_SHOWN, arrange, parseMenu } from '../../lib/menuSetup';
 import { COUNTRIES } from '../../lib/countries';
 import { useTimezones } from '../../hooks/useTimezones';
 import { panFromGstin, taxInfo, taxProblem, useCountryProfiles } from '../../hooks/useCountryProfiles';
@@ -138,6 +142,7 @@ const GROUPS = [
     {
         title: 'Misc',
         items: [
+            { id: 'menu-setup', label: 'Menu Setup', icon: LayoutList },
             { id: 'backup', label: 'Backup', icon: DatabaseBackup },
         ],
     },
@@ -195,6 +200,11 @@ const FINANCE: Record<string, OptionSection> = {
     },
 };
 
+const groupId = (title: string) => title.toLowerCase().replace(/\s+/g, '-');
+
+/** The Setup menu's defaults, for Menu Setup. */
+const SETUP_MENU_DEFAULT: MenuDefault[] = GROUPS.map((g) => ({ id: groupId(g.title), label: g.title, children: g.items.map((i) => ({ id: i.id, label: i.label })) }));
+
 const TABS: readonly { id: string; label: string; icon: LucideIcon }[] = GROUPS.flatMap((g) => [...g.items]);
 type TabId = (typeof GROUPS)[number]['items'][number]['id'];
 
@@ -214,6 +224,7 @@ export default function SetupPage() {
     const [params, setParams] = useSearchParams();
     const timezones = useTimezones();
     const countryProfiles = useCountryProfiles();
+    const appOptions = useAppOptions();
     const tab = (TABS.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'company') as TabId;
 
     if (!user?.is_admin) {
@@ -222,6 +233,24 @@ export default function SetupPage() {
 
     const visible = (id: string) => id !== 'backup' || user.is_super_admin;
     const current = TABS.find((t) => t.id === tab)!;
+    // The Setup menu as the company arranged it (Menu Setup): its order, names, and without what it hid.
+    const setupMenu = parseMenu(appOptions?.setup_menu_setup);
+    const groups = arrange(
+        GROUPS.map((g) => ({ ...g, id: groupId(g.title) })),
+        setupMenu,
+    )
+        .filter(({ item, entry }) => !entry?.hidden || ALWAYS_SHOWN.includes(item.id))
+        .map(({ item, entry }) => ({
+            title: entry?.label?.trim() || item.title,
+            items: arrange(
+                item.items.filter((i) => visible(i.id)),
+                entry?.children,
+            )
+                .filter(({ item: i, entry: e }) => !e?.hidden || ALWAYS_SHOWN.includes(i.id))
+                .map(({ item: i, entry: e }) => ({ ...i, label: e?.label?.trim() || i.label })),
+        }))
+        .filter((g) => g.items.length > 0);
+    const currentLabel = groups.flatMap((g) => g.items).find((i) => i.id === tab)?.label ?? current.label;
 
     return (
         <div className="w-full space-y-4">
@@ -230,8 +259,8 @@ export default function SetupPage() {
                 {/* Perfex Settings menu: grouped sections on the left (a dropdown on phones). */}
                 <div className="lg:hidden">
                     <Select value={tab} onChange={(e) => setParams({ tab: e.target.value })}>
-                        {GROUPS.map((g) =>
-                            g.items.filter((i) => visible(i.id)).map((i) => (
+                        {groups.map((g) =>
+                            g.items.map((i) => (
                                 <option key={i.id} value={i.id}>
                                     {g.title} · {i.label}
                                 </option>
@@ -242,12 +271,11 @@ export default function SetupPage() {
                 <nav aria-label="Setup sections" className="hidden lg:sticky lg:top-[84px] lg:block">
                     <h3 className="mb-2 px-1 text-[16px] font-bold text-slate-800">Settings</h3>
                     <div className="panel_s !mb-0 p-3 lg:max-h-[calc(100vh-150px)] lg:overflow-y-auto">
-                    {GROUPS.map((g) => (
+                    {groups.map((g) => (
                         <div key={g.title} className="mb-3 last:mb-0">
                             <p className="px-2.5 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">{g.title}</p>
                             <ul className="space-y-0.5">
                                 {g.items
-                                    .filter((i) => visible(i.id))
                                     .map((i) => {
                                         const Icon = i.icon;
                                         const on = i.id === tab;
@@ -274,7 +302,7 @@ export default function SetupPage() {
                 <div className="min-w-0 space-y-4">
                     <h3 className="flex items-center gap-2 px-1 text-[16px] font-bold text-slate-800">
                         <current.icon className="h-[18px] w-[18px] text-accent" />
-                        {current.label}
+                        {currentLabel}
                     </h3>
 
             {tab === 'company' && <CompanyLogoSetup />}
@@ -369,6 +397,7 @@ export default function SetupPage() {
                 />
             )}
             {tab === 'backup' && user.is_super_admin && <BackupSetup />}
+            {tab === 'menu-setup' && <MenuSetup setupGroups={SETUP_MENU_DEFAULT} />}
             {tab === 'customers' && <CustomersSettings />}
             {tab === 'support' && <SupportSettings />}
             {tab === 'leads' && <LeadsSettings />}

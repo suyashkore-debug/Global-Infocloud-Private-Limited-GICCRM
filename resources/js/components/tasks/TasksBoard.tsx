@@ -11,6 +11,7 @@ import { useStaff } from '../../hooks/useStaff';
 import { SummaryCard, AvatarStack, Button, Card, EmptyState, ErrorNote, Input, Menu, MenuItem, Pagination, Select, Spinner, StatusBadge, Tag } from '../ui';
 import { useToast } from '../ui/Toast';
 import type { Paginated, Task } from '../../types';
+import type { RelatedType } from './TaskFormModal';
 import { useTaskModals } from './TaskModalHost';
 import SavedFilters, { type FilterValues } from '../filters/SavedFilters';
 import { downloadCsv } from '../../pages/reports/shared';
@@ -23,7 +24,18 @@ const DEFAULT_STATUSES = TASK_STATUSES.filter((s) => s.id !== 5).map((s) => s.id
  * Perfex tasks table and Kanban board, with the status summary, filters, row options (Start
  * Timer | Edit | Delete) and bulk actions. Used on the Tasks page and inside a project.
  */
-export default function TasksBoard({ projectId, lead, canCreate: canCreateOverride }: { projectId?: number; lead?: { id: number; name: string }; canCreate?: boolean }) {
+export default function TasksBoard({
+    projectId,
+    lead,
+    related,
+    canCreate: canCreateOverride,
+}: {
+    projectId?: number;
+    lead?: { id: number; name: string };
+    /** The tasks of a customer, invoice, ticket … (Perfex "Related to"). */
+    related?: { type: RelatedType; id: number; name: string };
+    canCreate?: boolean;
+}) {
     const toast = useToast();
     const staff = useStaff();
     const { openTask, newTask, editTask } = useTaskModals();
@@ -54,7 +66,7 @@ export default function TasksBoard({ projectId, lead, canCreate: canCreateOverri
     };
 
     const params = useMemo(() => {
-        const p: Record<string, unknown> = { search, project_id: projectId, lead_id: lead?.id, sort: view === 'kanban' ? 'kanban_order' : 'id', direction: view === 'kanban' ? 'asc' : 'desc' };
+        const p: Record<string, unknown> = { search, project_id: projectId, lead_id: lead?.id, rel_type: related?.type, rel_id: related?.id, sort: view === 'kanban' ? 'kanban_order' : 'id', direction: view === 'kanban' ? 'asc' : 'desc' };
         if (view === 'list') {
             p.status = statuses.length ? statuses : [0];
             p.page = page;
@@ -79,7 +91,7 @@ export default function TasksBoard({ projectId, lead, canCreate: canCreateOverri
         }
 
         return p;
-    }, [search, projectId, lead?.id, view, statuses, page, perPage, filter, assignee, priority, startFrom, startTo]);
+    }, [search, projectId, lead?.id, related?.type, related?.id, view, statuses, page, perPage, filter, assignee, priority, startFrom, startTo]);
 
     const { data, loading, error, reload, setData } = useApi<TaskList>('/tasks', params);
     useEvent([TASKS_CHANGED, TIMERS_CHANGED], reload);
@@ -134,7 +146,7 @@ export default function TasksBoard({ projectId, lead, canCreate: canCreateOverri
 
             <div className="flex flex-wrap items-center gap-2">
                 {canCreate && (
-                    <Button onClick={() => newTask({ project_id: projectId ?? null, lead: lead ?? null })}>
+                    <Button onClick={() => newTask({ project_id: projectId ?? null, lead: lead ?? null, related: related ?? null })}>
                         <Plus className="h-4 w-4" /> New Task
                     </Button>
                 )}
@@ -147,7 +159,7 @@ export default function TasksBoard({ projectId, lead, canCreate: canCreateOverri
                     {view === 'list' ? <Columns3 className="h-4 w-4" /> : <List className="h-4 w-4" />}
                 </button>
                 <span className="ml-auto" />
-                {!projectId && !lead && <SavedFilters identifier="tasks" current={savedFilterValues} onApply={applySaved} />}
+                {!projectId && !lead && !related && <SavedFilters identifier="tasks" current={savedFilterValues} onApply={applySaved} />}
                 <Button variant="secondary" onClick={() => setShowFilters(!showFilters)}>
                     <Filter className="h-4 w-4" /> Filters
                 </Button>
@@ -222,7 +234,7 @@ export default function TasksBoard({ projectId, lead, canCreate: canCreateOverri
                 loading && !data ? (
                     <Spinner />
                 ) : (
-                    data && <Kanban tasks={data.data} onOpen={openTask} onMoved={(tasks) => setData({ ...data, data: tasks })} onAdd={canCreate ? (status) => newTask({ project_id: projectId ?? null, lead: lead ?? null, status }) : undefined} />
+                    data && <Kanban tasks={data.data} onOpen={openTask} onMoved={(tasks) => setData({ ...data, data: tasks })} onAdd={canCreate ? (status) => newTask({ project_id: projectId ?? null, lead: lead ?? null, related: related ?? null, status }) : undefined} />
                 )
             ) : (
                 <Card className="overflow-hidden">

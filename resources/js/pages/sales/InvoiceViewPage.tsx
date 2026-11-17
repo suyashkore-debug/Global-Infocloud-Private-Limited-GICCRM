@@ -15,6 +15,7 @@ import { useCelebrateWhen } from '../../lib/celebrate';
 import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
 /** Open or download a PDF through the API (it needs the login token). */
 export async function openPdf(url: string, fileName: string, download: boolean): Promise<void> {
@@ -38,7 +39,7 @@ export default function InvoiceViewPage() {
     const canCreate = usePermission('invoices.create');
     const canDeletePayments = usePermission('payments.delete');
     const { data, error, reload, setData } = useApi<{ data: Invoice }>(`/invoices/${id}`);
-    const [tab, setTab] = useState<'invoice' | 'payments'>('invoice');
+    const [tab, setTab] = useState<'invoice' | 'payments' | 'tasks'>('invoice');
     const [paymentOpen, setPaymentOpen] = useState(false);
     const invoice = data?.data;
     useCelebrateWhen(invoice ? invoice.status === 2 : undefined, invoice?.id);
@@ -174,6 +175,7 @@ export default function InvoiceViewPage() {
                 tabs={[
                     { id: 'invoice', label: 'Invoice' },
                     { id: 'payments', label: 'Payments', count: invoice.payments?.length ?? 0 },
+                    { id: 'tasks', label: 'Tasks' },
                 ]}
                 active={tab}
                 onChange={setTab}
@@ -291,6 +293,8 @@ export default function InvoiceViewPage() {
                     </div>
                 </div>
             )}
+
+            {tab === 'tasks' && <RelatedTasks panel type="invoice" id={invoice.id} name={invoice.formatted_number} />}
 
             {tab === 'payments' && (
                 <div className="panel_s overflow-hidden">

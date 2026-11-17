@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Support\TaskRelation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,6 +29,11 @@ class TaskRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:65000'],
             'project_id' => ['nullable', 'integer', $this->existsInCompany('projects')],
             'lead_id' => ['nullable', 'integer', $this->existsInCompany('leads')],
+            // Perfex "Related to": a customer, invoice, estimate, proposal, contract, ticket or expense.
+            'rel_type' => ['nullable', Rule::in(array_keys(TaskRelation::TYPES))],
+            'rel_id' => ['nullable', 'required_with:rel_type', 'integer', TaskRelation::rule($this->input('rel_type'), $this->user())],
+            // Editing a finished task: when it was finished.
+            'date_finished' => ['nullable', 'date'],
             'milestone_id' => ['nullable', 'integer', Rule::exists('milestones', 'id')->where('project_id', $this->input('project_id'))],
             'priority' => ['required', Rule::enum(TaskPriority::class)],
             'status' => ['nullable', Rule::enum(TaskStatus::class)],

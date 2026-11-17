@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { CalendarClock, ListChecks, NotebookPen, Users } from 'lucide-react';
+import { CalendarClock, ListChecks, NotebookPen, Paperclip, Users } from 'lucide-react';
 import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { RECURRING_TYPES, TASK_PRIORITIES } from '../../lib/constants';
 import { todayIso } from '../../lib/format';
@@ -15,13 +15,86 @@ export interface TaskDefaults {
     status?: number;
     /** A task created from a lead is related to it (Perfex "related to: lead"). */
     lead?: { id: number; name: string } | null;
+    /** A task created from a customer, invoice, ticket … is related to it. */
+    related?: { type: RelatedType; id: number; name: string } | null;
+}
+
+/** What a task can be related to (Perfex "Related to"), besides a project. */
+export type RelatedType = 'lead' | 'customer' | 'invoice' | 'estimate' | 'proposal' | 'contract' | 'ticket' | 'expense';
+export const RELATED_TYPES: { id: RelatedType; name: string }[] = [
+    { id: 'lead', name: 'Lead' },
+    { id: 'customer', name: 'Customer' },
+    { id: 'invoice', name: 'Invoice' },
+    { id: 'estimate', name: 'Estimate' },
+    { id: 'proposal', name: 'Proposal' },
+    { id: 'contract', name: 'Contract' },
+    { id: 'ticket', name: 'Ticket' },
+    { id: 'expense', name: 'Expense' },
+];
+
+/** Search and pick one record of a type (an invoice, a customer …) the person may open. */
+function RecordPicker({ type, value, onChange, error }: { type: RelatedType; value: { id: number; name: string } | null; onChange: (v: { id: number; name: string } | null) => void; error?: string }) {
+    const [search, setSearch] = useState('');
+    const [options, setOptions] = useState<{ id: number; name: string }[]>([]);
+    const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        if (value) {
+            return;
+        }
+        setLoading(true);
+        const timer = setTimeout(() => {
+            api.get<{ data: { id: number; name: string }[] }>('/tasks/relations', { params: { type, search } })
+                .then((r) => setOptions(r.data.data))
+                .catch(() => setOptions([]))
+                .finally(() => setLoading(false));
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, [type, search, value]);
+    const label = RELATED_TYPES.find((t) => t.id === type)?.name ?? '';
+
+    if (value) {
+        return (
+            <Field label={label} error={error}>
+                <div className="flex items-center gap-2 rounded-xl bg-accent-50 px-3 py-2 text-[13px] ring-1 ring-accent/20">
+                    <span className="min-w-0 flex-1 truncate font-semibold text-brand">{value.name}</span>
+                    <button type="button" onClick={() => onChange(null)} className="shrink-0 text-[12px] font-semibold text-slate-500 hover:text-red-600">
+                        Change
+                    </button>
+                </div>
+            </Field>
+        );
+    }
+
+    return (
+        <Field label={label} error={error}>
+            <div>
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Search ${label.toLowerCase()}s…`} />
+                <ul className="mt-1.5 max-h-44 overflow-y-auto rounded-xl border border-slate-200 bg-white text-[13px]">
+                    {loading && options.length === 0 && <li className="px-3 py-2 text-slate-400">Searching…</li>}
+                    {!loading && options.length === 0 && <li className="px-3 py-2 text-slate-400">Nothing found.</li>}
+                    {options.map((o) => (
+                        <li key={o.id}>
+                            <button type="button" onClick={() => onChange(o)} className="block w-full truncate px-3 py-1.5 text-left hover:bg-slate-50">
+                                {o.name}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </Field>
+    );
 }
 
 interface FormState {
     name: string;
     project_id: string;
-    lead: { id: number; name: string } | null;
+    /** Related to: '' (nothing), 'project', or a record type with the chosen record. */
+    rel_type: '' | 'project' | RelatedType;
+    rel: { id: number; name: string } | null;
     milestone_id: string;
+    date_finished: string;
+    files: File[];
     priority: number;
     start_date: string;
     due_date: string;
@@ -40,12 +113,46 @@ interface FormState {
     description: string;
 }
 
+/** "2026-11-17T10:30:00Z" → "2026-11-17T16:00" for a datetime-local input (the browser's time). */
+const toLocalInput = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '' : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
+/** What the task is related to: its project, its lead, or another record. */
+function relatedOf(task: Task | null, defaults: TaskDefaults): Pick<FormState, 'rel_type' | 'rel'> {
+    if (task) {
+        if (task.project) {
+            return { rel_type: 'project', rel: null };
+        }
+        if (task.lead) {
+            return { rel_type: 'lead', rel: task.lead };
+        }
+        if (task.related) {
+            return { rel_type: task.related.type as RelatedType, rel: { id: task.related.id, name: task.related.name } };
+        }
+        return { rel_type: '', rel: null };
+    }
+    if (defaults.project_id) {
+        return { rel_type: 'project', rel: null };
+    }
+    if (defaults.lead) {
+        return { rel_type: 'lead', rel: defaults.lead };
+    }
+    if (defaults.related) {
+        return { rel_type: defaults.related.type, rel: { id: defaults.related.id, name: defaults.related.name } };
+    }
+    return { rel_type: '', rel: null };
+}
+
 function initial(task: Task | null, defaults: TaskDefaults): FormState {
     return {
         name: task?.name ?? '',
         project_id: String(task?.project?.id ?? defaults.project_id ?? ''),
-        lead: task ? (task.lead ?? null) : (defaults.lead ?? null),
+        ...relatedOf(task, defaults),
         milestone_id: String(task?.milestone?.id ?? defaults.milestone_id ?? ''),
+        date_finished: task?.date_finished ? toLocalInput(task.date_finished) : '',
+        files: [],
         priority: task?.priority ?? 2,
         start_date: task?.start_date ?? todayIso(),
         due_date: task?.due_date ?? '',
@@ -127,9 +234,12 @@ export default function TaskFormModal({
         setError(null);
         const payload: Record<string, unknown> = {
             name: form.name,
-            project_id: form.project_id ? Number(form.project_id) : null,
-            lead_id: form.lead?.id ?? null,
-            milestone_id: form.project_id && form.milestone_id ? Number(form.milestone_id) : null,
+            // Related to one thing: a project, a lead, or another record.
+            project_id: form.rel_type === 'project' && form.project_id ? Number(form.project_id) : null,
+            lead_id: form.rel_type === 'lead' ? (form.rel?.id ?? null) : null,
+            rel_type: form.rel_type && form.rel_type !== 'project' && form.rel_type !== 'lead' && form.rel ? form.rel_type : null,
+            rel_id: form.rel_type && form.rel_type !== 'project' && form.rel_type !== 'lead' ? (form.rel?.id ?? null) : null,
+            milestone_id: form.rel_type === 'project' && form.project_id && form.milestone_id ? Number(form.milestone_id) : null,
             priority: form.priority,
             start_date: form.start_date,
             due_date: form.due_date || null,
@@ -144,6 +254,9 @@ export default function TaskFormModal({
             checklist_templates: form.checklist_templates,
             description: form.description,
         };
+        if (task && task.status === 5 && form.date_finished) {
+            payload.date_finished = new Date(form.date_finished).toISOString();
+        }
         if (!task) {
             payload.assignees = form.assignees;
             payload.followers = form.followers;
@@ -154,6 +267,12 @@ export default function TaskFormModal({
         try {
             const { data } = task ? await api.put<{ data: Task }>(`/tasks/${task.id}`, payload) : await api.post<{ data: Task }>('/tasks', payload);
             await cf.save(data.data.id);
+            // Files chosen while creating the task (Perfex "Attach files").
+            if (!task && form.files.length > 0) {
+                const body = new FormData();
+                form.files.forEach((file) => body.append('files[]', file));
+                await api.post(`/tasks/${data.data.id}/attachments`, body).catch((e) => toast(`Task saved, but the files were not attached: ${errorMessage(e)}`, 'error'));
+            }
             toast(task ? 'Task updated.' : 'Task created.');
             onSaved(data.data);
         } catch (err) {
@@ -189,8 +308,22 @@ export default function TaskFormModal({
                 <div className="flex flex-wrap gap-5 sm:col-span-2">
                     <Checkbox label="Public (visible to all staff)" checked={form.is_public} onChange={(v) => update('is_public', v)} />
                     <Checkbox label="Billable" checked={form.billable} onChange={(v) => update('billable', v)} />
-                    {form.project_id && <Checkbox label="Visible to customer" checked={form.visible_to_client} onChange={(v) => update('visible_to_client', v)} />}
+                    {form.rel_type === 'project' && form.project_id && <Checkbox label="Visible to customer" checked={form.visible_to_client} onChange={(v) => update('visible_to_client', v)} />}
                 </div>
+                {!task && (
+                    <div className="sm:col-span-2">
+                        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 px-3 py-2.5 text-[13px] hover:bg-slate-50">
+                            <Paperclip className="h-4 w-4 shrink-0 text-accent" />
+                            <span className="min-w-0 flex-1 truncate text-slate-600">{form.files.length ? form.files.map((f) => f.name).join(', ') : 'Attach files (optional, up to 10)'}</span>
+                            {form.files.length > 0 && (
+                                <button type="button" onClick={(e) => (e.preventDefault(), update('files', []))} className="shrink-0 text-[12px] font-semibold text-slate-500 hover:text-red-600">
+                                    Clear
+                                </button>
+                            )}
+                            <input type="file" multiple className="hidden" onChange={(e) => update('files', Array.from(e.target.files ?? []).slice(0, 10))} />
+                        </label>
+                    </div>
+                )}
                 <SectionHeading icon={ListChecks} title="Task" hint="What needs doing, and how urgent it is." className="sm:col-span-2" />
                 <Field label="Subject" required error={errors.name} className="sm:col-span-2">
                     <Input value={form.name} onChange={(e) => update('name', e.target.value)} autoFocus />
@@ -238,38 +371,51 @@ export default function TaskFormModal({
                     <div className="hidden sm:block" />
                 )}
 
-                <SectionHeading icon={Users} title="Project & people" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
-                {form.lead && (
-                    <div className="flex items-center gap-2 rounded-xl bg-accent-50 px-3 py-2 text-[13px] ring-1 ring-accent/20 sm:col-span-2">
-                        <span className="font-semibold text-slate-600">Related to lead:</span>
-                        <span className="font-semibold text-brand">
-                            #{form.lead.id} {form.lead.name}
-                        </span>
-                        <button type="button" onClick={() => setForm((f) => ({ ...f, lead: null }))} className="ml-auto text-[12px] font-semibold text-slate-500 hover:text-red-600">
-                            Remove
-                        </button>
-                    </div>
+                <SectionHeading icon={Users} title="Related to & people" className="sm:col-span-2 mt-1 border-t border-slate-200/70 pt-4" />
+                <Field label="Related to" error={errors.rel_type}>
+                    <Select value={form.rel_type} onChange={(e) => setForm((f) => ({ ...f, rel_type: e.target.value as FormState['rel_type'], rel: null, project_id: '', milestone_id: '' }))}>
+                        <option value="">Nothing</option>
+                        <option value="project">Project</option>
+                        {RELATED_TYPES.map((t) => (
+                            <option key={t.id} value={t.id}>
+                                {t.name}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
+                {form.rel_type === 'project' ? (
+                    <Field label="Project" error={errors.project_id}>
+                        <Select value={form.project_id} onChange={(e) => setForm((f) => ({ ...f, project_id: e.target.value, milestone_id: '' }))}>
+                            <option value="">Choose a project</option>
+                            {projects.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                ) : form.rel_type ? (
+                    <RecordPicker type={form.rel_type} value={form.rel} onChange={(rel) => update('rel', rel)} error={errors.rel_id ?? errors.lead_id} />
+                ) : (
+                    <div className="hidden sm:block" />
                 )}
-                <Field label="Related to project" error={errors.project_id}>
-                    <Select value={form.project_id} onChange={(e) => setForm((f) => ({ ...f, project_id: e.target.value, milestone_id: '' }))}>
-                        <option value="">Not related to a project</option>
-                        {projects.map((p) => (
-                            <option key={p.id} value={p.id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </Select>
-                </Field>
-                <Field label="Milestone" error={errors.milestone_id}>
-                    <Select value={form.milestone_id} onChange={(e) => update('milestone_id', e.target.value)} disabled={!form.project_id}>
-                        <option value="">No milestone</option>
-                        {milestones.map((m) => (
-                            <option key={m.id} value={m.id}>
-                                {m.name}
-                            </option>
-                        ))}
-                    </Select>
-                </Field>
+                {form.rel_type === 'project' && (
+                    <Field label="Milestone" error={errors.milestone_id}>
+                        <Select value={form.milestone_id} onChange={(e) => update('milestone_id', e.target.value)} disabled={!form.project_id}>
+                            <option value="">No milestone</option>
+                            {milestones.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                    {m.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                )}
+                {task && task.status === 5 && (
+                    <Field label="Finished" error={errors.date_finished} hint="When the task was completed.">
+                        <Input type="datetime-local" value={form.date_finished} onChange={(e) => update('date_finished', e.target.value)} />
+                    </Field>
+                )}
 
                 {!task && (
                     <>

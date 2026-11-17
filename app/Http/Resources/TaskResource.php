@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Task;
+use App\Support\TaskRelation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,6 +42,8 @@ class TaskResource extends JsonResource
             'cycles' => $this->cycles,
             'total_cycles' => $this->total_cycles,
             'lead' => $this->whenLoaded('lead', fn () => $this->lead?->only(['id', 'name'])),
+            // Perfex "Related to": a customer, invoice, estimate, proposal, contract, ticket or expense.
+            'related' => $this->rel_type ? TaskRelation::describe($this->resource) : null,
             'project' => $this->whenLoaded('project', fn () => $this->project ? [
                 'id' => $this->project->id,
                 'name' => $this->project->name,

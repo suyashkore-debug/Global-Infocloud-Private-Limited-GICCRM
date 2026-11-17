@@ -24,6 +24,7 @@ import { useAppOptions } from '../../hooks/useAppOptions';
 import { panFromGstin, taxInfo, taxProblem, useCountryProfiles } from '../../hooks/useCountryProfiles';
 import { COUNTRIES } from '../../lib/countries';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
 const TABS = [
     { id: 'profile', label: 'Profile' },
@@ -39,6 +40,7 @@ const TABS = [
     { id: 'notes', label: 'Notes' },
     { id: 'reminders', label: 'Reminders' },
     { id: 'projects', label: 'Projects' },
+    { id: 'tasks', label: 'Tasks' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -150,6 +152,7 @@ export default function CustomerPage() {
             )}
             {!isNew && tab === 'payments' && <PaymentsTable customerId={customer!.id} />}
             {!isNew && tab === 'projects' && <CustomerProjects customerId={customer!.id} />}
+            {!isNew && tab === 'tasks' && <RelatedTasks panel type="customer" id={customer!.id} name={customer!.name} />}
         </div>
     );
 }

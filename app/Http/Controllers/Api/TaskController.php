@@ -14,6 +14,7 @@ use App\Http\Resources\TimerResource;
 use App\Models\Project;
 use App\Models\Task;
 use App\Services\TaskService;
+use App\Support\TaskRelation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,7 +72,8 @@ class TaskController extends Controller
         $user = $request->user();
         $base = Task::query()->visibleTo($user)
             ->when($request->integer('project_id'), fn (Builder $q, int $id) => $q->where('project_id', $id))
-            ->when($request->integer('lead_id'), fn (Builder $q, int $id) => $q->where('lead_id', $id));
+            ->when($request->integer('lead_id'), fn (Builder $q, int $id) => $q->where('lead_id', $id))
+            ->when($request->filled('rel_type') && $request->integer('rel_id'), fn (Builder $q) => $q->where('rel_type', $request->string('rel_type')->value())->where('rel_id', $request->integer('rel_id')));
         $total = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $mine = (clone $base)->whereHas('assignees', fn (Builder $a) => $a->where('user_id', $user->id))
             ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
@@ -137,6 +139,20 @@ class TaskController extends Controller
             'data' => $rows->groupBy('month')->map(fn ($r) => $r->values()),
             'meta' => ['year' => $year, 'years' => $years->push($year)->unique()->sortDesc()->values(), 'can_view_all' => $canViewAll, 'member' => $member],
         ]);
+    }
+
+    /**
+     * Records a task can be related to (Perfex "Related to"): the type's records matching the search
+     * that the person may open.
+     */
+    public function relations(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'type' => ['required', Rule::in([...array_keys(TaskRelation::TYPES), 'lead'])],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        return response()->json(['data' => TaskRelation::options($data['type'], (string) ($data['search'] ?? ''), $request->user())]);
     }
 
     public function store(TaskRequest $request): JsonResponse
@@ -327,6 +343,7 @@ class TaskController extends Controller
             ->visibleTo($user)
             ->when($request->integer('project_id'), fn (Builder $q, int $id) => $q->where('project_id', $id))
             ->when($request->integer('lead_id'), fn (Builder $q, int $id) => $q->where('lead_id', $id))
+            ->when($request->filled('rel_type') && $request->integer('rel_id'), fn (Builder $q) => $q->where('rel_type', $request->string('rel_type')->value())->where('rel_id', $request->integer('rel_id')))
             ->when($request->has('milestone_id'), fn (Builder $q) => $request->input('milestone_id') === 'none'
                 ? $q->whereNull('milestone_id')
                 : $q->where('milestone_id', $request->integer('milestone_id')))

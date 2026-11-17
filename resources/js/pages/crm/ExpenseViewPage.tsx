@@ -10,6 +10,7 @@ import { useToast } from '../../components/ui/Toast';
 import { FilesPanel } from '../../components/records/RecordPanels';
 import type { Expense } from '../../types';
 import { CustomFieldsView } from '../../components/customfields/CustomFields';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
 export default function ExpenseViewPage() {
     const { id } = useParams();
@@ -134,6 +135,7 @@ export default function ExpenseViewPage() {
                     </div>
                 </div>
             </div>
+            <RelatedTasks panel type="expense" id={e.id} name={e.name || `Expense #${e.id}`} />
         </div>
     );
 }

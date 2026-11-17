@@ -96,6 +96,8 @@ export interface Task {
     total_cycles: number;
     project?: { id: number; name: string; customer_name?: string | null } | null;
     lead?: { id: number; name: string } | null;
+    /** Perfex "Related to": a customer, invoice, estimate, proposal, contract, ticket or expense. */
+    related?: { type: string; type_label: string; id: number; name: string; url: string } | null;
     milestone?: { id: number; name: string; color: string | null } | null;
     assignees?: Staff[];
     followers?: Staff[];

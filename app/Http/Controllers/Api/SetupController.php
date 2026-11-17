@@ -193,7 +193,8 @@ class SetupController extends Controller
             $data['options']['company_pan'] = (string) $pan;
         }
         foreach ($data['options'] as $name => $value) {
-            if (array_key_exists($name, Options::DEFAULTS) && $name !== 'recaptcha_secret_key') {
+            // The menus are saved checked, through Menu Setup.
+            if (array_key_exists($name, Options::DEFAULTS) && ! in_array($name, ['recaptcha_secret_key', 'menu_setup', 'setup_menu_setup'], true)) {
                 Options::set($name, $value);
             }
         }

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CustomerResource;
 use App\Http\Resources\LeadResource;
+use App\Models\EmailLog;
 use App\Models\Lead;
 use App\Models\LeadStatus;
+use App\Models\User;
 use App\Services\DefaultLookups;
 use App\Services\LeadFilterRules;
 use App\Services\LeadService;
@@ -234,6 +236,25 @@ class LeadController extends Controller
         $this->leads->moveToStatus(LeadStatus::findOrFail($data['lead_status_id']), $data['order'], $request->user());
 
         return response()->json(['message' => 'Saved.']);
+    }
+
+    /**
+     * Perfex "Email activity": e-mails sent to this lead, and to its e-mail address from elsewhere
+     * (a proposal, a notification), newest first.
+     */
+    public function emails(Lead $lead): JsonResponse
+    {
+        $this->authorize('view', $lead);
+        $logs = EmailLog::query()
+            ->where(fn (Builder $q) => $q->where(fn (Builder $r) => $r->where('rel_type', 'lead')->where('rel_id', $lead->id))
+                ->when($lead->email, fn (Builder $e) => $e->orWhere('to', $lead->email)))
+            ->latest('id')->limit(100)->get();
+        $names = User::whereIn('id', $logs->pluck('user_id')->filter()->unique())->pluck('full_name', 'id');
+
+        return response()->json(['data' => $logs->map(fn (EmailLog $m) => [
+            'id' => $m->id, 'subject' => $m->subject, 'to' => $m->to, 'template' => $m->template, 'status' => $m->status,
+            'error' => $m->error, 'sent_by' => $m->user_id ? ($names[$m->user_id] ?? null) : null, 'created_at' => $m->created_at,
+        ])]);
     }
 
     public function flag(Request $request, Lead $lead): LeadResource

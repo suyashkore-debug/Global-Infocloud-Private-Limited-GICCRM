@@ -13,6 +13,7 @@ import type { Estimate } from '../../types';
 import { openPdf } from './InvoiceViewPage';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
 export default function EstimateViewPage() {
     const { id } = useParams();
@@ -163,6 +164,7 @@ export default function EstimateViewPage() {
                     ['Project', estimate.project ? <Link to={`/projects/${estimate.project.id}`}>{estimate.project.name}</Link> : null],
                 ]}
             />
+            <RelatedTasks panel type="estimate" id={estimate.id} name={estimate.formatted_number} />
         </div>
     );
 }

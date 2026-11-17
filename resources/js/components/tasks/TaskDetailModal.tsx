@@ -324,6 +324,13 @@ export default function TaskDetailModal({ taskId, onClose, onOpenTask }: { taskI
                                     </Link>
                                 </p>
                             )}
+                            {task.related && (
+                                <Info label={task.related.type_label}>
+                                    <Link to={task.related.url} onClick={onClose} className="font-medium text-blue-700 hover:underline">
+                                        {task.related.name}
+                                    </Link>
+                                </Info>
+                            )}
                             {task.project && (
                                 <Info label="Project">
                                     <Link to={`/projects/${task.project.id}`} onClick={onClose} className="font-medium text-blue-700 hover:underline">

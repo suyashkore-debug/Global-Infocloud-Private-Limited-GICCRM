@@ -8,7 +8,7 @@
  * primary actions, orange accents, soft white cards on a cool grey page.
  */
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';
     /* Headings, titles and big numbers: GIC's display face. Body text stays in Inter. */
     --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
@@ -41,7 +41,15 @@
             radial-gradient(1000px 560px at 18% -18%, rgb(11 44 86 / 0.1), transparent 60%),
             var(--color-page);
         background-attachment: fixed;
+        /* The same crisp text on macOS in every browser (Chrome / Safari and Firefox). */
         -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Windows Edge adds its own eye / clear buttons to inputs: our fields have their own. */
+    input::-ms-reveal,
+    input::-ms-clear {
+        display: none;
     }
 
     a {

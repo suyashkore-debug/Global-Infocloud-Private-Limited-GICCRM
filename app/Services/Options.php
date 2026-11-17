@@ -32,6 +32,9 @@ class Options
         'timezone' => 'Asia/Kolkata',
         'locale' => 'en-IN',
         'tax_id_label' => 'GSTIN',
+        // Setup → Menu Setup: the sidebar and Setup menus as the company arranged them (JSON; empty = default).
+        'menu_setup' => '',
+        'setup_menu_setup' => '',
         // Numbering.
         'number_padding_prefixes' => '6',
         'invoice_prefix' => 'INV-',
@@ -152,7 +155,7 @@ class Options
 
     /** Settings every staff member's screens may read (no secrets). */
     public const PUBLIC = [
-        'customer_default_country', 'company_country', 'timezone', 'locale', 'tax_id_label', 'default_contact_permissions', 'ticket_services_enabled', 'ticket_replies_order', 'default_ticket_reply_status',
+        'menu_setup', 'setup_menu_setup', 'customer_default_country', 'company_country', 'timezone', 'locale', 'tax_id_label', 'default_contact_permissions', 'ticket_services_enabled', 'ticket_replies_order', 'default_ticket_reply_status',
         'maximum_allowed_ticket_attachments', 'ticket_attachments_file_extensions', 'leads_default_status', 'leads_default_source',
         'calendar_first_day', 'lead_unique_validation', 'allow_non_admin_members_to_import_leads', 'leads_kanban_limit', 'lead_modal_class', 'default_leads_kanban_sort', 'default_leads_kanban_sort_type',
     ];

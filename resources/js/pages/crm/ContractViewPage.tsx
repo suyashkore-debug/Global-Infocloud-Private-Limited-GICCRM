@@ -17,8 +17,9 @@ import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { openPdf } from '../sales/InvoiceViewPage';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
-type Tab = 'contract' | 'attachments' | 'comments' | 'renewals' | 'notes' | 'reminders';
+type Tab = 'contract' | 'attachments' | 'comments' | 'renewals' | 'notes' | 'reminders' | 'tasks';
 
 export default function ContractViewPage() {
     const { id } = useParams();
@@ -154,6 +155,7 @@ export default function ContractViewPage() {
                     { id: 'renewals', label: 'Renewal History', count: contract.renewals?.length ?? 0 },
                     { id: 'notes', label: 'Notes' },
                     { id: 'reminders', label: 'Reminders' },
+                    { id: 'tasks', label: 'Tasks' },
                 ]}
                 active={tab}
                 onChange={setTab}
@@ -229,6 +231,7 @@ export default function ContractViewPage() {
                     )}
                     {tab === 'notes' && <NotesPanel type="contract" id={contract.id} />}
                     {tab === 'reminders' && <RemindersPanel type="contract" id={contract.id} />}
+                    {tab === 'tasks' && <RelatedTasks type="contract" id={contract.id} name={contract.subject} />}
                 </div>
             </div>
 

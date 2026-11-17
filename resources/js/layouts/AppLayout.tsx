@@ -1,8 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-    BarChart3,
-    BookOpen,
     Building2,
     ChevronDown,
     ChevronRight,
@@ -10,12 +8,10 @@ import {
     FileSignature,
     FolderKanban,
     Gauge,
-    Inbox,
     LifeBuoy,
     ListChecks,
     LogOut,
     Menu as MenuIcon,
-    MessageCircle,
     MonitorSmartphone,
     Moon,
     PanelLeftClose,
@@ -23,12 +19,9 @@ import {
     Plus,
     Receipt,
     Search,
-    Settings,
     Sun,
-    ShoppingCart,
     Target,
     Wallet,
-    Wrench,
     UserPen,
     UserRound,
     type LucideIcon,
@@ -47,11 +40,16 @@ import { useInstallApp } from '../lib/pwa';
 import { api } from '../lib/api';
 import { Avatar, Menu, MenuItem } from '../components/ui';
 import { TaskModalHost, useTaskModals } from '../components/tasks/TaskModalHost';
+import { ALWAYS_SHOWN, MENU_ICONS, SIDEBAR_DEFAULT, arrange, parseMenu } from '../lib/menuSetup';
 import CommandPalette, { type PaletteAction, type PaletteLink } from './CommandPalette';
 import { Breadcrumbs, CrumbProvider } from './Breadcrumbs';
 import { ChatIcon, CompanySwitcher, NewsfeedIcon, NotificationsBell, TodosIcon } from './HeaderWidgets';
 
 interface MenuNode {
+    /** Its id in Menu Setup (a link's address, a section's name). */
+    id: string;
+    /** The section's colour (its icon chip). */
+    color?: string;
     label: string;
     to?: string;
     icon?: LucideIcon;
@@ -61,31 +59,10 @@ interface MenuNode {
     children?: MenuNode[];
 }
 
-/** Each menu section's own colour (its icon chip), so sections are easy to tell apart at a glance. */
-const SECTION_COLORS: Record<string, string> = {
-    Dashboard: '#60a5fa',
-    Chat: '#34d399',
-    Customers: '#a78bfa',
-    Sales: '#4ade80',
-    Expenses: '#f472b6',
-    Contracts: '#facc15',
-    Projects: '#38bdf8',
-    Tasks: '#fb923c',
-    Support: '#22d3ee',
-    Leads: '#fa6010',
-    'Estimate Request': '#c084fc',
-    'Knowledge Base': '#fbbf24',
-    Purchase: '#2dd4bf',
-    Accounting: '#818cf8',
-    Utilities: '#94a3b8',
-    Reports: '#f87171',
-    Setup: '#cbd5e1',
-};
-
 /** A section's icon on a chip of its colour: tinted normally, filled when you are in that section. */
 function SectionIcon({ item, active, size = 'md' }: { item: MenuNode; active: boolean; size?: 'md' | 'lg' }) {
     const Icon = item.icon ?? Gauge;
-    const color = SECTION_COLORS[item.label] ?? '#94a3b8';
+    const color = item.color ?? '#94a3b8';
 
     return (
         <span
@@ -131,6 +108,7 @@ export default function AppLayout() {
 
 function Shell() {
     const { user, logout } = useAuth();
+    const appOptions = useAppOptions();
     const location = useLocation();
     const navigate = useNavigate();
     const { newTask } = useTaskModals();
@@ -237,86 +215,53 @@ function Shell() {
         return () => document.removeEventListener('keydown', onKey);
     }, []);
 
-    const menu: MenuNode[] = [
-        { label: 'Dashboard', to: '/', icon: Gauge },
-        { label: 'Chat', to: '/chat', icon: MessageCircle },
-        { label: 'Customers', to: '/customers', icon: Building2, show: canCustomers },
-        {
-            label: 'Sales',
-            icon: Receipt,
-            children: [
-                { label: 'Proposals', to: '/proposals', show: canProposals },
-                { label: 'Estimates', to: '/estimates', show: canEstimates },
-                { label: 'Invoices', to: '/invoices', show: canInvoices },
-                { label: 'Payments', to: '/payments', show: canPayments },
-                { label: 'Credit Notes', to: '/credit-notes', show: canCreditNotes },
-                { label: 'Items', to: '/items' },
-            ],
-        },
-        { label: 'Expenses', to: '/expenses', icon: Wallet, show: canExpenses },
-        { label: 'Contracts', to: '/contracts', icon: FileSignature, show: canContracts },
-        { label: 'Projects', to: '/projects', icon: FolderKanban },
-        { label: 'Tasks', to: '/tasks', icon: ListChecks },
-        { label: 'Support', to: '/tickets', icon: LifeBuoy },
-        { label: 'Leads', to: '/leads', icon: Target },
-        { label: 'Estimate Request', to: '/estimate-requests', icon: Inbox, show: canEstimateRequests },
-        { label: 'Knowledge Base', to: '/knowledge-base', icon: BookOpen },
-        {
-            label: 'Purchase',
-            icon: ShoppingCart,
-            show: canVendors || canPurchaseRequests || canPurchaseOrders || canPurchaseInvoices,
-            children: [
-                { label: 'Vendors', to: '/purchase/vendors', show: canVendors },
-                { label: 'Purchase Requests', to: '/purchase/requests', show: canPurchaseRequests },
-                { label: 'Purchase Orders', to: '/purchase/orders', show: canPurchaseOrders },
-                { label: 'Purchase Invoices', to: '/purchase/invoices', show: canPurchaseInvoices },
-                { label: 'Settings', to: '/purchase/settings', show: !!user?.is_admin },
-            ],
-        },
-        {
-            label: 'Accounting',
-            icon: BarChart3,
-            show: canAccounting,
-            children: [
-                { label: 'Chart of Accounts', to: '/accounting/chart-of-accounts' },
-                { label: 'Journal Entries', to: '/accounting/journal-entries' },
-                { label: 'Transfers', to: '/accounting/transfers' },
-                { label: 'Reports', to: '/accounting/reports' },
-            ],
-        },
-        {
-            label: 'Utilities',
-            icon: Wrench,
-            children: [
-                { label: 'Media', to: '/utilities/media' },
-                { label: 'Bulk PDF Export', to: '/utilities/bulk-pdf' },
-                { label: 'CSV Export', to: '/utilities/csv-export' },
-                { label: 'Calendar', to: '/utilities/calendar' },
-                { label: 'Announcements', to: '/utilities/announcements' },
-                { label: 'Activity Log', to: '/utilities/activity-log', show: !!user?.is_admin },
-                { label: 'Goals', to: '/utilities/goals' },
-                { label: 'Surveys', to: '/utilities/surveys', show: canSurveys },
-            ],
-        },
-        {
-            label: 'Reports',
-            icon: BarChart3,
-            show: canReports,
-            children: [
-                { label: 'Management dashboard', to: '/reports/management' },
-                { label: 'Sales', to: '/reports/sales' },
-                { label: 'Expenses', to: '/reports/expenses' },
-                { label: 'Expenses vs Income', to: '/reports/expenses-vs-income' },
-                { label: 'Leads', to: '/reports/leads' },
-                { label: 'Timesheets Overview', to: '/reports/timesheets' },
-                { label: 'KB Articles', to: '/reports/knowledge-base' },
-            ],
-        },
-        { label: 'Setup', to: '/settings', icon: Settings, show: !!user?.is_admin },
-    ];
+    // What this person may open (their permissions); everything else is for everyone.
+    const allowed: Record<string, boolean> = {
+        '/customers': canCustomers,
+        '/proposals': canProposals,
+        '/estimates': canEstimates,
+        '/invoices': canInvoices,
+        '/payments': canPayments,
+        '/credit-notes': canCreditNotes,
+        '/expenses': canExpenses,
+        '/contracts': canContracts,
+        '/estimate-requests': canEstimateRequests,
+        '/purchase/vendors': canVendors,
+        '/purchase/requests': canPurchaseRequests,
+        '/purchase/orders': canPurchaseOrders,
+        '/purchase/invoices': canPurchaseInvoices,
+        '/purchase/settings': !!user?.is_admin,
+        accounting: canAccounting,
+        '/utilities/activity-log': !!user?.is_admin,
+        '/utilities/surveys': canSurveys,
+        reports: canReports,
+        '/settings': !!user?.is_admin,
+    };
+    // The sidebar in the company's order, names and icons, without what it hid (Setup → Menu Setup).
+    const menuSetup = parseMenu(appOptions?.menu_setup);
+    const menu: MenuNode[] = arrange(SIDEBAR_DEFAULT, menuSetup).map(({ item, entry }) => {
+        const hidden = !!entry?.hidden && !ALWAYS_SHOWN.includes(item.id);
+        const children = item.children
+            ? arrange(item.children, entry?.children).map(({ item: child, entry: own }) => ({
+                  id: child.id,
+                  to: child.to,
+                  label: own?.label?.trim() || child.label,
+                  show: allowed[child.id] !== false && !own?.hidden,
+              }))
+            : undefined;
 
+        return {
+            id: item.id,
+            to: item.to,
+            color: item.color,
+            label: entry?.label?.trim() || item.label,
+            icon: (entry?.icon && MENU_ICONS[entry.icon]) || MENU_ICONS[item.icon],
+            show: allowed[item.id] !== false && !hidden && (!children || children.some((child) => child.show)),
+            children,
+        };
+    });
     // Accordion: one sidebar section open at a time; it follows the page you are on.
-    const sectionOf = (path: string) => menu.find((node) => node.children?.some((child) => child.to && path.startsWith(child.to)))?.label ?? null;
+    const sectionOf = (path: string) => menu.find((node) => node.children?.some((child) => child.to && path.startsWith(child.to)))?.id ?? null;
     const [openSection, setOpenSection] = useState<string | null>(() => sectionOf(location.pathname));
     useEffect(() => {
         const current = sectionOf(location.pathname);
@@ -447,12 +392,12 @@ function Shell() {
                         .filter((item) => item.show !== false)
                         .map((item) => (
                             <SidebarItem
-                                key={item.label}
+                                key={item.id}
                                 item={item}
                                 pathname={location.pathname}
                                 compact={compact}
-                                open={openSection === item.label}
-                                onToggle={() => setOpenSection((current) => (current === item.label ? null : item.label))}
+                                open={openSection === item.id}
+                                onToggle={() => setOpenSection((current) => (current === item.id ? null : item.id))}
                             />
                         ))}
                 </ul>
@@ -679,7 +624,7 @@ function SidebarItem({ item, pathname, compact = false, open, onToggle }: { item
                 {open && (
                     <ul className="fade-in mb-1 ml-[22px] mt-1 space-y-0.5 border-l border-white/10 pl-2">
                         {item.children.filter((child) => child.show !== false).map((child) => (
-                            <li key={child.label}>
+                            <li key={child.id}>
                                 {child.soon ? (
                                     <span className="flex cursor-not-allowed items-center rounded-lg px-3 py-1.5 text-[13px] text-blue-100/35">
                                         {child.label}

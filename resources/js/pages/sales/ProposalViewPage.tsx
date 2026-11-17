@@ -14,6 +14,7 @@ import type { Proposal } from '../../types';
 import { openPdf } from './InvoiceViewPage';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import RelatedTasks from '../../components/tasks/RelatedTasks';
 
 export default function ProposalViewPage() {
     const { id } = useParams();
@@ -175,6 +176,7 @@ export default function ProposalViewPage() {
                 ]}
                 notes={proposal.content_html ? <RichContent html={proposal.content_html} className="rounded-md border border-gray-200 bg-white p-4" /> : null}
             />
+            <RelatedTasks panel type="proposal" id={proposal.id} name={proposal.subject} />
         </div>
     );
 }
