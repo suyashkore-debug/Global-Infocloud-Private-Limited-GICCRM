@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { User } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** Setup → Company Information → Company Logo: shown in the app, on e-mails and PDFs. */
 export default function CompanyLogoSetup() {
@@ -38,7 +39,7 @@ export default function CompanyLogoSetup() {
     }
 
     async function remove() {
-        if (!confirm('Remove the company logo?')) {
+        if (!(await confirmDialog('Remove the company logo?'))) {
             return;
         }
         setBusy(true);

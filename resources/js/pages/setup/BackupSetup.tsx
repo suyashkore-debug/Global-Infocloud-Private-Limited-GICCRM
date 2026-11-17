@@ -4,6 +4,7 @@ import { api, errorMessage } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
 import { Button, Card, EmptyState, Field, Input, Select, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Backup = { name: string; size: number; created_at: string };
 type Settings = { auto_backup_enabled: string; auto_backup_every: string; auto_backup_hour: string; delete_backups_older_then: string; last_auto_backup: string };
@@ -57,7 +58,7 @@ export default function BackupSetup() {
     }
 
     async function remove(b: Backup) {
-        if (!confirm(`Delete the backup ${b.name}? It cannot be recovered.`)) {
+        if (!(await confirmDialog(`Delete the backup ${b.name}? It cannot be recovered.`))) {
             return;
         }
         try {

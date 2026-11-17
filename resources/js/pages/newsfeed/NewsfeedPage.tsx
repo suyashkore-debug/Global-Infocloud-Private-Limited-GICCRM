@@ -10,6 +10,7 @@ import { Avatar, Button, Modal, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../auth/AuthContext';
 import type { Attachment } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Person = { id: number; full_name: string; photo_url: string | null };
 type Comment = { id: number; author: Person; content: string; created_at: string; likes_count: number; liked: boolean; can_delete: boolean };
@@ -74,7 +75,7 @@ export default function NewsfeedPage() {
     }
 
     async function remove(post: Post) {
-        if (!confirm('Delete this post?')) {
+        if (!(await confirmDialog('Delete this post?'))) {
             return;
         }
         await api.delete(`/newsfeed/${post.id}`);
@@ -108,7 +109,7 @@ export default function NewsfeedPage() {
                         onLike={() => act(() => (post.liked ? api.delete(`/newsfeed/${post.id}/like`) : api.post(`/newsfeed/${post.id}/like`)))}
                         onComment={(content) => act(() => api.post(`/newsfeed/${post.id}/comments`, { content }))}
                         onLikeComment={(c) => act(() => (c.liked ? api.delete(`/newsfeed-comments/${c.id}/like`) : api.post(`/newsfeed-comments/${c.id}/like`)))}
-                        onDeleteComment={(c) => confirm('Delete this comment?') && act(() => api.delete(`/newsfeed-comments/${c.id}`))}
+                        onDeleteComment={async (c) => (await confirmDialog('Delete this comment?')) && act(() => api.delete(`/newsfeed-comments/${c.id}`))}
                         onDelete={() => remove(post)}
                         onPin={() => pin(post)}
                         onShowLikers={() => setLikersOf(post.id)}

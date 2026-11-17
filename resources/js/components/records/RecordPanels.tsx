@@ -8,6 +8,7 @@ import { AttachmentList } from '../comments/AttachmentList';
 import { Button, Checkbox, Field, Input, Select, Spinner, Textarea } from '../ui';
 import { useToast } from '../ui/Toast';
 import type { Attachment, NoteItem, ReminderItem } from '../../types';
+import { confirmDialog } from '../ui/Dialogs';
 
 export type RecordType = 'lead' | 'customer' | 'contract' | 'ticket' | 'expense';
 
@@ -39,7 +40,7 @@ export function NotesPanel({ type, id, withContacted = false, onChange }: { type
     }
 
     async function remove(note: NoteItem) {
-        if (!confirm('Delete this note?')) {
+        if (!(await confirmDialog('Delete this note?'))) {
             return;
         }
         await api.delete(`/notes/${note.id}`);
@@ -205,7 +206,7 @@ export function FilesPanel({ type, id, files, canUpload, onChange }: { type: Rec
             <AttachmentList
                 files={files}
                 canDelete={(f) => f.is_own || canUpload}
-                onDelete={(f) => confirm(`Delete ${f.original_name}?`) && api.delete(`/files/${f.id}`).then(onChange)}
+                onDelete={async (f) => (await confirmDialog(`Delete ${f.original_name}?`)) && api.delete(`/files/${f.id}`).then(onChange)}
             />
             {files.length === 0 && <p className="text-[13px] text-gray-500">No files.</p>}
         </div>

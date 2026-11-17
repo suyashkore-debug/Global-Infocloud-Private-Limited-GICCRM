@@ -11,6 +11,7 @@ import { downloadAttachment } from '../../components/comments/AttachmentList';
 import { useRealtimeConnected, useRealtimeEvent } from '../../lib/realtime';
 import { AudioPlayer, chatDay, chatTime, EMOJIS, fileSize, Linkified, usePolling, VoiceRecorder, type ChatFile } from '../../components/chat/ChatShared';
 import type { Attachment } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Preview = { text: string; at: string; own: boolean } | null;
 type Status = 'online' | 'away' | 'busy' | 'offline';
@@ -438,7 +439,7 @@ function Conversation({ conversation, staff, group, contacts, theme, color, onBa
     }
 
     async function remove(m: Message) {
-        if (!confirm('Delete this message?')) {
+        if (!(await confirmDialog('Delete this message?'))) {
             return;
         }
         await api.delete(`/chat/messages/${m.id}`);
@@ -505,12 +506,12 @@ function Conversation({ conversation, staff, group, contacts, theme, color, onBa
                                 <button type="button" onClick={() => setRenaming(true)} className={iconBtn()} title="Rename group">
                                     <Pencil className="h-4 w-4" />
                                 </button>
-                                <button type="button" onClick={() => confirm(`Delete the group "${title}" and all its messages?`) && groupAction(() => api.delete(`/chat/groups/${id}`), 'Group deleted.', true)} className={`${iconBtn()} hover:!text-red-600`} title="Delete group">
+                                <button type="button" onClick={async () => (await confirmDialog(`Delete the group "${title}" and all its messages?`)) && groupAction(() => api.delete(`/chat/groups/${id}`), 'Group deleted.', true)} className={`${iconBtn()} hover:!text-red-600`} title="Delete group">
                                     <Trash2 className="h-4 w-4" />
                                 </button>
                             </>
                         )}
-                        <button type="button" onClick={() => confirm('Leave this group?') && groupAction(() => api.delete(`/chat/groups/${id}/members/${contacts.me.id}`), 'You left the group.', true)} className={iconBtn()} title="Leave group">
+                        <button type="button" onClick={async () => (await confirmDialog('Leave this group?')) && groupAction(() => api.delete(`/chat/groups/${id}/members/${contacts.me.id}`), 'You left the group.', true)} className={iconBtn()} title="Leave group">
                             <LogOut className="h-4 w-4" />
                         </button>
                     </>
@@ -832,7 +833,7 @@ function AnnounceModal({ hasCustomers, onClose, onSent }: { hasCustomers: boolea
     const [busy, setBusy] = useState(false);
 
     async function send() {
-        if (!confirm(audience === 'staff' ? 'Send this message to every colleague?' : 'Send this message to every customer contact who can log in to the customers area?')) {
+        if (!(await confirmDialog(audience === 'staff' ? 'Send this message to every colleague?' : 'Send this message to every customer contact who can log in to the customers area?'))) {
             return;
         }
         setBusy(true);

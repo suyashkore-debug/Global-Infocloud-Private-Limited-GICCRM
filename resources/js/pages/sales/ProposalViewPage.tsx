@@ -15,6 +15,7 @@ import { openPdf } from './InvoiceViewPage';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export default function ProposalViewPage() {
     const { id } = useParams();
@@ -65,7 +66,7 @@ export default function ProposalViewPage() {
     }
 
     async function remove() {
-        if (!confirm('Delete this proposal?')) {
+        if (!(await confirmDialog('Delete this proposal?'))) {
             return;
         }
         try {

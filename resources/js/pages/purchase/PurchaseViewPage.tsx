@@ -12,6 +12,7 @@ import { useToast } from '../../components/ui/Toast';
 import type { Attachment, PaymentMode } from '../../types';
 import { DELIVERY_STATUSES, PAYMENT_STATUSES, PURCHASE_STATUSES, StatusPill, TITLES, type CurrencyLite, type DocType } from './shared';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Doc = Record<string, unknown> & {
     id: number;
@@ -61,7 +62,7 @@ export default function PurchaseViewPage({ type }: { type: DocType }) {
     }
 
     async function remove() {
-        if (!confirm(`Delete ${title}?`)) {
+        if (!(await confirmDialog(`Delete ${title}?`))) {
             return;
         }
         try {
@@ -282,7 +283,7 @@ export default function PurchaseViewPage({ type }: { type: DocType }) {
                                                         {d.can.edit && (
                                                             <button
                                                                 type="button"
-                                                                onClick={() => confirm('Delete this payment?') && api.delete<{ data: Doc }>(`/purchase/invoices/${id}/payments/${p.id}`).then((r) => setData(r.data))}
+                                                                onClick={async () => (await confirmDialog('Delete this payment?')) && api.delete<{ data: Doc }>(`/purchase/invoices/${id}/payments/${p.id}`).then((r) => setData(r.data))}
                                                                 className="text-gray-400 hover:text-red-600"
                                                                 title="Delete"
                                                             >

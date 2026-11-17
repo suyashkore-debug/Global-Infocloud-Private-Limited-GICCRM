@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { Avatar, Button, Input, Select, Spinner } from '../components/ui';
 import { useToast } from '../components/ui/Toast';
+import { confirmDialog } from '../components/ui/Dialogs';
 
 interface StaffPermissions {
     id: number;
@@ -99,8 +100,8 @@ export default function SettingsPage() {
         }
     }
 
-    function pick(id: number) {
-        if (dirty && !confirm('You have unsaved changes for this staff member. Discard them?')) {
+    async function pick(id: number) {
+        if (dirty && !(await confirmDialog('You have unsaved changes for this staff member. Discard them?'))) {
             return;
         }
         setSelectedId(id);

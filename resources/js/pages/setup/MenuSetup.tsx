@@ -5,6 +5,7 @@ import { ALWAYS_SHOWN, MENU_ICONS, SIDEBAR_DEFAULT, arrange, type MenuEntry } fr
 import { reloadAppOptions } from '../../hooks/useAppOptions';
 import { Button, Input, Menu, Spinner, Tabs } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** A menu entry with its default, as given to the editor. */
 export interface MenuDefault {
@@ -130,7 +131,7 @@ export default function MenuSetup({ setupGroups }: { setupGroups: MenuDefault[] 
                                 { id: 'setup' as Which, label: 'Setup menu' },
                             ]}
                             active={which}
-                            onChange={(w) => (dirty && !confirm('Leave without saving your changes?') ? undefined : setWhich(w))}
+                            onChange={async (w) => (dirty && !(await confirmDialog('Leave without saving your changes?')) ? undefined : setWhich(w))}
                         />
                         <span className="text-[12.5px] text-slate-500">Drag rows (or use the arrows) to reorder · click the eye to hide or show.</span>
                     </div>
@@ -141,7 +142,7 @@ export default function MenuSetup({ setupGroups }: { setupGroups: MenuDefault[] 
                     <RowList parent={null} items={list} icons={which === 'sidebar'} open={open} setOpen={setOpen} update={update} reorder={reorder} />
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 bg-slate-50/80 px-6 py-3">
-                    <Button variant="secondary" onClick={() => confirm(`Put the ${which === 'sidebar' ? 'sidebar' : 'Setup'} menu back to the default order, names and icons?`) && save(null)} disabled={saving}>
+                    <Button variant="secondary" onClick={async () => (await confirmDialog(`Put the ${which === 'sidebar' ? 'sidebar' : 'Setup'} menu back to the default order, names and icons?`)) && save(null)} disabled={saving}>
                         <RotateCcw className="h-4 w-4" /> Reset to default
                     </Button>
                     <span className="flex items-center gap-3">

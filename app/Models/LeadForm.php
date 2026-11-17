@@ -21,7 +21,7 @@ class LeadForm extends Model
     public const DUPLICATE_FIELDS = ['email', 'phone', 'website', 'company', 'name'];
 
     protected $fillable = [
-        'company_id', 'form_key', 'name', 'fields', 'lead_status_id', 'lead_source_id', 'responsible_id', 'lead_name_prefix', 'language',
+        'company_id', 'form_key', 'name', 'fields', 'lead_status_id', 'lead_source_id', 'responsible_id', 'assignee_ids', 'last_assigned_id', 'lead_name_prefix', 'language',
         'submit_btn_name', 'submit_btn_bg_color', 'submit_btn_text_color', 'submit_action', 'success_submit_msg', 'submit_redirect_url',
         'mark_public', 'allow_duplicate', 'track_duplicate_field', 'track_duplicate_field_and', 'create_task_on_duplicate',
         'notify_lead_imported', 'notify_type', 'notify_ids', 'active', 'recaptcha', 'created_by',
@@ -32,6 +32,7 @@ class LeadForm extends Model
         return [
             'fields' => 'array',
             'notify_ids' => 'array',
+            'assignee_ids' => 'array',
             'mark_public' => 'boolean',
             'allow_duplicate' => 'boolean',
             'create_task_on_duplicate' => 'boolean',
@@ -47,6 +48,31 @@ class LeadForm extends Model
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class);
+    }
+
+    /**
+     * Who gets the next lead: with staff "in turn", the one after whoever got the last lead (skipping
+     * anyone no longer active); otherwise the responsible person. Call inside a transaction: the form
+     * row is locked so two leads arriving together go to two people.
+     */
+    public function nextAssignee(): ?int
+    {
+        $turn = array_values(array_unique(array_map('intval', $this->assignee_ids ?? [])));
+        if (! $turn) {
+            return $this->responsible_id ? (int) $this->responsible_id : null;
+        }
+        $form = self::withoutGlobalScopes()->whereKey($this->id)->lockForUpdate()->first(['id', 'last_assigned_id']);
+        $active = User::where('company_id', $this->company_id)->where('is_active', true)->whereIn('id', $turn)->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $turn = array_values(array_filter($turn, fn ($id) => in_array($id, $active, true)));
+        if (! $turn) {
+            return $this->responsible_id ? (int) $this->responsible_id : null;
+        }
+        $last = array_search((int) $form?->last_assigned_id, $turn, true);
+        $next = $turn[$last === false ? 0 : ($last + 1) % count($turn)];
+        self::withoutGlobalScopes()->whereKey($this->id)->update(['last_assigned_id' => $next]);
+        $this->last_assigned_id = $next;
+
+        return $next;
     }
 
     /**

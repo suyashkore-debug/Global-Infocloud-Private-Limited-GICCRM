@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
 import { Button, EmptyState, Input, Modal, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type MailList = { id: number; name: string; emails_count: number; created_at: string };
 
@@ -31,7 +32,7 @@ export default function MailListsPage() {
     }
 
     async function remove(list: MailList) {
-        if (!confirm(`Delete the mail list "${list.name}"?`)) {
+        if (!(await confirmDialog(`Delete the mail list "${list.name}"?`))) {
             return;
         }
         await api.delete(`/mail-lists/${list.id}`);

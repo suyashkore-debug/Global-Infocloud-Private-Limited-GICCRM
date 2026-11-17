@@ -3,6 +3,7 @@ import { api, errorMessage } from '../../lib/api';
 import { useApi } from '../../hooks/useApi';
 import { Button, ErrorNote, Field, Input, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Settings = { site_key: string; has_secret_key: boolean };
 
@@ -66,7 +67,7 @@ export default function RecaptchaSetup() {
                         Save
                     </Button>
                     {ready && (
-                        <Button variant="secondary" onClick={() => confirm('Remove the reCAPTCHA keys? Forms will stop asking for the check.') && save(true)}>
+                        <Button variant="secondary" onClick={async () => (await confirmDialog('Remove the reCAPTCHA keys? Forms will stop asking for the check.')) && save(true)}>
                             Remove keys
                         </Button>
                     )}

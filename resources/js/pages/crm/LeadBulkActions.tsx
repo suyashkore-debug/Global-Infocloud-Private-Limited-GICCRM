@@ -4,6 +4,7 @@ import { useStaff } from '../../hooks/useStaff';
 import { Button, Checkbox, Field, Input, Modal, Select, TagInput } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { LeadStatus } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /**
  * Perfex leads "Bulk Actions" for the ticked rows: mark as lost, change status / source, last
@@ -31,7 +32,7 @@ export default function LeadBulkActions({
     const nothing = !form.mass_delete && !form.lost && !form.lead_status_id && !form.lead_source_id && !form.last_contact_at && !form.next_follow_up_at && !form.assigned_id && form.tags.length === 0 && !form.visibility;
 
     async function confirm() {
-        if (form.mass_delete && !window.confirm(`Delete ${ids.length} lead${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) {
+        if (form.mass_delete && !(await confirmDialog(`Delete ${ids.length} lead${ids.length === 1 ? '' : 's'}? This cannot be undone.`))) {
             return;
         }
         setSaving(true);

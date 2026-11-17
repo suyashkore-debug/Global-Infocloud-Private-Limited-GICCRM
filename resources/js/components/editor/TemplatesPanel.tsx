@@ -4,6 +4,7 @@ import { api, errorMessage } from '../../lib/api';
 import { Button, Field, Input, Modal } from '../ui';
 import { useToast } from '../ui/Toast';
 import RichTextEditor from './RichTextEditor';
+import { confirmDialog } from '../ui/Dialogs';
 
 type TemplateRow = { id: number; name: string; author: string | null; is_own: boolean; can_manage: boolean };
 
@@ -39,7 +40,7 @@ export default function TemplatesPanel({ type, currentContent, onInsert }: { typ
     }
 
     async function remove(row: TemplateRow) {
-        if (!confirm(`Delete the template "${row.name}"?`)) {
+        if (!(await confirmDialog(`Delete the template "${row.name}"?`))) {
             return;
         }
         await api.delete(`/templates/${row.id}`);

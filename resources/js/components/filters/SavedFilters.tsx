@@ -3,6 +3,7 @@ import { Bookmark, Check, ChevronDown, Pencil, Star, Trash2, Users } from 'lucid
 import { api, errorMessage } from '../../lib/api';
 import { Button, Checkbox, Field, Input, Menu, Modal } from '../ui';
 import { useToast } from '../ui/Toast';
+import { confirmDialog } from '../ui/Dialogs';
 
 export type FilterValues = Record<string, unknown>;
 type Saved = { id: number; name: string; filters: FilterValues; is_shared: boolean; is_own: boolean; is_default: boolean; can_manage: boolean; author: string | null };
@@ -76,7 +77,7 @@ export default function SavedFilters({ identifier, current, onApply }: { identif
     }
 
     async function remove(f: Saved) {
-        if (!confirm(`Delete the filter "${f.name}"?`)) {
+        if (!(await confirmDialog(`Delete the filter "${f.name}"?`))) {
             return;
         }
         await api.delete(`/saved-filters/${f.id}`);

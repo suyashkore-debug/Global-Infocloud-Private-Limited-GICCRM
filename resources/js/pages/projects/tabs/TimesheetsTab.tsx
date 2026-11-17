@@ -9,6 +9,7 @@ import { Card, EmptyState, IconButton, Pagination, Select, Spinner } from '../..
 import { useToast } from '../../../components/ui/Toast';
 import { useTaskModals } from '../../../components/tasks/TaskModalHost';
 import type { Paginated, Project, Timer } from '../../../types';
+import { confirmDialog } from '../../../components/ui/Dialogs';
 
 export default function TimesheetsTab({ project }: { project: Project }) {
     const toast = useToast();
@@ -19,7 +20,7 @@ export default function TimesheetsTab({ project }: { project: Project }) {
     useEvent([TASKS_CHANGED, TIMERS_CHANGED], reload);
 
     async function remove(timer: Timer) {
-        if (!confirm('Delete this timesheet?')) {
+        if (!(await confirmDialog('Delete this timesheet?'))) {
             return;
         }
         try {

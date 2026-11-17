@@ -18,6 +18,7 @@ import SendEmailButton from '../../components/email/SendEmailButton';
 import { openPdf } from '../sales/InvoiceViewPage';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Tab = 'contract' | 'attachments' | 'comments' | 'renewals' | 'notes' | 'reminders' | 'tasks';
 
@@ -69,7 +70,7 @@ export default function ContractViewPage() {
     }
 
     async function remove() {
-        if (!confirm('Delete this contract?')) {
+        if (!(await confirmDialog('Delete this contract?'))) {
             return;
         }
         await api.delete(`/contracts/${contract!.id}`);

@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { Button, IconButton, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { promptDialog, confirmDialog } from '../../components/ui/Dialogs';
 
 interface MediaItem {
     id: number;
@@ -65,8 +66,8 @@ export default function MediaPage() {
                 </label>
                 <Button
                     variant="secondary"
-                    onClick={() => {
-                        const name = prompt('Folder name')?.trim().replace(/[^\w\- ]/g, '');
+                    onClick={async () => {
+                        const name = (await promptDialog('Folder name'))?.trim().replace(/[^\w\- ]/g, '');
                         if (name) {
                             setExtraFolders((f) => [...f, folder ? `${folder}/${name}` : name]);
                         }
@@ -112,7 +113,7 @@ export default function MediaPage() {
                                     <Download className="h-3.5 w-3.5" />
                                 </IconButton>
                                 {(m.is_own || user?.is_admin) && (
-                                    <IconButton label="Delete" onClick={() => confirm(`Delete ${m.original_name}?`) && api.delete(`/media/${m.id}`).then(reload)} className="hover:text-red-600">
+                                    <IconButton label="Delete" onClick={async () => (await confirmDialog(`Delete ${m.original_name}?`)) && api.delete(`/media/${m.id}`).then(reload)} className="hover:text-red-600">
                                         <Trash2 className="h-3.5 w-3.5" />
                                     </IconButton>
                                 )}

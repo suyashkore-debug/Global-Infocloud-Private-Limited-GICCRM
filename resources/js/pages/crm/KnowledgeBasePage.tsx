@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
 import { Button, Checkbox, EmptyState, Field, IconButton, Input, Modal, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 interface ArticleRow {
     id: number;
@@ -54,7 +55,7 @@ export default function KnowledgeBasePage() {
     const open = (id: number | null) => setParams(id ? { article: String(id) } : {});
 
     async function removeGroup(group: Group) {
-        if (!confirm(`Delete group "${group.name}" and all its articles?`)) {
+        if (!(await confirmDialog(`Delete group "${group.name}" and all its articles?`))) {
             return;
         }
         await api.delete(`/kb/groups/${group.id}`);
@@ -185,7 +186,7 @@ function ArticleView({
     }
 
     async function remove() {
-        if (!confirm('Delete this article?')) {
+        if (!(await confirmDialog('Delete this article?'))) {
             return;
         }
         await api.delete(`/kb/articles/${id}`);

@@ -4,6 +4,7 @@ import { api, errorMessage } from '../../lib/api';
 import { AttachmentList } from '../../components/comments/AttachmentList';
 import { useToast } from '../../components/ui/Toast';
 import type { Attachment } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** The vendor's bill (scan / PDF) attached to a purchase invoice. */
 export function FilesPanelFor({ invoiceId, files, canUpload, onChange }: { invoiceId: number; files: Attachment[]; canUpload: boolean; onChange: () => void }) {
@@ -37,7 +38,7 @@ export function FilesPanelFor({ invoiceId, files, canUpload, onChange }: { invoi
                         <input type="file" multiple className="hidden" onChange={(e) => (upload(Array.from(e.target.files ?? [])), (e.target.value = ''))} />
                     </label>
                 )}
-                <AttachmentList files={files} canDelete={() => canUpload} onDelete={(f) => confirm(`Delete ${f.original_name}?`) && api.delete(`/files/${f.id}`).then(onChange)} />
+                <AttachmentList files={files} canDelete={() => canUpload} onDelete={async (f) => (await confirmDialog(`Delete ${f.original_name}?`)) && api.delete(`/files/${f.id}`).then(onChange)} />
                 {files.length === 0 && <p className="text-[13px] text-gray-500">No files.</p>}
             </div>
         </div>

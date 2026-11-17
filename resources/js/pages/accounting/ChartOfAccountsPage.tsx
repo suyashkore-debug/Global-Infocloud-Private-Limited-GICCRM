@@ -9,6 +9,7 @@ import { usePermission } from '../../hooks/usePermission';
 import { Button, Checkbox, ErrorNote, Field, Input, Modal, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { accountLabel, REL_LABELS, useAccounts, type AccountRow, type AccountsReply } from './shared';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** Perfex Accounting → Chart of Accounts, grouped by account type, with balances. */
 export default function ChartOfAccountsPage() {
@@ -33,7 +34,7 @@ export default function ChartOfAccountsPage() {
     }, [data, search, type, showInactive]);
 
     async function remove(a: AccountRow) {
-        if (!confirm(`Delete the account "${a.name}"?`)) {
+        if (!(await confirmDialog(`Delete the account "${a.name}"?`))) {
             return;
         }
         try {

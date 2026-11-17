@@ -5,6 +5,7 @@ import { formatDateTime } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, ErrorNote, Field, Input, Modal, Spinner, Textarea } from '../ui';
 import { useToast } from '../ui/Toast';
+import { confirmDialog } from '../ui/Dialogs';
 
 type Preview = {
     recipients: { contact_id: number | null; name: string; email: string; checked: boolean }[];
@@ -100,7 +101,7 @@ function SendEmailModal({ type, id, onClose, onSent }: { type: EmailDocumentType
     }
 
     async function cancelSchedule() {
-        if (!confirm('Cancel the scheduled e-mail?')) {
+        if (!(await confirmDialog('Cancel the scheduled e-mail?'))) {
             return;
         }
         try {

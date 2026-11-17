@@ -73,6 +73,8 @@ class PublicLeadFormController extends Controller
         $campaign = trim(mb_substr((string) $request->input('_utm_campaign'), 0, 100));
 
         $lead = DB::transaction(function () use ($form, $fields, $custom, $extra, $request, $channel, $campaign) {
+            // The responsible person, or the next of the staff who get leads in turn.
+            $assignee = $form->nextAssignee();
             DefaultLookups::ensureLeadLists();
             $description = trim(implode("\n", array_filter([$fields['description'] ?? null, ...array_map(fn ($e) => "{$e['label']}: {$e['value']}", $extra)])));
             $person = trim(($fields['first_name'] ?? '').' '.($fields['last_name'] ?? ''));
@@ -85,8 +87,8 @@ class PublicLeadFormController extends Controller
                 'description' => $description !== '' ? $description : null,
                 'lead_status_id' => $form->lead_status_id ?? ((int) Options::get('leads_default_status') ?: LeadStatus::orderBy('status_order')->value('id')),
                 'lead_source_id' => $channel ? LeadChannel::source($channel, $form->company_id)->id : ($form->lead_source_id ?? ((int) Options::get('leads_default_source') ?: LeadSource::orderBy('id')->value('id'))),
-                'assigned_id' => $form->responsible_id,
-                'assigned_at' => $form->responsible_id ? today() : null,
+                'assigned_id' => $assignee,
+                'assigned_at' => $assignee ? today() : null,
                 'is_public' => $form->mark_public,
                 'default_language' => $form->language,
                 'lead_form_id' => $form->id,
@@ -122,10 +124,11 @@ class PublicLeadFormController extends Controller
         });
 
         $link = "/leads?lead={$lead->id}";
-        $notifier->notify(array_diff($form->notifyUserIds(), [(int) $form->responsible_id]), "New lead from the web form {$form->name}: {$lead->name}", $link, $form->company_id);
-        if ($form->responsible_id) {
-            $notifier->notify([$form->responsible_id], "Lead #{$lead->id} from the web form {$form->name} has been assigned to you", $link, $form->company_id);
-            Emails::toStaff('new-lead-assigned', $form->company_id, [$form->responsible_id], Emails::lead($lead), $lead);
+        $assignee = (int) $lead->assigned_id;
+        $notifier->notify(array_diff($form->notifyUserIds(), [$assignee]), "New lead from the web form {$form->name}: {$lead->name}", $link, $form->company_id);
+        if ($assignee) {
+            $notifier->notify([$assignee], "Lead #{$lead->id} from the web form {$form->name} has been assigned to you", $link, $form->company_id);
+            Emails::toStaff('new-lead-assigned', $form->company_id, [$assignee], Emails::lead($lead), $lead);
         }
         // Perfex "Web to lead form submitted - Sent to lead": a thank-you to the lead (when the template is on).
         if ($lead->email) {
@@ -229,9 +232,9 @@ class PublicLeadFormController extends Controller
             'start_date' => today(),
             'created_by' => $form->created_by,
         ]);
-        if ($form->responsible_id) {
-            $task->assignees()->create(['user_id' => $form->responsible_id]);
-            $notifier->notify([$form->responsible_id], "A repeat web form submission was added as a task on lead {$lead->name}", "/leads?lead={$lead->id}", $form->company_id);
+        if ($owner = (int) ($lead->assigned_id ?: $form->responsible_id)) {
+            $task->assignees()->create(['user_id' => $owner]);
+            $notifier->notify([$owner], "A repeat web form submission was added as a task on lead {$lead->name}", "/leads?lead={$lead->id}", $form->company_id);
         }
         $lead->logActivity("Web form \"{$form->name}\" sent again; added as a task");
     }

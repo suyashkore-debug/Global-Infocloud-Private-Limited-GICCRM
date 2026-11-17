@@ -14,6 +14,7 @@ import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import { useAppOptions } from '../../hooks/useAppOptions';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Option = { id: number; name: string };
 
@@ -112,7 +113,7 @@ export default function TicketViewPage() {
     }
 
     async function remove() {
-        if (!confirm('Delete this ticket?')) {
+        if (!(await confirmDialog('Delete this ticket?'))) {
             return;
         }
         try {

@@ -9,6 +9,7 @@ import { usePermission } from '../../hooks/usePermission';
 import { Button, EmptyState, ErrorNote, Field, Input, Modal, Pagination, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { accountLabel, useAccounts } from './shared';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Entry = { id: number; number: number; journal_date: string; reference: string | null; description: string | null; amount: number; lines: { account_id: number; account: string | null; debit: number; credit: number; description: string | null }[] };
 
@@ -80,7 +81,7 @@ function EntryModal({ id, onClose }: { id: number; onClose: () => void }) {
     const e = data?.data;
 
     async function remove() {
-        if (!confirm('Delete this journal entry?')) {
+        if (!(await confirmDialog('Delete this journal entry?'))) {
             return;
         }
         await api.delete(`/accounting/journal-entries/${id}`);

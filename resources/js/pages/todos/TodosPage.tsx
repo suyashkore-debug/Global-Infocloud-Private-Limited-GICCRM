@@ -6,6 +6,7 @@ import { emit, TODOS_CHANGED } from '../../lib/events';
 import { useApi } from '../../hooks/useApi';
 import { Button, Modal, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export type TodoItem = { id: number; description: string; finished: boolean; finished_at: string | null; item_order: number; created_at: string };
 type List = { data: TodoItem[]; meta: { total: number; unfinished: number } };
@@ -31,7 +32,7 @@ export default function TodosPage() {
     }
 
     async function remove(todo: TodoItem) {
-        if (!confirm('Delete this to do item?')) {
+        if (!(await confirmDialog('Delete this to do item?'))) {
             return;
         }
         await api.delete(`/todos/${todo.id}`);

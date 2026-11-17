@@ -11,6 +11,7 @@ import { FilesPanel } from '../../components/records/RecordPanels';
 import type { Expense } from '../../types';
 import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export default function ExpenseViewPage() {
     const { id } = useParams();
@@ -45,7 +46,7 @@ export default function ExpenseViewPage() {
     }
 
     async function remove() {
-        if (!confirm('Delete this expense?')) {
+        if (!(await confirmDialog('Delete this expense?'))) {
             return;
         }
         await api.delete(`/expenses/${e!.id}`);

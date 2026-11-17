@@ -5,6 +5,7 @@ import { useApi } from '../../hooks/useApi';
 import { clearCustomFieldCache, type CustomFieldDef, type FieldTo } from '../../components/customfields/CustomFields';
 import { Button, Checkbox, ErrorNote, Field, Input, Modal, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 const MODULES: { id: FieldTo; label: string; pdf?: boolean }[] = [
     { id: 'leads', label: 'Leads' },
@@ -43,7 +44,7 @@ export default function CustomFieldsSetup() {
     const [editing, setEditing] = useState<CustomFieldDef | 'new' | null>(null);
 
     async function remove(f: CustomFieldDef) {
-        if (!confirm(`Delete the custom field "${f.name}" and all its saved values?`)) {
+        if (!(await confirmDialog(`Delete the custom field "${f.name}" and all its saved values?`))) {
             return;
         }
         await api.delete(`/custom-fields/${f.id}`);

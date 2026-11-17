@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { useAppOptions } from '../../hooks/useAppOptions';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 interface CalendarItem {
     id: string;
@@ -177,7 +178,7 @@ function EventModal({ state, onClose, onSaved, onError }: { state: { open: boole
     }
 
     async function remove() {
-        if (item?.event_id && confirm('Delete this event?')) {
+        if (item?.event_id && (await confirmDialog('Delete this event?'))) {
             await api.delete(`/calendar/events/${item.event_id}`);
             onSaved();
         }

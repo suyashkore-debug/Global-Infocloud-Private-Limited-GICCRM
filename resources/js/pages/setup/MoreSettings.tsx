@@ -5,6 +5,7 @@ import { useApi } from '../../hooks/useApi';
 import { Button, EmptyState, Input, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import OptionsForm from './OptionsForm';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 const yes = 'yesno' as const;
 const opts = (rows: { id: number; name: string }[] | undefined, none: string) => [{ value: '', label: none }, ...(rows ?? []).map((r) => ({ value: String(r.id), label: r.name }))];
@@ -211,7 +212,7 @@ export function TagsSettings() {
     }
 
     async function remove(tag: { id: number; name: string; used: number }) {
-        if (!confirm(`Delete the tag "${tag.name}"? It is removed from ${tag.used} record(s).`)) {
+        if (!(await confirmDialog(`Delete the tag "${tag.name}"? It is removed from ${tag.used} record(s).`))) {
             return;
         }
         await api.delete(`/tags/${tag.id}`);

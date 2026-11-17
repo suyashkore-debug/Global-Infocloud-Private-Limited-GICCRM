@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Code, Eraser, Heading2, Heading3, Italic, Link2, List, ListOrdered, Minus, Pilcrow, Redo2, Strikethrough, Underline, Undo2 } from 'lucide-react';
+import { promptDialog } from '../ui/Dialogs';
 
 /** Old plain text becomes HTML with its line breaks, so it edits like formatted content. */
 export function asHtml(value: string | null | undefined): string {
@@ -113,9 +114,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, { value: string; onChang
                 {btn('Align centre', <AlignCenter className={ic} />, () => exec('justifyCenter'))}
                 {btn('Align right', <AlignRight className={ic} />, () => exec('justifyRight'))}
                 {sep('s4')}
-                {btn('Link', <Link2 className={ic} />, () => {
+                {btn('Link', <Link2 className={ic} />, async () => {
                     remember();
-                    const url = prompt('Link address (https://…)');
+                    const url = (await promptDialog('Link address (https://…)'));
                     if (url) {
                         exec('createLink', url);
                     }

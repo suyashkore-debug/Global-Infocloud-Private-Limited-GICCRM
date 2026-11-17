@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 import { Button, Input, Pagination, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { Paginated } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export default function ActivityLogPage() {
     const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function ActivityLogPage() {
     }
 
     async function clear() {
-        if (!confirm('Clear the whole activity log?')) {
+        if (!(await confirmDialog('Clear the whole activity log?'))) {
             return;
         }
         await api.delete('/activity-log');

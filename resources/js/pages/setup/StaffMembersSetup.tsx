@@ -7,6 +7,7 @@ import { clearStaffCache } from '../../hooks/useStaff';
 import { useAuth } from '../../auth/AuthContext';
 import { Avatar, Button, Checkbox, ErrorNote, Field, FormSection, IconInput, Modal, Spinner, Tabs } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Member = {
     id: number;
@@ -70,7 +71,7 @@ export default function StaffMembersSetup() {
     }
 
     async function remove(m: Member) {
-        if (!confirm(`Delete ${m.full_name}? They will not be able to log in any more.`)) {
+        if (!(await confirmDialog(`Delete ${m.full_name}? They will not be able to log in any more.`))) {
             return;
         }
         try {

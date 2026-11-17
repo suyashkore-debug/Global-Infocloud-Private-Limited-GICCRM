@@ -6,6 +6,7 @@ import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, Field, Input, MenuItem, Modal } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { FilterRule, LeadSort } from './LeadFilters';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /**
  * A dropdown drawn over the page (like Menu), so the scrolling tabs row does not cut it off.
@@ -166,7 +167,7 @@ export function ViewTabs({
     }, [saveSignal]);
 
     async function remove(view: LeadView) {
-        if (!confirm(`Delete the view "${view.name}"?`)) {
+        if (!(await confirmDialog(`Delete the view "${view.name}"?`))) {
             return;
         }
         try {

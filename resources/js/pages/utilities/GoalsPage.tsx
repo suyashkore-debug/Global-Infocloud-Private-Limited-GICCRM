@@ -8,6 +8,7 @@ import { usePermission } from '../../hooks/usePermission';
 import { useStaff } from '../../hooks/useStaff';
 import { Button, Checkbox, EmptyState, ErrorNote, Field, IconButton, Input, Modal, ProgressBar, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 interface Goal {
     id: number;
@@ -136,7 +137,7 @@ export default function GoalsPage() {
                                                     </IconButton>
                                                 )}
                                                 {canDelete && (
-                                                    <IconButton label="Delete" onClick={() => confirm('Delete this goal?') && api.delete(`/goals/${g.id}`).then(reload)} className="hover:text-red-600">
+                                                    <IconButton label="Delete" onClick={async () => (await confirmDialog('Delete this goal?')) && api.delete(`/goals/${g.id}`).then(reload)} className="hover:text-red-600">
                                                         <Trash2 className="h-4 w-4" />
                                                     </IconButton>
                                                 )}

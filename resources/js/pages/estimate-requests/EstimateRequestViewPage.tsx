@@ -10,6 +10,7 @@ import { AttachmentList } from '../../components/comments/AttachmentList';
 import { Button, ErrorNote, Field, Input, Modal, Select, Spinner, TagInput } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { EstimateRequestDetail, RequestStatus } from './types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** One estimate request: the submitted answers, status / assignee / tags, and Convert. */
 export default function EstimateRequestViewPage() {
@@ -34,7 +35,7 @@ export default function EstimateRequestViewPage() {
     }
 
     async function remove() {
-        if (!confirm('Delete this estimate request?')) {
+        if (!(await confirmDialog('Delete this estimate request?'))) {
             return;
         }
         await api.delete(`/estimate-requests/${id}`);

@@ -8,6 +8,7 @@ import { formatDate, formatDateTime } from '../../lib/format';
 import { money } from '../../lib/sales';
 import DocumentPreview, { AddressLines } from '../../components/sales/DocumentPreview';
 import type { Address, SalesDocumentBase } from '../../types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type DocType = 'invoice' | 'estimate' | 'proposal' | 'contract';
 type PublicDoc = SalesDocumentBase & Record<string, unknown> & { billing?: Address; shipping?: Address };
@@ -48,7 +49,7 @@ export default function PublicDocumentPage({ type }: { type: DocType }) {
     useEffect(load, [load]);
 
     async function respond(action: 'accept' | 'decline' | 'sign') {
-        if (action === 'decline' && !confirm('Decline this document?')) {
+        if (action === 'decline' && !(await confirmDialog('Decline this document?'))) {
             return;
         }
         setBusy(true);

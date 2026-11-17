@@ -14,6 +14,7 @@ import { openPdf } from './InvoiceViewPage';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export default function EstimateViewPage() {
     const { id } = useParams();
@@ -63,7 +64,7 @@ export default function EstimateViewPage() {
     }
 
     async function remove() {
-        if (!confirm(`Delete estimate ${estimate!.formatted_number}?`)) {
+        if (!(await confirmDialog(`Delete estimate ${estimate!.formatted_number}?`))) {
             return;
         }
         try {

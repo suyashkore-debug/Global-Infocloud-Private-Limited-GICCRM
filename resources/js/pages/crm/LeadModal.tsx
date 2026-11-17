@@ -23,6 +23,7 @@ import { COUNTRIES, LANGUAGES } from '../../lib/countries';
 import { celebrate } from '../../lib/celebrate';
 import LeadEmails from './LeadEmails';
 import { FollowUpPanel } from './LeadFollowUp';
+import { confirmDialog } from '../../components/ui/Dialogs';
 /** Setup → Leads "Modal Width Class" → the lead panel size. */
 const LEAD_WIDTHS: Record<string, 'lg' | 'xl' | 'xxl'> = { 'modal-lg': 'lg', 'modal-xl': 'xl', 'modal-xxl': 'xxl' };
 const appOptionsLoad = () => api.get<{ data: Record<string, string> }>('/app-options').then((r) => r.data.data).catch(() => ({}) as Record<string, string>);
@@ -150,7 +151,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
             ...(lead || !followUpAt ? {} : { next_follow_up_at: new Date(followUpAt).toISOString(), follow_up_note: followUpNote || null }),
             // Perfex: the e-mail changed on a lead with proposals → ask whether they move to it too.
             ...(lead && lead.email && form.email !== lead.email && (lead.proposals?.length ?? 0) > 0
-                ? { update_proposal_emails: window.confirm('The e-mail changed. Also update it on the proposals of this lead?') }
+                ? { update_proposal_emails: await confirmDialog({ title: 'Also update the proposals?', message: 'The e-mail changed. Use the new e-mail on the proposals of this lead too?', confirmLabel: 'Update proposals', cancelLabel: 'No' }) }
                 : {}),
         };
         try {
@@ -181,7 +182,7 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
     }
 
     async function remove() {
-        if (!confirm('Delete this lead?')) {
+        if (!(await confirmDialog('Delete this lead?'))) {
             return;
         }
         try {
@@ -685,7 +686,7 @@ function ConvertModal({ open, lead, onClose, onDone }: { open: boolean; lead: Le
                 <Field label="Password" error={errors.password} hint="For the customer area. Leave empty to e-mail a link instead." className="sm:col-span-2">
                     <Input type="password" value={form.password} onChange={set('password')} autoComplete="new-password" />
                 </Field>
-                <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:col-span-2">
+                <div className="flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:col-span-2">
                     {!form.password && (
                         <Checkbox label="Send set password email" checked={options.send_set_password_email} onChange={(v) => setOptions({ ...options, send_set_password_email: v })} />
                     )}

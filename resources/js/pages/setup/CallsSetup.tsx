@@ -3,6 +3,7 @@ import { api, errorMessage } from '../../lib/api';
 import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type StaffRow = { id: number; name: string; number: string; hrms_mobile: string | null };
 type CallSettings = {
@@ -106,7 +107,7 @@ export default function CallsSetup() {
                                 Save
                             </Button>
                             {form.has_api_token && (
-                                <Button variant="secondary" onClick={() => confirm('Remove the saved Exotel API key and token?') && save(true)}>
+                                <Button variant="secondary" onClick={async () => (await confirmDialog('Remove the saved Exotel API key and token?')) && save(true)}>
                                     Disconnect
                                 </Button>
                             )}

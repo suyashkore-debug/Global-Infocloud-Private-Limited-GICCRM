@@ -8,6 +8,7 @@ import { usePermission } from '../../hooks/usePermission';
 import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { QUESTION_TYPES, type QuestionType, type SurveyDetail, type SurveyQuestion } from './types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type Form = Pick<SurveyDetail, 'subject' | 'ip_restrict' | 'only_for_logged_in' | 'active'> & { description: string; view_description: string; from_name: string; redirect_url: string; questions: SurveyQuestion[] };
 
@@ -77,7 +78,7 @@ export default function SurveyFormPage() {
     }
 
     async function remove() {
-        if (!confirm('Delete this survey and all its results?')) {
+        if (!(await confirmDialog('Delete this survey and all its results?'))) {
             return;
         }
         await api.delete(`/surveys/${id}`);
@@ -186,7 +187,7 @@ export default function SurveyFormPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => confirm('Remove this question (and its answers)?') && set({ questions: form.questions.filter((_, qi) => qi !== i) })}
+                                                onClick={async () => (await confirmDialog('Remove this question (and its answers)?')) && set({ questions: form.questions.filter((_, qi) => qi !== i) })}
                                                 className="p-1 text-gray-400 hover:text-red-600"
                                                 title="Remove question"
                                             >

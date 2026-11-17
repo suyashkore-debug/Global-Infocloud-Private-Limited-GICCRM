@@ -214,7 +214,7 @@ export function Modal({
     children,
     footer,
     size = 'md',
-    drawer = true,
+    drawer,
 }: {
     open: boolean;
     title: ReactNode;
@@ -222,9 +222,14 @@ export function Modal({
     children: ReactNode;
     footer?: ReactNode;
     size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
-    /** Slide in from the right as a full-height panel (the default); false for a centred dialog. */
+    /**
+     * A full-height panel sliding in from the right, or a dialog in the middle of the screen. By
+     * default the big windows (lg and up: a lead, a task, long forms) are panels, so the list stays
+     * in view beside them, and the small ones (sm, md: a few fields, a question) are centred.
+     */
     drawer?: boolean;
 }) {
+    const asDrawer = drawer ?? ['lg', 'xl', 'xxl'].includes(size);
     useEffect(() => {
         if (!open) {
             return;
@@ -255,7 +260,7 @@ export function Modal({
     );
     const foot = footer && <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50/70 px-6 py-3.5">{footer}</div>;
 
-    if (drawer) {
+    if (asDrawer) {
         // The list stays in view on the left; the panel floats like the sidebar and scrolls inside.
         return createPortal(
             <div data-floating className="fade-in fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-[2px]" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -275,11 +280,17 @@ export function Modal({
 
     // Portalled to <body>: a parent with a backdrop filter or transform (the blurred header) would
     // otherwise trap this fixed overlay inside itself. data-floating keeps an opener menu open.
+    // Centred: at most the screen's height; only the content scrolls, the title and buttons stay.
+    const centred = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl', xxl: 'max-w-6xl' };
     return createPortal(
-        <div data-floating className="fade-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/45 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-            <div role="dialog" aria-modal="true" className={`pop-in my-4 w-full ${widths[size]} overflow-clip rounded-[22px] bg-white shadow-[0_30px_80px_-20px_rgba(8,33,63,0.45)] ring-1 ring-slate-900/5`}>
+        <div data-floating className="fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+            <div
+                role="dialog"
+                aria-modal="true"
+                className={`pop-in flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_30px_80px_-20px_rgba(8,33,63,0.45)] ring-1 ring-slate-900/5 sm:max-h-[calc(100dvh-3rem)] ${centred[size]}`}
+            >
                 {head}
-                <div className="px-6 py-5">{children}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
                 {foot}
             </div>
         </div>,

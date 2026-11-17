@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, EmptyState, Field, IconButton, Input, Modal, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 interface Announcement {
     id: number;
@@ -80,7 +81,7 @@ export default function AnnouncementsPage() {
                                             <IconButton label="Edit" onClick={() => start(a)}>
                                                 <Pencil className="h-4 w-4" />
                                             </IconButton>
-                                            <IconButton label="Delete" onClick={() => confirm('Delete?') && api.delete(`/announcements/${a.id}`).then(reload)} className="hover:text-red-600">
+                                            <IconButton label="Delete" onClick={async () => (await confirmDialog('Delete?')) && api.delete(`/announcements/${a.id}`).then(reload)} className="hover:text-red-600">
                                                 <Trash2 className="h-4 w-4" />
                                             </IconButton>
                                         </>

@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
 import { Button, EmptyState, ErrorNote, Field, Input, Modal, Select, Spinner, Textarea } from '../../components/ui';
 import { accountLabel, useAccounts } from './shared';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** Perfex Accounting → Transfer: move money between two accounts (e.g. bank to cash). */
 export default function TransfersPage() {
@@ -52,7 +53,7 @@ export default function TransfersPage() {
                                     <td>{t.description}</td>
                                     <td className="text-right">
                                         {canDelete && (
-                                            <button type="button" onClick={() => confirm('Delete this transfer?') && api.delete(`/accounting/transfers/${t.id}`).then(reload)} className="text-gray-400 hover:text-red-600" title="Delete">
+                                            <button type="button" onClick={async () => (await confirmDialog('Delete this transfer?')) && api.delete(`/accounting/transfers/${t.id}`).then(reload)} className="text-gray-400 hover:text-red-600" title="Delete">
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         )}

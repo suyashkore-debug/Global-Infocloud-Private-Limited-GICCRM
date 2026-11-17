@@ -12,6 +12,7 @@ import { Button, Checkbox, EmptyState, ErrorNote, Field, FormSection, Input, Mod
 import { useToast } from '../../components/ui/Toast';
 import { fetchDefinitions, type CustomFieldDef } from '../../components/customfields/CustomFields';
 import type { FieldType, FormField } from '../estimate-requests/types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export type LeadWebForm = {
     id: number;
@@ -21,6 +22,8 @@ export type LeadWebForm = {
     lead_status_id: number | null;
     lead_source_id: number | null;
     responsible_id: number | null;
+    /** Staff who get the leads in turn (round-robin); empty: the responsible person gets them all. */
+    assignee_ids?: number[] | null;
     lead_name_prefix: string | null;
     language: string | null;
     submit_btn_name: string;
@@ -157,7 +160,7 @@ export default function LeadFormsPage() {
     }
 
     async function remove(form: LeadWebForm) {
-        if (!confirm(`Delete the form "${form.name}"? Leads already received are kept.`)) {
+        if (!(await confirmDialog(`Delete the form "${form.name}"? Leads already received are kept.`))) {
             return;
         }
         await api.delete(`/lead-forms/${form.id}`);
@@ -310,6 +313,8 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
         lead_status_id: String(form?.lead_status_id ?? ''),
         lead_source_id: String(form?.lead_source_id ?? ''),
         responsible_id: String(form?.responsible_id ?? ''),
+        assign_mode: (form?.assignee_ids?.length ? 'turn' : 'one') as 'one' | 'turn',
+        assignee_ids: form?.assignee_ids ?? ([] as number[]),
         lead_name_prefix: form?.lead_name_prefix ?? '',
         language: form?.language ?? '',
         submit_btn_name: form?.submit_btn_name ?? 'Submit',
@@ -353,7 +358,9 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
             ...state,
             lead_status_id: state.lead_status_id ? Number(state.lead_status_id) : null,
             lead_source_id: state.lead_source_id ? Number(state.lead_source_id) : null,
-            responsible_id: state.responsible_id ? Number(state.responsible_id) : null,
+            responsible_id: state.assign_mode === 'one' && state.responsible_id ? Number(state.responsible_id) : null,
+            assignee_ids: state.assign_mode === 'turn' ? state.assignee_ids : [],
+            assign_mode: undefined,
             lead_name_prefix: state.lead_name_prefix || null,
             language: state.language || null,
             submit_redirect_url: state.submit_redirect_url || null,
@@ -532,15 +539,42 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                             <Field label="Lead name prefix" hint="Added before the lead's name, e.g. WEB → “WEB Ravi Patil”.">
                                 <Input value={state.lead_name_prefix} onChange={(e) => set({ lead_name_prefix: e.target.value })} />
                             </Field>
-                            <Field label="Responsible (Assignee)">
-                                <Select value={state.responsible_id} onChange={(e) => set({ responsible_id: e.target.value })}>
-                                    <option value="">Nobody</option>
-                                    {staff.map((s) => (
-                                        <option key={s.id} value={s.id}>
-                                            {s.full_name}
-                                        </option>
-                                    ))}
-                                </Select>
+                            <Field
+                                label="Leads go to"
+                                hint={state.assign_mode === 'turn' ? 'Each new lead goes to the next person in turn (1st → first person, 2nd → second …), so everyone gets an equal share. Inactive staff are skipped.' : 'Every lead from this form is assigned to this person.'}
+                            >
+                                <div className="space-y-2">
+                                    <div className="inline-flex rounded-xl bg-slate-100 p-1 text-[12.5px] font-semibold">
+                                        {(
+                                            [
+                                                ['one', 'One person'],
+                                                ['turn', 'In turn (round-robin)'],
+                                            ] as const
+                                        ).map(([mode, label]) => (
+                                            <button
+                                                key={mode}
+                                                type="button"
+                                                aria-pressed={state.assign_mode === mode}
+                                                onClick={() => set({ assign_mode: mode })}
+                                                className={`rounded-lg px-3 py-1.5 transition ${state.assign_mode === mode ? 'bg-white text-brand shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {state.assign_mode === 'one' ? (
+                                        <Select value={state.responsible_id} onChange={(e) => set({ responsible_id: e.target.value })}>
+                                            <option value="">Nobody</option>
+                                            {staff.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.full_name}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    ) : (
+                                        <StaffMultiSelect staff={staff} value={state.assignee_ids} onChange={(ids) => set({ assignee_ids: ids })} placeholder="Choose the staff who share the leads" />
+                                    )}
+                                </div>
                             </Field>
                             <Field label="Status">
                                 <Select value={state.lead_status_id} onChange={(e) => set({ lead_status_id: e.target.value })}>
@@ -635,7 +669,7 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                                             </Select>
                                         </Field>
                                         <div className="sm:col-span-2">
-                                            <Checkbox label="Create the duplicate form data as a task on the existing lead (assigned to the responsible person)" checked={state.create_task_on_duplicate} onChange={(v) => set({ create_task_on_duplicate: v })} />
+                                            <Checkbox label="Create the duplicate form data as a task on the existing lead (assigned to whoever has the lead)" checked={state.create_task_on_duplicate} onChange={(v) => set({ create_task_on_duplicate: v })} />
                                         </div>
                                     </div>
                                 )}
@@ -704,7 +738,7 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
  */
 function ShareLinks({ form, onClose, onCopy }: { form: LeadWebForm; onClose: () => void; onCopy: (text: string) => void }) {
     return (
-        <Modal open size="lg" title={`Share "${form.name}"`} onClose={onClose}>
+        <Modal open size="lg" drawer={false} title={`Share "${form.name}"`} onClose={onClose}>
             <div className="space-y-4">
                 <p className="text-[13px] text-slate-500">
                     Post the link of each channel there. Leads that come through a link get that channel as their <b>Source</b> (Facebook, Instagram, WhatsApp, …), so you can see where each lead came from.

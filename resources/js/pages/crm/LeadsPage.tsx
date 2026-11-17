@@ -1,6 +1,6 @@
 import { useEffect, useState, type DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowUp, Check, Clock, Columns3, Filter, Globe, List, Paperclip, Plus, RefreshCw, Save, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Clock, Columns3, Filter, Globe, List, Paperclip, Plus, RefreshCw, Save, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { money } from '../../lib/sales';
@@ -35,6 +35,13 @@ const OPTIONAL_COLUMNS: [string, string][] = [
 ];
 
 type LeadList = Paginated<Lead> & { meta: { summary: LeadStatus[] } };
+
+/** How the kanban's cards can be ordered (Perfex's kanban sort). */
+const KANBAN_SORTS: [string, string][] = [
+    ['dateadded', 'Date Created'],
+    ['leadorder', 'Kanban Order'],
+    ['lastcontact', 'Last Contact'],
+];
 
 /** Perfex Leads: table (default) or kanban by status, with filters and the lead modal. */
 export default function LeadsPage() {
@@ -205,31 +212,55 @@ export default function LeadsPage() {
 
     return (
         <div className="w-full space-y-4">
-            <h4 className="page-title">Leads</h4>
-            <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={() => setNewOpen({})}>
-                    <Plus className="h-4 w-4" /> New Lead
-                </Button>
-                {canImport && (
-                    <Button variant="secondary" onClick={() => navigate('/leads/import')}>
-                        <Upload className="h-4 w-4" /> Import Leads
+            <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h4 className="page-title">Leads</h4>
+                    {data && (
+                        <p className="mt-1 text-[13px] text-slate-500">
+                            <b className="text-slate-700">{data.meta.summary.reduce((a, s) => a + (s.count ?? 0), 0)}</b> leads in the pipeline · worth{' '}
+                            <b className="text-slate-700">{money(data.meta.summary.reduce((a, s) => a + Number(s.value ?? 0), 0))}</b>
+                        </p>
+                    )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm" role="group" aria-label="Show as">
+                        {(
+                            [
+                                ['kanban', 'Kanban', Columns3],
+                                ['list', 'List', List],
+                            ] as const
+                        ).map(([id, label, Icon]) => (
+                            <button
+                                key={id}
+                                type="button"
+                                onClick={() => setView(id)}
+                                aria-pressed={view === id}
+                                title={label}
+                                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition ${view === id ? 'bg-brand text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                                <Icon className="h-4 w-4" />
+                                <span className="hidden sm:inline">{label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {canImport && (
+                        <Button variant="secondary" onClick={() => navigate('/leads/import')}>
+                            <Upload className="h-4 w-4" /> Import
+                        </Button>
+                    )}
+                    {user?.is_admin && (
+                        <Button variant="secondary" onClick={() => navigate('/leads/forms')}>
+                            <Globe className="h-4 w-4" /> Web to Lead
+                        </Button>
+                    )}
+                    <Button onClick={() => setNewOpen({})}>
+                        <Plus className="h-4 w-4" /> New Lead
                     </Button>
-                )}
-                {user?.is_admin && (
-                    <Button variant="secondary" onClick={() => navigate('/leads/forms')}>
-                        <Globe className="h-4 w-4" /> Web to Lead
-                    </Button>
-                )}
-                <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
-                    <button type="button" onClick={() => setView('kanban')} className={`rounded-md px-2.5 py-1.5 ${view === 'kanban' ? 'bg-brand text-white' : 'text-slate-500 hover:text-slate-800'}`} title="Kanban">
-                        <Columns3 className="h-4 w-4" />
-                    </button>
-                    <button type="button" onClick={() => setView('list')} className={`rounded-md px-2.5 py-1.5 ${view === 'list' ? 'bg-brand text-white' : 'text-slate-500 hover:text-slate-800'}`} title="List">
-                        <List className="h-4 w-4" />
-                    </button>
                 </div>
             </div>
 
+            {/* One toolbar: the views, then search, filters, follow-ups and the view's options. */}
+            <div className="rounded-2xl bg-white px-4 pt-1 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ring-1 ring-slate-200/70">
             <ViewTabs
                 views={views}
                 active={activeView}
@@ -244,9 +275,7 @@ export default function LeadsPage() {
                 }}
             />
 
-            <FollowUpBar active={followUpFilter} onPick={pickFollowUp} refreshKey={followUpKey} />
-
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="-mx-4 flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-3">
                 <Button variant="secondary" onClick={togglePanel} className={rules.length ? '!border-brand !text-brand' : ''}>
                     <Filter className={`h-4 w-4 ${rules.length ? 'text-accent' : ''}`} />
                     {panelOpen ? 'Hide filters' : 'Filters'}
@@ -264,7 +293,39 @@ export default function LeadsPage() {
                         </button>
                     </span>
                 )}
+                <span className="mx-1 hidden h-6 w-px bg-slate-200 xl:block" />
+                <FollowUpBar active={followUpFilter} onPick={pickFollowUp} refreshKey={followUpKey} />
                 <span className="ml-auto" />
+                {view === 'kanban' && (
+                    <Menu
+                        trigger={(toggle) => (
+                            <Button variant="secondary" onClick={toggle} title="Order of the cards in each column">
+                                <ArrowUpDown className="h-4 w-4" /> {KANBAN_SORTS.find(([by]) => by === sort.by)?.[1] ?? 'Sort'}
+                                {sort.dir === 'asc' ? <ArrowUp className="h-3.5 w-3.5 text-slate-400" /> : <ArrowDown className="h-3.5 w-3.5 text-slate-400" />}
+                            </Button>
+                        )}
+                    >
+                        {(close) => (
+                            <div className="w-56">
+                                <p className="px-2.5 pb-1 pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Sort cards by</p>
+                                {KANBAN_SORTS.map(([by, label]) => {
+                                    const on = sort.by === by;
+                                    return (
+                                        <button
+                                            key={by}
+                                            type="button"
+                                            onClick={() => (setKanbanSort({ by, dir: on && sort.dir === 'asc' ? 'desc' : on ? 'asc' : sort.dir }), close())}
+                                            className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[13px] hover:bg-brand-50 ${on ? 'font-semibold text-brand' : 'text-slate-700'}`}
+                                        >
+                                            <span className="flex-1">{label}</span>
+                                            {on && (sort.dir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </Menu>
+                )}
                 {view === 'list' && (
                     <Menu
                         trigger={(toggle) => (
@@ -296,8 +357,10 @@ export default function LeadsPage() {
                     <Save className="h-4 w-4" />
                 </Button>
             </div>
+            </div>
 
-            {data && (
+            {/* The statuses as filters (list only: the kanban shows them as its columns). */}
+            {data && view === 'list' && (
                 <div className="flex flex-wrap items-center gap-2">
                     {data.meta.summary.map((s) => {
                         const on = statuses.includes(s.id);
@@ -333,28 +396,6 @@ export default function LeadsPage() {
                 <Spinner />
             ) : !data ? null : view === 'kanban' ? (
                 <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
-                    <span className="font-semibold text-slate-500">Sort by:</span>
-                    {[
-                        ['dateadded', 'Date Created'],
-                        ['leadorder', 'Kanban Order'],
-                        ['lastcontact', 'Last Contact'],
-                    ].map(([by, label]) => {
-                        const on = sort.by === by;
-                        return (
-                            <button
-                                key={by}
-                                type="button"
-                                onClick={() => setKanbanSort({ by, dir: on && sort.dir === 'asc' ? 'desc' : on ? 'asc' : sort.dir })}
-                                title={on ? 'Click to reverse the order' : undefined}
-                                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-semibold transition ${on ? 'bg-brand text-white' : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:text-brand'}`}
-                            >
-                                {label}
-                                {on && (sort.dir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)}
-                            </button>
-                        );
-                    })}
-                </div>
                 <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
                     <div className="flex min-w-max gap-4">
                         {data.meta.summary.map((status) => {
@@ -367,18 +408,29 @@ export default function LeadsPage() {
                                     onDragOver={(e) => (e.preventDefault(), overColumn !== status.id && setOverColumn(status.id))}
                                     onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setOverColumn(null)}
                                     onDrop={(e) => drop(e, status.id)}
-                                    className={`flex w-[280px] flex-col rounded-xl bg-slate-100/80 ring-1 transition ${overColumn === status.id ? 'bg-brand-50 ring-2 ring-brand/30' : 'ring-slate-200/70'}`}
+                                    className={`flex w-[290px] flex-col rounded-2xl ring-1 transition ${overColumn === status.id ? 'ring-2 ring-brand/40' : 'ring-slate-200/70'}`}
+                                    style={{ backgroundColor: overColumn === status.id ? `${status.color}1f` : `${status.color}0d` }}
                                 >
-                                    <div className="relative overflow-hidden rounded-t-xl border-b border-slate-200/80 bg-white px-3.5 pb-2.5 pt-3">
-                                        <span className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: status.color }} />
+                                    <div className="sticky top-0 z-[1] rounded-t-2xl border-b border-slate-200/70 bg-white/95 px-3.5 pb-2.5 pt-3 backdrop-blur">
+                                        <span className="absolute inset-x-3 top-0 h-[3px] rounded-b-full" style={{ backgroundColor: status.color }} />
                                         <div className="flex items-center gap-2">
-                                            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: status.color }} />
-                                            <span className="truncate text-[13.5px] font-semibold text-slate-800">{status.name}</span>
-                                            <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[11.5px] font-bold text-slate-600">{status.count}</span>
+                                            <span className="h-2.5 w-2.5 shrink-0 rounded-full ring-4" style={{ backgroundColor: status.color, ['--tw-ring-color' as string]: `${status.color}26` }} />
+                                            <span className="truncate text-[13.5px] font-bold text-slate-800">{status.name}</span>
+                                            <span className="rounded-full px-2 py-0.5 text-[11.5px] font-bold" style={{ backgroundColor: `${status.color}1a`, color: status.color }}>
+                                                {status.count}
+                                            </span>
+                                            <button type="button" onClick={() => setNewOpen({ statusId: status.id })} title={`New lead in ${status.name}`} className="ml-auto rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-brand">
+                                                <Plus className="h-4 w-4" />
+                                            </button>
                                         </div>
-                                        <p className="mt-0.5 pl-[18px] text-[12px] text-slate-500">{money(status.value ?? 0)}</p>
+                                        <p className="mt-0.5 pl-[18px] text-[12px] font-medium text-slate-500">{money(status.value ?? 0)}</p>
                                     </div>
-                                    <div className="flex min-h-[8rem] flex-col gap-2 p-2">
+                                    <div className="flex min-h-[9rem] flex-1 flex-col gap-2 p-2">
+                                        {column.length === 0 && (
+                                            <div className={`flex flex-1 items-center justify-center rounded-xl border-2 border-dashed px-3 py-6 text-center text-[12px] font-medium transition ${overColumn === status.id ? 'border-brand/40 text-brand' : 'border-slate-200 text-slate-400'}`}>
+                                                {overColumn === status.id ? 'Drop here' : 'No leads · drag one here'}
+                                            </div>
+                                        )}
                                         {column.map((lead) => (
                                             <div
                                                 key={lead.id}
@@ -444,10 +496,7 @@ export default function LeadsPage() {
                                                 Load more · {(status.count ?? 0) - column.length} more
                                             </button>
                                         )}
-                                        <button type="button" onClick={() => setNewOpen({ statusId: status.id })} className="flex items-center gap-1 rounded-lg border border-dashed border-transparent px-2 py-1.5 text-left text-xs font-semibold text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-brand">
-                                            <Plus className="h-3.5 w-3.5" />
-                                            New lead
-                                        </button>
+
                                     </div>
                                 </div>
                             );

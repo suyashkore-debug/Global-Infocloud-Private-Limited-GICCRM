@@ -16,6 +16,7 @@ import { CustomFieldsView } from '../../components/customfields/CustomFields';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** Open or download a PDF through the API (it needs the login token). */
 export async function openPdf(url: string, fileName: string, download: boolean): Promise<void> {
@@ -73,7 +74,7 @@ export default function InvoiceViewPage() {
     }
 
     async function remove() {
-        if (!confirm(`Delete invoice ${invoice!.formatted_number}?`)) {
+        if (!(await confirmDialog(`Delete invoice ${invoice!.formatted_number}?`))) {
             return;
         }
         try {
@@ -86,7 +87,7 @@ export default function InvoiceViewPage() {
     }
 
     async function deletePayment(paymentId: number) {
-        if (!confirm('Delete this payment?')) {
+        if (!(await confirmDialog('Delete this payment?'))) {
             return;
         }
         try {

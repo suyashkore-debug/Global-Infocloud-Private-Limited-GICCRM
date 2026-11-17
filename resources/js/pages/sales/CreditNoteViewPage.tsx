@@ -13,6 +13,7 @@ import type { CreditNote, PaymentMode } from '../../types';
 import { openPdf } from './InvoiceViewPage';
 import SendEmailButton from '../../components/email/SendEmailButton';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export default function CreditNoteViewPage() {
     const { id } = useParams();
@@ -43,7 +44,7 @@ export default function CreditNoteViewPage() {
     }
 
     async function remove() {
-        if (!confirm(`Delete credit note ${note!.formatted_number}?`)) {
+        if (!(await confirmDialog(`Delete credit note ${note!.formatted_number}?`))) {
             return;
         }
         try {
@@ -56,7 +57,7 @@ export default function CreditNoteViewPage() {
     }
 
     async function removeLine(url: string, message: string) {
-        if (!confirm('Are you sure?')) {
+        if (!(await confirmDialog('Are you sure?'))) {
             return;
         }
         try {

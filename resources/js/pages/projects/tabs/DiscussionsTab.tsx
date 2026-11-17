@@ -10,6 +10,7 @@ import { CommentBox, MentionText } from '../../../components/comments/Mentions';
 import { Avatar, Button, Card, EmptyState, Field, IconButton, Input, Modal, Spinner, Textarea } from '../../../components/ui';
 import { useToast } from '../../../components/ui/Toast';
 import type { Comment, Discussion, Project } from '../../../types';
+import { confirmDialog } from '../../../components/ui/Dialogs';
 
 export default function DiscussionsTab({ project }: { project: Project }) {
     const [params, setParams] = useSearchParams();
@@ -117,7 +118,7 @@ function DiscussionView({ id, project, onBack, onEdit, formOpen }: { id: number;
     }
 
     async function removeDiscussion() {
-        if (!discussion || !confirm('Delete this discussion and all its comments?')) {
+        if (!discussion || !(await confirmDialog('Delete this discussion and all its comments?'))) {
             return;
         }
         try {
@@ -187,7 +188,7 @@ function DiscussionComment({ comment, project, onReply, reload }: { comment: Com
     const toast = useToast();
 
     async function remove() {
-        if (!confirm('Delete this comment?')) {
+        if (!(await confirmDialog('Delete this comment?'))) {
             return;
         }
         try {

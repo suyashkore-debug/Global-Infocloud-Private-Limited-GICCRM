@@ -25,6 +25,7 @@ import { panFromGstin, taxInfo, taxProblem, useCountryProfiles } from '../../hoo
 import { COUNTRIES } from '../../lib/countries';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 import RelatedTasks from '../../components/tasks/RelatedTasks';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 const TABS = [
     { id: 'profile', label: 'Profile' },
@@ -272,7 +273,7 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
     }
 
     async function remove() {
-        if (!customer || !confirm(`Delete customer "${customer.name}"?`)) {
+        if (!customer || !(await confirmDialog(`Delete customer "${customer.name}"?`))) {
             return;
         }
         try {
@@ -493,7 +494,7 @@ function ContactsTab({ customer, reload }: { customer: CustomerFull; reload: () 
     const [open, setOpen] = useState(false);
 
     async function remove(contact: Contact) {
-        if (!confirm(`Delete contact ${contact.first_name}?`)) {
+        if (!(await confirmDialog(`Delete contact ${contact.first_name}?`))) {
             return;
         }
         try {

@@ -75,6 +75,9 @@ class LeadFormController extends Controller
             'lead_status_id' => ['nullable', 'integer', Rule::exists('lead_statuses', 'id')->where('company_id', $company)],
             'lead_source_id' => ['nullable', 'integer', Rule::exists('lead_sources', 'id')->where('company_id', $company)],
             'responsible_id' => ['nullable', 'integer', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
+            // Staff who get the leads in turn (round-robin); empty: the responsible person gets them all.
+            'assignee_ids' => ['nullable', 'array', 'max:50'],
+            'assignee_ids.*' => ['integer', 'distinct', Rule::exists('crm_users', 'id')->where('company_id', $company)->where('is_active', true)],
             'lead_name_prefix' => ['nullable', 'string', 'max:100'],
             'language' => ['nullable', 'string', 'max:40'],
             'submit_btn_name' => ['required', 'string', 'max:100'],
@@ -98,6 +101,12 @@ class LeadFormController extends Controller
             'fields.*.name.distinct' => 'Two fields fill the same place; give each field its own.',
             'submit_redirect_url.required_if' => 'Enter the website address to redirect to.',
         ]);
+
+        // In turn among staff, or one responsible person: not both.
+        if (! empty($data['assignee_ids'])) {
+            $data['responsible_id'] = null;
+        }
+        $data['assignee_ids'] = array_values(array_map('intval', $data['assignee_ids'] ?? [])) ?: null;
 
         return $data;
     }

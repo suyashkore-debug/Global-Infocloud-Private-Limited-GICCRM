@@ -12,6 +12,7 @@ import type { Currency } from '../../types';
 import { useAppOptions } from '../../hooks/useAppOptions';
 import { taxInfo, taxProblem, useCountryProfiles } from '../../hooks/useCountryProfiles';
 import { COUNTRIES } from '../../lib/countries';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type VendorRow = { id: number; vendor_code: string | null; name: string; phone: string | null; vat: string | null; active: boolean; primary_contact: { name: string; email: string | null } | null; categories: string[]; invoiced: number; created_at: string };
 type VendorContact = { id: number; first_name: string; last_name: string | null; email: string | null; phone: string | null; title: string | null; is_primary: boolean; active: boolean };
@@ -270,7 +271,7 @@ export function VendorViewPage() {
     const v = data.data;
 
     async function remove() {
-        if (!confirm(`Delete ${v.name}?`)) {
+        if (!(await confirmDialog(`Delete ${v.name}?`))) {
             return;
         }
         try {
@@ -356,7 +357,7 @@ export function VendorViewPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => confirm('Delete this contact?') && api.delete<{ data: Vendor }>(`/purchase/vendors/${v.id}/contacts/${c.id}`).then((r) => setData(r.data))}
+                                                onClick={async () => (await confirmDialog('Delete this contact?')) && api.delete<{ data: Vendor }>(`/purchase/vendors/${v.id}/contacts/${c.id}`).then((r) => setData(r.data))}
                                                 className="text-gray-400 hover:text-red-600"
                                                 title="Delete"
                                             >

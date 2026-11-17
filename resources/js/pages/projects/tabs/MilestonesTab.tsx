@@ -10,6 +10,7 @@ import { AvatarStack, Button, Card, EmptyState, Field, IconButton, Input, Modal,
 import { useToast } from '../../../components/ui/Toast';
 import { useTaskModals } from '../../../components/tasks/TaskModalHost';
 import type { Milestone, Project, Task } from '../../../types';
+import { confirmDialog } from '../../../components/ui/Dialogs';
 
 export default function MilestonesTab({ project }: { project: Project }) {
     const toast = useToast();
@@ -27,7 +28,7 @@ export default function MilestonesTab({ project }: { project: Project }) {
     });
 
     async function remove(milestone: Milestone) {
-        if (!confirm(`Delete milestone "${milestone.name}"? Its tasks stay, without a milestone.`)) {
+        if (!(await confirmDialog(`Delete milestone "${milestone.name}"? Its tasks stay, without a milestone.`))) {
             return;
         }
         try {

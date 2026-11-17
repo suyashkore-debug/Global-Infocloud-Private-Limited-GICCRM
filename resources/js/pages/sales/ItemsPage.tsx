@@ -9,6 +9,7 @@ import { useToast } from '../../components/ui/Toast';
 import type { Item, Paginated, Tax } from '../../types';
 import { CustomFieldInputs, useCustomFields } from '../../components/customfields/CustomFields';
 import { useCustomFieldColumns } from '../../components/customfields/CustomFields';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 /** Sales → Items (Perfex invoice items). */
 export default function ItemsPage() {
@@ -26,7 +27,7 @@ export default function ItemsPage() {
     const groups = useApi<{ data: { id: number; name: string }[] }>('/setup/item-groups');
 
     async function remove(item: Item) {
-        if (!confirm(`Delete item "${item.description}"?`)) {
+        if (!(await confirmDialog(`Delete item "${item.description}"?`))) {
             return;
         }
         try {

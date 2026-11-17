@@ -14,6 +14,7 @@ import { useToast } from '../ui/Toast';
 import type { Staff, TaskDetail } from '../../types';
 import TaskFormModal from './TaskFormModal';
 import { CustomFieldsView } from '../customfields/CustomFields';
+import { confirmDialog } from '../ui/Dialogs';
 
 
 export default function TaskDetailModal({ taskId, onClose, onOpenTask }: { taskId: number | null; onClose: () => void; onOpenTask: (id: number) => void }) {
@@ -79,7 +80,7 @@ export default function TaskDetailModal({ taskId, onClose, onOpenTask }: { taskI
     const checklistDone = task?.checklist.filter((c) => c.finished).length ?? 0;
 
     async function remove() {
-        if (!task || !confirm('Delete this task?')) {
+        if (!task || !(await confirmDialog('Delete this task?'))) {
             return;
         }
         await act(() => api.delete(`/tasks/${task.id}`), 'Task deleted.');
@@ -228,7 +229,7 @@ export default function TaskDetailModal({ taskId, onClose, onOpenTask }: { taskI
                                 <AttachmentList
                                     files={task.attachments}
                                     canDelete={(file) => file.is_own || can.update}
-                                    onDelete={(file) => confirm(`Delete ${file.original_name}?`) && act(() => api.delete(`/files/${file.id}`), 'File deleted.')}
+                                    onDelete={async (file) => (await confirmDialog(`Delete ${file.original_name}?`)) && act(() => api.delete(`/files/${file.id}`), 'File deleted.')}
                                 />
                                 <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
                                     <Upload className="h-4 w-4" /> Upload files
@@ -609,7 +610,7 @@ function Timesheets({ task, staff, act, canLogForOthers }: { task: TaskDetail; s
                                                             <Pencil className="h-3.5 w-3.5" />
                                                         </button>
                                                     )}
-                                                    <button type="button" onClick={() => confirm('Delete this timesheet?') && act(() => api.delete(`/timesheets/${timer.id}`), 'Timesheet deleted.').then(() => emit(TIMERS_CHANGED))} className="text-gray-400 hover:text-red-600" title="Delete">
+                                                    <button type="button" onClick={async () => (await confirmDialog('Delete this timesheet?')) && act(() => api.delete(`/timesheets/${timer.id}`), 'Timesheet deleted.').then(() => emit(TIMERS_CHANGED))} className="text-gray-400 hover:text-red-600" title="Delete">
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </button>
                                                 </span>
@@ -704,7 +705,7 @@ function CommentItem({ comment, staff, canManage, act }: { comment: TaskDetail['
                                     Edit
                                 </button>
                             )}
-                            <button type="button" onClick={() => confirm('Delete this comment?') && act(() => api.delete(`/task-comments/${comment.id}`))} className="hover:text-red-600">
+                            <button type="button" onClick={async () => (await confirmDialog('Delete this comment?')) && act(() => api.delete(`/task-comments/${comment.id}`))} className="hover:text-red-600">
                                 Delete
                             </button>
                         </span>

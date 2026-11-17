@@ -6,6 +6,7 @@ import { AttachmentList } from '../../../components/comments/AttachmentList';
 import { Button, Card, EmptyState, Field, Input, Modal, Spinner } from '../../../components/ui';
 import { useToast } from '../../../components/ui/Toast';
 import type { Attachment, Project } from '../../../types';
+import { confirmDialog } from '../../../components/ui/Dialogs';
 
 export default function FilesTab({ project }: { project: Project }) {
     const toast = useToast();
@@ -46,7 +47,7 @@ export default function FilesTab({ project }: { project: Project }) {
     }
 
     async function remove(file: Attachment) {
-        if (!confirm(`Delete ${file.original_name}?`)) {
+        if (!(await confirmDialog(`Delete ${file.original_name}?`))) {
             return;
         }
         try {

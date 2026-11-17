@@ -6,6 +6,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import RequireAuth from './auth/RequireAuth';
 import { ToastProvider } from './components/ui/Toast';
+import { DialogHost } from './components/ui/Dialogs';
 import AppLayout from './layouts/AppLayout';
 import ContractFormPage from './pages/crm/ContractFormPage';
 import ContractsPage from './pages/crm/ContractsPage';
@@ -224,6 +225,8 @@ createRoot(document.getElementById('app')!).render(
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </AuthProvider>
+                {/* The app's confirm / prompt dialogs (instead of the browser's). */}
+                <DialogHost />
             </ToastProvider>
         </BrowserRouter>
     </StrictMode>,

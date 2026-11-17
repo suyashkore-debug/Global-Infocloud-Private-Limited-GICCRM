@@ -9,6 +9,7 @@ import { useStaff } from '../../hooks/useStaff';
 import { Button, Checkbox, EmptyState, ErrorNote, Field, Input, Modal, Select, Spinner, StaffMultiSelect, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { FieldType, FormField, QuoteForm, RequestStatus } from './types';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 const FIELD_TYPES: { id: FieldType; label: string }[] = [
     { id: 'text', label: 'Text' },
@@ -45,7 +46,7 @@ export default function FormsPage() {
     }
 
     async function remove(form: QuoteForm) {
-        if (!confirm(`Delete the form "${form.name}"? Requests already received are kept.`)) {
+        if (!(await confirmDialog(`Delete the form "${form.name}"? Requests already received are kept.`))) {
             return;
         }
         await api.delete(`/estimate-request-forms/${form.id}`);

@@ -3,6 +3,7 @@ import { api, errorMessage } from '../../lib/api';
 import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, ErrorNote, Field, Input, Select, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 type WhatsAppSettings = {
     whatsapp_provider: string;
@@ -127,7 +128,7 @@ export default function WhatsAppSetup() {
                             Save
                         </Button>
                         {(form.has_access_token || form.has_bird_access_key) && (
-                            <Button variant="secondary" onClick={() => confirm('Remove the saved keys, tokens and secrets?') && save(true)}>
+                            <Button variant="secondary" onClick={async () => (await confirmDialog('Remove the saved keys, tokens and secrets?')) && save(true)}>
                                 Disconnect
                             </Button>
                         )}

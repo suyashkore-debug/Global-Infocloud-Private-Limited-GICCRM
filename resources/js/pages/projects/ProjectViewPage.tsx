@@ -32,6 +32,7 @@ import NotesTab from './tabs/NotesTab';
 import OverviewTab from './tabs/OverviewTab';
 import TimesheetsTab from './tabs/TimesheetsTab';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 const TABS = [
     { id: 'overview', label: 'Overview' },
@@ -91,7 +92,7 @@ export default function ProjectViewPage() {
     }
 
     async function remove() {
-        if (!project || !confirm(`Delete project "${project.name}"? All its tasks, milestones, files and discussions are deleted too.`)) {
+        if (!project || !(await confirmDialog(`Delete project "${project.name}"? All its tasks, milestones, files and discussions are deleted too.`))) {
             return;
         }
         try {

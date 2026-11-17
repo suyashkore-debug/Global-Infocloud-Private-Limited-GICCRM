@@ -15,6 +15,7 @@ import type { RelatedType } from './TaskFormModal';
 import { useTaskModals } from './TaskModalHost';
 import SavedFilters, { type FilterValues } from '../filters/SavedFilters';
 import { downloadCsv } from '../../pages/reports/shared';
+import { confirmDialog } from '../ui/Dialogs';
 
 type TaskList = Paginated<Task> & { meta: { status_counts: Record<string, number>; can_create: boolean; summary: Record<string, { total: number; mine: number }> } };
 
@@ -109,7 +110,7 @@ export default function TasksBoard({
     }
 
     async function bulk(action: string, extra: Record<string, unknown> = {}) {
-        if (action === 'delete' && !confirm(`Delete ${selected.length} task(s)?`)) {
+        if (action === 'delete' && !(await confirmDialog(`Delete ${selected.length} task(s)?`))) {
             return;
         }
         try {
@@ -437,7 +438,7 @@ function TaskRow({ task, showRelated, selected, onSelect, onOpen, onEdit, run }:
                     {task.can?.delete && (
                         <>
                             <span className="mx-1 text-gray-300">|</span>
-                            <button type="button" onClick={() => confirm(`Delete task "${task.name}"?`) && run(() => api.delete(`/tasks/${task.id}`), 'Task deleted.')} className="text-red-600 hover:underline">
+                            <button type="button" onClick={async () => (await confirmDialog(`Delete task "${task.name}"?`)) && run(() => api.delete(`/tasks/${task.id}`), 'Task deleted.')} className="text-red-600 hover:underline">
                                 Delete
                             </button>
                         </>

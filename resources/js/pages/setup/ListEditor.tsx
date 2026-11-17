@@ -4,6 +4,7 @@ import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { useApi } from '../../hooks/useApi';
 import { Button, EmptyState, IconButton, Modal, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { confirmDialog } from '../../components/ui/Dialogs';
 
 export interface Column<T> {
     label: string;
@@ -65,7 +66,7 @@ export default function ListEditor<T extends { id: number }, F extends Record<st
     }
 
     async function remove(row: T) {
-        if (!confirm('Delete this record?')) {
+        if (!(await confirmDialog('Delete this record?'))) {
             return;
         }
         try {
