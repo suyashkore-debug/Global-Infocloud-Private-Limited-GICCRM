@@ -30,6 +30,7 @@ use App\Services\Emails;
 use App\Services\Notifier;
 use App\Services\Options;
 use App\Services\TicketService;
+use App\Support\TaxNumber;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -379,8 +380,10 @@ class PortalController extends Controller
     {
         $customer = $this->contact($request)->customer;
 
-        return response()->json(['data' => $customer->only(['name', 'phone', 'website', 'vat', 'address', 'city', 'state', 'zip', 'country',
-            'billing_street', 'billing_city', 'billing_state', 'billing_zip', 'billing_country', 'shipping_street', 'shipping_city', 'shipping_state', 'shipping_zip', 'shipping_country'])]);
+        return response()->json(['data' => [...$customer->only(['name', 'phone', 'website', 'vat', 'address', 'city', 'state', 'zip', 'country',
+            'billing_street', 'billing_city', 'billing_state', 'billing_zip', 'billing_country', 'shipping_street', 'shipping_city', 'shipping_state', 'shipping_zip', 'shipping_country']),
+            // What its tax number is called in its country (GSTIN, TRN, VAT No. …).
+            'tax_label' => TaxNumber::label($customer->country)]]);
     }
 
     /**

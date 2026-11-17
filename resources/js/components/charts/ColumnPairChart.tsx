@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { appLocale } from '../../lib/format';
 
 export type Series = { key: string; label: string; color: string; values: number[] };
 
-const compact = new Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 });
+const compact = () => new Intl.NumberFormat(appLocale(), { notation: 'compact', maximumFractionDigits: 1 });
 
 /** A "nice" axis top and step for 4 gridlines. */
 function niceScale(max: number): { top: number; step: number } {
@@ -116,7 +117,7 @@ export default function ColumnPairChart({ categories, series, format, height = 2
                             <g key={i}>
                                 <line x1={pad.left} x2={width - pad.right} y1={y(step * i)} y2={y(step * i)} className="stroke-slate-200" strokeWidth={1} strokeDasharray={i === 0 ? undefined : '3 4'} />
                                 <text x={pad.left - 8} y={y(step * i)} dy="0.32em" textAnchor="end" className="fill-slate-400 text-[10.5px]">
-                                    {compact.format(step * i)}
+                                    {compact().format(step * i)}
                                 </text>
                             </g>
                         ))}

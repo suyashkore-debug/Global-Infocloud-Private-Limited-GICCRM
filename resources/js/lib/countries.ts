@@ -29,3 +29,9 @@ export const COUNTRIES = [
 
 /** Languages a lead's e-mails can be written in (Perfex "Default Language"); '' = system default. */
 export const LANGUAGES = ['English', 'Hindi', 'Marathi', 'Gujarati', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Bengali', 'Punjabi', 'Urdu', 'Odia'];
+
+/** Every timezone the browser knows (all IANA zones); a short list on old browsers. */
+export const TIMEZONES: string[] = (() => {
+    const intl = Intl as unknown as { supportedValuesOf?: (key: string) => string[] };
+    return intl.supportedValuesOf ? intl.supportedValuesOf('timeZone') : ['Asia/Kolkata', 'Asia/Dubai', 'Europe/London', 'America/New_York', 'UTC'];
+})();

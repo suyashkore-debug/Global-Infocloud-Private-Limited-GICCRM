@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CustomField;
 use App\Models\Lead;
+use App\Support\CompanyTime;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
@@ -108,8 +109,8 @@ class LeadFilterRules
      */
     private static function date(Builder $query, string $column, string $op, mixed $value, mixed $value2): void
     {
-        $day = fn (mixed $d) => $d ? Carbon::parse((string) $d, 'Asia/Kolkata')->startOfDay() : null;
-        $today = Carbon::today('Asia/Kolkata');
+        $day = fn (mixed $d) => $d ? Carbon::parse((string) $d, CompanyTime::zone())->startOfDay() : null;
+        $today = Carbon::today(CompanyTime::zone());
         $range = match ($op) {
             'today' => [$today, $today],
             'yesterday' => [$today->copy()->subDay(), $today->copy()->subDay()],

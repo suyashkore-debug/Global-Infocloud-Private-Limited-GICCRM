@@ -353,7 +353,7 @@ export interface Invoice {
     recurring_type: string | null;
     cycles: number;
     total_cycles: number;
-    customer?: { id: number; name: string; vat: string | null; company_pan: string | null };
+    customer?: { id: number; name: string; vat: string | null; company_pan: string | null; tax_label?: string };
     project?: { id: number; name: string } | null;
     currency?: { id: number; name: string; symbol: string; placement: string } | null;
     sale_agent?: Staff | null;
@@ -389,7 +389,7 @@ export interface SalesDocumentBase {
     discount_total: string;
     discount_type: 'before_tax' | 'after_tax' | null;
     show_quantity_as: number;
-    customer?: { id: number; name: string; vat: string | null; company_pan: string | null } | null;
+    customer?: { id: number; name: string; vat: string | null; company_pan: string | null; tax_label?: string } | null;
     project?: { id: number; name: string } | null;
     currency?: { id: number; name: string; symbol: string; placement: string } | null;
     items?: SalesLine[];

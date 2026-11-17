@@ -9,6 +9,9 @@ import { usePermission } from '../../hooks/usePermission';
 import { Button, Checkbox, EmptyState, ErrorNote, Field, Input, Modal, Pagination, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import type { Currency } from '../../types';
+import { useAppOptions } from '../../hooks/useAppOptions';
+import { taxInfo, taxProblem, useCountryProfiles } from '../../hooks/useCountryProfiles';
+import { COUNTRIES } from '../../lib/countries';
 
 type VendorRow = { id: number; vendor_code: string | null; name: string; phone: string | null; vat: string | null; active: boolean; primary_contact: { name: string; email: string | null } | null; categories: string[]; invoiced: number; created_at: string };
 type VendorContact = { id: number; first_name: string; last_name: string | null; email: string | null; phone: string | null; title: string | null; is_primary: boolean; active: boolean };
@@ -109,7 +112,7 @@ export default function VendorsPage() {
 
 const FIELDS: [string, string][] = [
     ['vendor_code', 'Vendor Code'],
-    ['vat', 'GSTIN / VAT'],
+    ['vat', 'Tax number (GSTIN / VAT)'],
     ['phone', 'Phone'],
     ['email', 'Email'],
     ['website', 'Website'],
@@ -130,6 +133,9 @@ function VendorFormModal({ vendor, onClose, onSaved }: { vendor: Vendor | null; 
     const [contact, setContact] = useState({ first_name: '', last_name: '', email: '', phone: '' });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
+    // The tax number as the vendor's country writes it (GSTIN, TRN, VAT No. …).
+    const appOptions = useAppOptions();
+    const tax = taxInfo(useCountryProfiles(), form.country, appOptions?.company_country, appOptions?.tax_id_label);
 
     async function save() {
         setSaving(true);
@@ -174,11 +180,28 @@ function VendorFormModal({ vendor, onClose, onSaved }: { vendor: Vendor | null; 
                     <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </Field>
                 <div className="grid gap-3 sm:grid-cols-3">
-                    {FIELDS.map(([k, label]) => (
-                        <Field key={k} label={label} error={errors[k]}>
-                            <Input value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
-                        </Field>
-                    ))}
+                    {FIELDS.map(([k, label]) =>
+                        k === 'vat' ? (
+                            <Field key={k} label={tax.label} error={errors.vat ?? taxProblem(tax, form.vat) ?? undefined}>
+                                <Input value={form.vat} onChange={(e) => setForm({ ...form, vat: e.target.value.toUpperCase() })} placeholder={tax.example ?? ''} />
+                            </Field>
+                        ) : k === 'country' ? (
+                            <Field key={k} label={label} error={errors.country}>
+                                <Select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
+                                    <option value="">—</option>
+                                    {(COUNTRIES.includes(form.country) || !form.country ? COUNTRIES : [form.country, ...COUNTRIES]).map((c) => (
+                                        <option key={c} value={c}>
+                                            {c}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                        ) : (
+                            <Field key={k} label={label} error={errors[k]}>
+                                <Input value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
+                            </Field>
+                        ),
+                    )}
                     <Field label="Currency">
                         <Select value={form.currency_id} onChange={(e) => setForm({ ...form, currency_id: e.target.value })}>
                             <option value="">Default</option>

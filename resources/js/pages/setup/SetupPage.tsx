@@ -52,6 +52,9 @@ import CustomFieldsSetup from './CustomFieldsSetup';
 import { EmailLogList, EmailSettingsForm, EmailTemplatesList } from './EmailSetup';
 import ListEditor from './ListEditor';
 import OptionsForm, { type OptionSection } from './OptionsForm';
+import { COUNTRIES } from '../../lib/countries';
+import { useTimezones } from '../../hooks/useTimezones';
+import { panFromGstin, taxInfo, taxProblem, useCountryProfiles } from '../../hooks/useCountryProfiles';
 import WhatsAppSetup from './WhatsAppSetup';
 import { CalendarSettings, CustomersSettings, LeadsSettings, PdfSettings, SupportSettings, TagsSettings } from './MoreSettings';
 
@@ -209,6 +212,8 @@ export default function SetupPage() {
     const { user } = useAuth();
     const staff = useStaff();
     const [params, setParams] = useSearchParams();
+    const timezones = useTimezones();
+    const countryProfiles = useCountryProfiles();
     const tab = (TABS.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'company') as TabId;
 
     if (!user?.is_admin) {
@@ -280,15 +285,41 @@ export default function SetupPage() {
                             title: 'Company Information (printed on PDFs)',
                             fields: [
                                 { name: 'company_name', label: 'Company Name' },
-                                { name: 'company_vat', label: 'GSTIN (GST Number)' },
-                                { name: 'company_pan', label: 'PAN' },
+                                {
+                                    // Named, written and checked as the company's country does (GSTIN, TRN, VAT No. …).
+                                    name: 'company_vat',
+                                    label: 'Tax number',
+                                    adapt: (v) => {
+                                        const tax = taxInfo(countryProfiles, v.company_country, v.company_country);
+                                        return { label: v.tax_id_label || tax.label, placeholder: tax.example ?? '', hint: taxProblem(tax, v.company_vat ?? '') ?? (tax.hasPan ? 'PAN is filled in from the GSTIN.' : undefined) };
+                                    },
+                                    onInput: (value, v) => {
+                                        const pan = panFromGstin(taxInfo(countryProfiles, v.company_country, v.company_country), value);
+                                        return { company_vat: value.toUpperCase(), ...(pan && !v.company_pan ? { company_pan: pan } : {}) };
+                                    },
+                                },
+                                // PAN is India's alone.
+                                { name: 'company_pan', label: 'PAN', placeholder: 'ABCDE1234F', adapt: (v) => (taxInfo(countryProfiles, v.company_country, v.company_country).hasPan ? {} : null), onInput: (value) => ({ company_pan: value.toUpperCase() }) },
                                 { name: 'company_address', label: 'Address', type: 'textarea' },
                                 { name: 'company_city', label: 'City' },
                                 { name: 'company_state', label: 'State' },
                                 { name: 'company_zip', label: 'Zip Code' },
-                                { name: 'company_country', label: 'Country' },
+                                { name: 'company_country', label: 'Country', type: 'select', options: COUNTRIES.map((c) => ({ value: c, label: c })), hint: 'Changing it also sets the number format and the tax number name.' },
                                 { name: 'company_phone', label: 'Phone' },
                                 { name: 'company_email', label: 'Email' },
+                            ],
+                        },
+                        {
+                            title: 'Localization',
+                            fields: [
+                                {
+                                    name: 'timezone',
+                                    label: 'Timezone',
+                                    type: 'select',
+                                    options: timezones.map((z) => ({ value: z, label: z.replace(/_/g, ' ') })),
+                                    hint: "The company's clock: today, due dates, reminders and times on screen and in e-mails.",
+                                },
+                                { name: 'tax_id_label', label: 'Tax number name', hint: 'Printed before the tax number on PDFs, e.g. GSTIN, VAT No., TRN.' },
                             ],
                         },
                     ]}

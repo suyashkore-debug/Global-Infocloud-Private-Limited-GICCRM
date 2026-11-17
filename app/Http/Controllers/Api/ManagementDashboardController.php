@@ -13,6 +13,7 @@ use App\Models\Project;
 use App\Models\TaskTimer;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\CompanyTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -26,8 +27,6 @@ use Illuminate\Validation\Rule;
  */
 class ManagementDashboardController extends Controller
 {
-    private const TZ = 'Asia/Kolkata';
-
     public function __invoke(Request $request): JsonResponse
     {
         abort_unless($request->user()->hasPermission('reports', 'view'), 403);
@@ -74,13 +73,13 @@ class ManagementDashboardController extends Controller
     /** @return array{0: Carbon, 1: Carbon} */
     private function range(string $period): array
     {
-        $today = Carbon::today(self::TZ);
+        $today = Carbon::today(CompanyTime::zone());
 
         return match ($period) {
             'month' => [$today->copy()->startOfMonth(), $today],
             'quarter' => [$today->copy()->startOfMonth()->subMonths(2), $today],
             // Indian financial year: 1 April → 31 March.
-            'fy' => [Carbon::create($today->month >= 4 ? $today->year : $today->year - 1, 4, 1, 0, 0, 0, self::TZ), $today],
+            'fy' => [Carbon::create($today->month >= 4 ? $today->year : $today->year - 1, 4, 1, 0, 0, 0, CompanyTime::zone()), $today],
             default => [$today->copy()->startOfMonth()->subMonths(11), $today],
         };
     }
@@ -114,7 +113,7 @@ class ManagementDashboardController extends Controller
      */
     private function aging(Collection $open): array
     {
-        $today = Carbon::today(self::TZ)->toDateString();
+        $today = Carbon::today(CompanyTime::zone())->toDateString();
         $buckets = ['Not due yet' => [], '1–30 days late' => [], '31–60 days late' => [], '61–90 days late' => [], 'Over 90 days late' => []];
         foreach ($open as $invoice) {
             $late = $invoice->due_date && $invoice->due_date->toDateString() < $today ? (int) $invoice->due_date->diffInDays(Carbon::parse($today), true) : 0;
@@ -168,7 +167,7 @@ class ManagementDashboardController extends Controller
      */
     private function projects(): array
     {
-        $today = Carbon::today(self::TZ)->toDateString();
+        $today = Carbon::today(CompanyTime::zone())->toDateString();
         $projects = Project::whereIn('status', [ProjectStatus::NotStarted, ProjectStatus::InProgress, ProjectStatus::OnHold])->with('customer:id,name')->orderBy('deadline')->limit(12)->get();
         $invoiced = Invoice::whereIn('project_id', $projects->pluck('id'))->whereNotIn('status', [InvoiceStatus::Draft, InvoiceStatus::Cancelled])->selectRaw('project_id, sum(total) as total')->groupBy('project_id')->pluck('total', 'project_id');
 
@@ -192,7 +191,7 @@ class ManagementDashboardController extends Controller
         $range = [$from->copy()->utc(), $to->copy()->endOfDay()->utc()];
         $created = Lead::whereBetween('created_at', $range)->with('source:id,name')->get(['id', 'created_at', 'lead_source_id']);
         $converted = Lead::whereBetween('converted_at', $range)->get(['id', 'converted_at']);
-        $local = fn ($date) => $key(Carbon::parse($date)->timezone(self::TZ));
+        $local = fn ($date) => $key(Carbon::parse($date)->timezone(CompanyTime::zone()));
 
         return [
             'new' => $this->perMonth($months, $created->groupBy(fn ($l) => $local($l->created_at))->map->count()),

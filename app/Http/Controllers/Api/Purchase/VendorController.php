@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Vendor;
 use App\Models\VendorCategory;
 use App\Models\VendorContact;
+use App\Support\TaxNumber;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -131,11 +132,15 @@ class VendorController extends Controller
     {
         $company = $request->user()->company_id;
         $text = fn (int $max) => ['nullable', 'string', 'max:'.$max];
+        // The tax number in the vendor's country's format; an unchanged old number is kept as it is.
+        $request->merge(['vat' => TaxNumber::normalize($request->input('vat'))]);
+        $vendor = $request->route('vendor');
+        $checkVat = ! ($vendor instanceof Vendor && TaxNumber::normalize($vendor->vat) === $request->input('vat') && $vendor->country === $request->input('country'));
 
         return $request->validate([
             'vendor_code' => [...$text(100), Rule::unique('vendors', 'vendor_code')->where('company_id', $company)->ignore($request->route('vendor'))],
             'name' => ['required', 'string', 'max:200'],
-            'vat' => $text(200), 'phone' => $text(30), 'email' => ['nullable', 'email', 'max:191'], 'website' => $text(150),
+            'vat' => [...$text(200), ...($checkVat ? [TaxNumber::rule($request->input('country'))] : [])], 'phone' => $text(30), 'email' => ['nullable', 'email', 'max:191'], 'website' => $text(150),
             'address' => $text(1000), 'city' => $text(100), 'state' => $text(100), 'zip' => $text(20), 'country' => $text(100),
             'billing_street' => $text(200), 'billing_city' => $text(100), 'billing_state' => $text(100), 'billing_zip' => $text(20), 'billing_country' => $text(100),
             'shipping_street' => $text(200), 'shipping_city' => $text(100), 'shipping_state' => $text(100), 'shipping_zip' => $text(20), 'shipping_country' => $text(100),

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Invoice;
+use App\Support\TaxNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -65,6 +66,7 @@ class InvoiceResource extends JsonResource
                 'name' => $this->customer->name,
                 'vat' => $this->customer->vat,
                 'company_pan' => $this->customer->company_pan,
+                'tax_label' => TaxNumber::label($this->customer->country),
             ]),
             'project' => $this->whenLoaded('project', fn () => $this->project ? ['id' => $this->project->id, 'name' => $this->project->name] : null),
             'currency' => $this->whenLoaded('currency', fn () => $this->currency ? $this->currency->only(['id', 'name', 'symbol', 'placement']) : null),

@@ -19,6 +19,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Services\CustomFields;
+use App\Support\CompanyTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -93,7 +94,7 @@ class ExportController extends Controller
     private function cell(mixed $value): string
     {
         if ($value instanceof \DateTimeInterface) {
-            return CarbonImmutable::instance($value)->timezone('Asia/Kolkata')->format('Y-m-d H:i');
+            return CarbonImmutable::instance($value)->timezone(CompanyTime::zone())->format('Y-m-d H:i');
         }
         if (is_bool($value)) {
             return $value ? 'Yes' : 'No';
@@ -110,7 +111,7 @@ class ExportController extends Controller
      */
     private function range(string $period, ?string $from, ?string $to): array
     {
-        $now = CarbonImmutable::now('Asia/Kolkata');
+        $now = CarbonImmutable::now(CompanyTime::zone());
 
         return match ($period) {
             'this_month' => [$now->startOfMonth(), $now->endOfMonth()],

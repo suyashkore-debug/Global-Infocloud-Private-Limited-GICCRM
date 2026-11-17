@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskTimer;
 use App\Models\User;
+use App\Support\CompanyTime;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -79,7 +80,7 @@ class ProjectInvoicer
             'task_per_item' => $tasks->map(fn (Task $t) => $this->line($t->name, null, $this->hours($t->totalLoggedSeconds()), $this->rate($project, $t)))->all(),
             'timesheets_individually' => $tasks->flatMap(fn (Task $t) => $t->timers->whereNotNull('end_time')->map(fn (TaskTimer $timer) => $this->line(
                 $t->name,
-                trim(($timer->user?->full_name ?? '').' · '.$timer->start_time->timezone('Asia/Kolkata')->format('d M Y H:i').' → '.$timer->end_time->timezone('Asia/Kolkata')->format('H:i').($timer->note ? "\n".$timer->note : '')),
+                trim(($timer->user?->full_name ?? '').' · '.$timer->start_time->timezone(CompanyTime::zone())->format('d M Y H:i').' → '.$timer->end_time->timezone(CompanyTime::zone())->format('H:i').($timer->note ? "\n".$timer->note : '')),
                 $this->hours($timer->roundedSeconds()),
                 $this->rate($project, $t),
             )))->values()->all(),

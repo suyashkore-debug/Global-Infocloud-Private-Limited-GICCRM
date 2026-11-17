@@ -6,6 +6,7 @@ import { useApi } from '../../hooks/useApi';
 import { useStaff } from '../../hooks/useStaff';
 import { Button, Card, ErrorNote, Field, FormSection, Select, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { appLocale } from '../../lib/format';
 
 interface Heading {
     key: string;
@@ -188,7 +189,7 @@ export default function LeadImportPage() {
                             </li>
                         )}
                         <li>
-                            <b>{info.unique_fields.length > 0 ? 5 : 4}.</b> Up to {info.max_rows.toLocaleString('en-IN')} rows per file; we recommend files of about 500 rows. <b>Simulate Import</b> shows the first {info.preview_rows} rows without saving anything.
+                            <b>{info.unique_fields.length > 0 ? 5 : 4}.</b> Up to {info.max_rows.toLocaleString(appLocale())} rows per file; we recommend files of about 500 rows. <b>Simulate Import</b> shows the first {info.preview_rows} rows without saving anything.
                         </li>
                     </ol>
                 </div>

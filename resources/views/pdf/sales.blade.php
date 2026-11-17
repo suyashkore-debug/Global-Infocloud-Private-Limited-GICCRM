@@ -7,7 +7,7 @@
      * @var string $number
      * @var array{0: string, 1: string} $status  [label, colour]
      * @var array<string, string> $infoRows  shown on the right under the "To" block
-     * @var array{name: string, lines: array<int, string>, vat?: ?string, pan?: ?string} $billTo
+     * @var array{name: string, lines: array<int, string>, vat?: ?string, vat_label?: string, pan?: ?string} $billTo
      * @var array<int, string>|null $shipTo
      * @var \Illuminate\Support\Collection|null $payments
      * @var float|null $amountPaid
@@ -65,7 +65,7 @@
         @if ($options['company_city'] || $options['company_state']){{ collect([$options['company_city'], $options['company_state']])->filter()->implode(', ') }}<br>@endif
         @if ($options['company_country'] || $options['company_zip']){{ collect([$options['company_country'], $options['company_zip']])->filter()->implode(' ') }}<br>@endif
         @if ($options['company_phone']){{ $options['company_phone'] }}<br>@endif
-        @if ($options['company_vat'])GSTIN: {{ $options['company_vat'] }}<br>@endif
+        @if ($options['company_vat']){{ $options['tax_id_label'] ?? 'GSTIN' }}: {{ $options['company_vat'] }}<br>@endif
         @if ($options['company_pan'] ?? '')PAN: {{ $options['company_pan'] }}@endif
     </div>
 @php $companyBlock = ob_get_clean(); ob_start(); @endphp
@@ -73,7 +73,7 @@
     <div class="box-name">{{ $billTo['name'] }}</div>
     <div class="muted">
         {!! collect($billTo['lines'])->filter()->map(fn ($l) => e($l))->implode('<br>') !!}
-        @if (! empty($billTo['vat']))<br>GSTIN: {{ $billTo['vat'] }}@endif
+        @if (! empty($billTo['vat']))<br>{{ $billTo['vat_label'] ?? 'GSTIN' }}: {{ $billTo['vat'] }}@endif
         @if (! empty($billTo['pan']))<br>PAN: {{ $billTo['pan'] }}@endif
     </div>
     @if ($shipTo)

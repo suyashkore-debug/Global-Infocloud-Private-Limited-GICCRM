@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Services\Options;
+use App\Support\CountryProfile;
 use Illuminate\Database\Eloquent\Model;
 
 class Currency extends Model
@@ -17,12 +19,15 @@ class Currency extends Model
     }
 
     /**
-     * The company's base currency; created (INR) the first time it is needed.
+     * The company's base currency; created (its country's, INR for India) the first time it is needed.
      */
     public static function default(): self
     {
-        return static::where('is_default', true)->first()
-            ?? static::first()
-            ?? static::create(['name' => 'INR', 'symbol' => '₹', 'is_default' => true]);
+        if ($currency = static::where('is_default', true)->first() ?? static::first()) {
+            return $currency;
+        }
+        $profile = CountryProfile::for(Options::get('company_country') ?: 'India');
+
+        return static::create(['name' => $profile['currency'], 'symbol' => $profile['symbol'], 'is_default' => true]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\TaxNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,7 +31,7 @@ abstract class SalesDocumentResource extends JsonResource
             'discount_total' => $this->discount_total,
             'discount_type' => $this->discount_type,
             'show_quantity_as' => $this->show_quantity_as,
-            'customer' => $this->whenLoaded('customer', fn () => $this->customer ? $this->customer->only(['id', 'name', 'vat', 'company_pan']) : null),
+            'customer' => $this->whenLoaded('customer', fn () => $this->customer ? [...$this->customer->only(['id', 'name', 'vat', 'company_pan']), 'tax_label' => TaxNumber::label($this->customer->country)] : null),
             'project' => $this->whenLoaded('project', fn () => $this->project ? ['id' => $this->project->id, 'name' => $this->project->name] : null),
             'currency' => $this->whenLoaded('currency', fn () => $this->currency ? $this->currency->only(['id', 'name', 'symbol', 'placement']) : null),
             'items' => $this->whenLoaded('items', fn () => SalesItemResource::collection($this->items)),

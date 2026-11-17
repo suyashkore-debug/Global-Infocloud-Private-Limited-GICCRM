@@ -89,7 +89,7 @@ class LeadChangeLog
             'lead_source_id' => LeadSource::find($value)?->name ?? "#{$value}",
             'is_public' => $value ? 'Yes' : 'No',
             'lead_value' => number_format((float) $value, 2),
-            'last_contact_at' => Carbon::parse($value)->setTimezone('Asia/Kolkata')->format('d M Y, h:i A'),
+            'last_contact_at' => Carbon::parse($value)->setTimezone(CompanyTime::zone())->format('d M Y, h:i A'),
             default => (string) $value,
         };
     }

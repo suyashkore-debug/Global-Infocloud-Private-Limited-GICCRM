@@ -11,6 +11,7 @@ use App\Models\PaymentMode;
 use App\Models\Proposal;
 use App\Support\PdfBrand;
 use App\Support\RichText;
+use App\Support\TaxNumber;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\HttpFoundation\Response;
@@ -203,7 +204,7 @@ class SalesPdf
     }
 
     /**
-     * @return array{name: string, lines: array<int, string|null>, vat: ?string, pan: ?string}
+     * @return array{name: string, lines: array<int, string|null>, vat: ?string, vat_label: string, pan: ?string}
      */
     private static function customerBlock(Model $document): array
     {
@@ -215,6 +216,7 @@ class SalesPdf
                 collect([$document->billing_country, $document->billing_zip])->filter()->implode(' '),
             ],
             'vat' => $document->customer?->vat,
+            'vat_label' => TaxNumber::label($document->customer?->country),
             'pan' => $document->customer?->company_pan,
         ];
     }

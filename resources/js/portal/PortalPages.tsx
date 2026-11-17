@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, FileSignature, FileText, FolderKanban, LifeBuoy, Megaphone, Plus, Receipt, Wallet } from 'lucide-react';
-import { formatDate, formatDateTime, formatDuration, toIsoDate } from '../lib/format';
+import { appLocale, appTimeZone, formatDate, formatDateTime, formatDuration, toIsoDate } from '../lib/format';
 import { money } from '../lib/sales';
 import { Button, Field, Input, Modal, Select, Spinner, Textarea } from '../components/ui';
 import { portalApi, portalError } from './api';
@@ -91,7 +91,7 @@ export function PortalDashboard() {
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0b2c56] via-[#123d73] to-[#1a4f8f] px-6 py-6 text-white shadow-lg shadow-brand/20 sm:px-8">
                 <span className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border-[36px] border-white/5" />
                 <span className="pointer-events-none absolute right-40 top-6 h-2.5 w-2.5 rounded-full bg-accent" />
-                <p className="relative text-[13px] font-medium text-blue-100/70">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                <p className="relative text-[13px] font-medium text-blue-100/70">{new Date().toLocaleDateString(appLocale(), { timeZone: appTimeZone(), weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 <h1 className="relative mt-1 text-[26px] font-bold leading-tight">Welcome, {contact.first_name} 👋</h1>
                 <p className="relative mt-1 text-[14px] text-blue-100/80">{contact.company_name}</p>
             </div>
@@ -836,7 +836,7 @@ export function PortalCompany() {
                             </Field>
                         ))}
                     </div>
-                    {data.data.vat && <p className="text-[13px] text-gray-600">GSTIN: {data.data.vat}</p>}
+                    {data.data.vat && <p className="text-[13px] text-gray-600">{data.data.tax_label ?? 'GSTIN'}: {data.data.vat}</p>}
                     {msg && <p className="text-[13px] text-gray-700">{msg}</p>}
                     {contact.can_edit_company && <Button onClick={save}>Save</Button>}
                 </div>

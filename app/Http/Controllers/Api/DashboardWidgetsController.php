@@ -25,6 +25,7 @@ use App\Models\TicketReply;
 use App\Models\TicketStatus;
 use App\Models\User;
 use App\Services\Options;
+use App\Support\CompanyTime;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -117,7 +118,7 @@ class DashboardWidgetsController extends Controller
     {
         abort_unless($this->canPayments($request->user()), 403);
         $period = $request->validate(['period' => ['nullable', Rule::in(['weekly', 'monthly'])]])['period'] ?? 'weekly';
-        $today = Carbon::today('Asia/Kolkata');
+        $today = Carbon::today(CompanyTime::zone());
 
         if ($period === 'monthly') {
             $start = $today->copy()->startOfYear();
@@ -268,7 +269,7 @@ class DashboardWidgetsController extends Controller
     /** @return array<int, array<string, mixed>> */
     private function contractsExpiring(User $user): array
     {
-        $today = Carbon::today('Asia/Kolkata');
+        $today = Carbon::today(CompanyTime::zone());
         $days = max(1, (int) Options::get('contract_expiration_before'));
 
         return Contract::visibleTo($user)->where('trash', false)->whereNotNull('end_date')
@@ -284,7 +285,7 @@ class DashboardWidgetsController extends Controller
      */
     private function upcomingEvents(User $user): array
     {
-        $monday = Carbon::today('Asia/Kolkata')->startOfWeek();
+        $monday = Carbon::today(CompanyTime::zone())->startOfWeek();
         $events = CalendarEvent::where(fn (Builder $q) => $q->where('public', true)->orWhere('user_id', $user->id))
             ->whereBetween('start', [$monday->copy()->utc(), $monday->copy()->addWeeks(2)->utc()])->orderBy('start')->limit(30)->get();
         $names = User::whereIn('id', $events->pluck('user_id')->unique())->pluck('full_name', 'id');
@@ -314,7 +315,7 @@ class DashboardWidgetsController extends Controller
     /** @return array{0: Carbon, 1: Carbon} */
     private function periodRange(string $period): array
     {
-        $now = Carbon::now('Asia/Kolkata');
+        $now = Carbon::now(CompanyTime::zone());
 
         return match ($period) {
             'this_week' => [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()],

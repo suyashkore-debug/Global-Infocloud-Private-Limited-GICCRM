@@ -1,5 +1,5 @@
 import { Activity, ArrowRight, ArrowRightLeft, Ban, FileText, Mail, MessageCircle, Paperclip, Pencil, PenLine, Phone, PhoneIncoming, RotateCcw, Sparkles, Star, StickyNote, Trophy, UserCheck, type LucideIcon } from 'lucide-react';
-import { formatDate, formatDateTime } from '../../lib/format';
+import { appLocale, appTimeZone, formatDate, formatDateTime } from '../../lib/format';
 import type { Lead } from '../../types';
 
 type Item = NonNullable<Lead['activities']>[number];
@@ -40,7 +40,7 @@ function dayLabel(iso: string): string {
     return same(day, today) ? 'Today' : same(day, yesterday) ? 'Yesterday' : formatDate(iso);
 }
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+const time = (iso: string) => new Date(iso).toLocaleTimeString(appLocale(), { hour: '2-digit', minute: '2-digit', timeZone: appTimeZone() });
 
 /** The description, with a status change shown as "old → new" chips. */
 function Description({ text }: { text: string }) {

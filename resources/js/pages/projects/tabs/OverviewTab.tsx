@@ -3,7 +3,7 @@ import { Users } from 'lucide-react';
 import { api, errorMessage } from '../../../lib/api';
 import { BILLING_TYPES, PROJECT_STATUSES, TASK_STATUSES, optionById } from '../../../lib/constants';
 import { emit, PROJECT_CHANGED, TASKS_CHANGED } from '../../../lib/events';
-import { formatDate, formatDuration, formatMoney } from '../../../lib/format';
+import { appLocale, formatDate, formatDuration, formatMoney } from '../../../lib/format';
 import { useApi } from '../../../hooks/useApi';
 import { useEvent } from '../../../hooks/useEvent';
 import { useStaff } from '../../../hooks/useStaff';
@@ -103,7 +103,7 @@ export default function OverviewTab({ project }: { project: Project }) {
                             <div key={day.date} className="flex flex-1 flex-col items-center gap-1">
                                 <span className="text-[10px] text-gray-500">{day.seconds ? formatDuration(day.seconds) : ''}</span>
                                 <div className="w-full rounded-t bg-brand" style={{ height: `${(day.seconds / maxWeek) * 100}%`, minHeight: day.seconds ? 4 : 0 }} />
-                                <span className="text-xs text-gray-500">{new Date(day.date).toLocaleDateString('en-IN', { weekday: 'short' })}</span>
+                                <span className="text-xs text-gray-500">{new Date(day.date).toLocaleDateString(appLocale(), { weekday: 'short' })}</span>
                             </div>
                         ))}
                     </div>

@@ -3,10 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AtSign, Building2, CheckCircle2, CreditCard, Hash, ImagePlus, KeyRound, Loader2, Mail, Phone, ReceiptText, UserRound, Users } from 'lucide-react';
 import { BRAND, StackedBrandLogo } from '../components/brand/BrandLogo';
 import { api, errorMessage } from '../lib/api';
-import { Field, IconInput } from '../components/ui';
+import { Field, IconInput, Select } from '../components/ui';
+import { COUNTRIES } from '../lib/countries';
+import { useTimezones } from '../hooks/useTimezones';
+import { panFromGstin, taxInfo, taxProblem, useCountryProfiles } from '../hooks/useCountryProfiles';
 
 const blank = {
     company_name: '',
+    country: 'India',
+    timezone: 'Asia/Kolkata',
     short_code: '',
     company_email: '',
     company_phone: '',
@@ -28,6 +33,19 @@ const blank = {
 export default function CompanySignupPage() {
     const navigate = useNavigate();
     const [form, setForm] = useState(blank);
+    const timezones = useTimezones();
+    // Each country's timezone, currency, phone code and tax number (its name and format).
+    const profiles = useCountryProfiles();
+    const profile = profiles[form.country];
+    const tax = taxInfo(profiles, form.country, form.country);
+    const india = tax.hasPan;
+    const setGstin = (value: string) =>
+        setForm((f) => {
+            const pan = panFromGstin(tax, value);
+            return { ...f, gstin: value.toUpperCase(), pan: pan && !f.pan ? pan : f.pan };
+        });
+    // A new country brings its timezone; GSTIN / PAN are India's, other countries enter their tax number.
+    const pickCountry = (country: string) => setForm((f) => ({ ...f, country, timezone: profiles[country]?.timezone ?? 'UTC', pan: country === 'India' ? f.pan : '' }));
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -119,12 +137,38 @@ export default function CompanySignupPage() {
                                     <Field label="Company Email" error={errors.company_email} className="sm:col-span-2">
                                         <IconInput icon={Mail} type="email" value={form.company_email} onChange={set('company_email')} placeholder="info@company.com" />
                                     </Field>
-                                    <Field label="GSTIN" error={errors.gstin} hint="Optional. 15 characters, printed on invoices.">
-                                        <IconInput icon={ReceiptText} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} placeholder="27ABCDE1234F1Z5" maxLength={15} />
+                                    <Field label="Country" required error={errors.country} hint="Sets the timezone, currency, phone code and number format.">
+                                        <Select value={form.country} onChange={(e) => pickCountry(e.target.value)}>
+                                            {COUNTRIES.map((c) => (
+                                                <option key={c} value={c}>
+                                                    {c}
+                                                </option>
+                                            ))}
+                                        </Select>
                                     </Field>
-                                    <Field label="PAN" error={errors.pan} hint="Optional. 10 characters.">
-                                        <IconInput icon={CreditCard} value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" maxLength={10} />
+                                    <Field label="Timezone" error={errors.timezone} hint={profile ? `Currency: ${profile.currency} (${profile.symbol}) · Phone code: +${profile.phone_code || '—'}` : undefined}>
+                                        <Select value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })}>
+                                            {timezones.map((z) => (
+                                                <option key={z} value={z}>
+                                                    {z.replace(/_/g, ' ')}
+                                                </option>
+                                            ))}
+                                        </Select>
                                     </Field>
+                                    {india ? (
+                                        <>
+                                            <Field label="GSTIN" error={errors.gstin ?? taxProblem(tax, form.gstin) ?? undefined} hint="Optional. 15 characters, printed on invoices.">
+                                                <IconInput icon={ReceiptText} value={form.gstin} onChange={(e) => setGstin(e.target.value)} placeholder="27ABCDE1234F1Z5" maxLength={15} />
+                                            </Field>
+                                            <Field label="PAN" error={errors.pan} hint="Optional. Filled in from the GSTIN.">
+                                                <IconInput icon={CreditCard} value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" maxLength={10} />
+                                            </Field>
+                                        </>
+                                    ) : (
+                                        <Field label={`Tax number (${tax.label})`} error={errors.gstin ?? taxProblem(tax, form.gstin) ?? undefined} hint="Optional. Printed on invoices." className="sm:col-span-2">
+                                            <IconInput icon={ReceiptText} value={form.gstin} onChange={(e) => setGstin(e.target.value)} placeholder={tax.example ?? ''} maxLength={50} />
+                                        </Field>
+                                    )}
                                     <Field label="Company Logo" error={errors.logo} hint="Optional. PNG or JPG, up to 2 MB. Shown in the app and on PDFs." className="sm:col-span-2">
                                         <div className="flex items-center gap-4">
                                             <div className="flex h-16 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50 p-1.5">

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
-import { toIsoDate } from '../../lib/format';
+import { appLocale, toIsoDate } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { Button, Checkbox, Field, Input, Modal, Select, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
@@ -76,7 +76,7 @@ export default function CalendarPage() {
                 <Button variant="secondary" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="w-40 text-center font-semibold">{month.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</span>
+                <span className="w-40 text-center font-semibold">{month.toLocaleDateString(appLocale(), { month: 'long', year: 'numeric' })}</span>
                 <Button variant="secondary" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
                     <ChevronRight className="h-4 w-4" />
                 </Button>

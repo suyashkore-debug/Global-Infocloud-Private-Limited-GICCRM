@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { api } from '../../lib/api';
-import { formatDateTime, formatDuration } from '../../lib/format';
+import { appLocale, formatDateTime, formatDuration } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { useTaskModals } from '../../components/tasks/TaskModalHost';
 import { BarChart } from '../../components/charts/BarChart';
@@ -71,7 +71,7 @@ export default function MyTimesheetsPage() {
         group_by_task: groupByTask ? 1 : undefined,
     });
     const showStaff = data?.meta.view_all ?? false;
-    const chartLabels = (data?.meta.chart.labels ?? []).map((d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }));
+    const chartLabels = (data?.meta.chart.labels ?? []).map((d) => new Date(`${d}T00:00:00`).toLocaleDateString(appLocale(), { day: 'numeric', month: 'short' }));
 
     return (
         <div className="w-full space-y-6">

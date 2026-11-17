@@ -49,7 +49,7 @@ export default function DocumentPreview({
                                     {document.customer?.name}
                                 </Link>
                                 {document.billing && <AddressLines address={document.billing} />}
-                                {document.customer?.vat && <p>GSTIN: {document.customer.vat}</p>}
+                                {document.customer?.vat && <p>{document.customer.tax_label ?? 'GSTIN'}: {document.customer.vat}</p>}
                                 {document.include_shipping && document.show_shipping && document.shipping && (
                                     <div className="mt-3">
                                         <p className="font-semibold text-gray-800">Ship To:</p>

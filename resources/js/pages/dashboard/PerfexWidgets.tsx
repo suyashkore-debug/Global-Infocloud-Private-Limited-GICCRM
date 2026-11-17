@@ -4,7 +4,7 @@ import { Bell, CalendarDays, ChevronLeft, ChevronRight, FileSignature, FolderKan
 import { useApi } from '../../hooks/useApi';
 import { ACTIVITY_LABELS, PROJECT_STATUSES, optionById } from '../../lib/constants';
 import { ESTIMATE_STATUSES, INVOICE_STATUSES, PROPOSAL_STATUSES, money } from '../../lib/sales';
-import { formatDate, formatDateTime, timeAgo, toIsoDate } from '../../lib/format';
+import { appLocale, formatDate, formatDateTime, timeAgo, toIsoDate } from '../../lib/format';
 import ColumnPairChart from '../../components/charts/ColumnPairChart';
 import BarList from '../../components/charts/BarList';
 import { Card, Select, StatusBadge, Tabs } from '../../components/ui';
@@ -677,7 +677,7 @@ export function CalendarWidget() {
                         <ChevronLeft className="h-4 w-4" />
                     </button>
                     <span className="w-28 text-center text-[13px] font-semibold text-slate-700">
-                        {month.toLocaleDateString('en-IN', {
+                        {month.toLocaleDateString(appLocale(), {
                             month: 'long',
                             year: 'numeric',
                         })}

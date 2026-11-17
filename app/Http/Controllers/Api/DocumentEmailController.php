@@ -7,6 +7,7 @@ use App\Models\EmailLog;
 use App\Models\ScheduledEmail;
 use App\Services\DocumentMailer;
 use App\Services\Emails;
+use App\Support\CompanyTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,7 +72,7 @@ class DocumentEmailController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-            return response()->json(['message' => 'E-mail scheduled for '.$at->copy()->setTimezone('Asia/Kolkata')->format('d M Y, h:i A').'.']);
+            return response()->json(['message' => 'E-mail scheduled for '.$at->copy()->setTimezone(CompanyTime::zone())->format('d M Y, h:i A').'.']);
         }
 
         $count = DocumentMailer::deliver($type, $document, $data);

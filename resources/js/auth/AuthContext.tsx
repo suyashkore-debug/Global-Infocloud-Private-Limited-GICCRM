@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, companyStore, onUnauthorized, tokenStore } from '../lib/api';
 import { deviceId } from '../lib/storage';
+import { configureLocale, type AppLocale } from '../lib/format';
 import type { User } from '../types';
 
 /** Admins and HR must clear a second step: an emailed code, or their authenticator app. */
@@ -27,6 +28,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** The company's locale, timezone and currency for dates and money; the defaults stay if this fails. */
+async function loadCompanyLocale(): Promise<void> {
+    try {
+        const { data } = await api.get<{ data: { locale?: string; timezone?: string; currency?: AppLocale['currency'] | null } }>('/app-options');
+        configureLocale({ locale: data.data.locale, timeZone: data.data.timezone, currency: data.data.currency ?? undefined });
+    } catch {
+        // Formats stay as they are.
+    }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(() => tokenStore.get() !== null);
@@ -39,7 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         api.get<{ data: { user: User } }>('/me')
-            .then(({ data }) => setUser(data.data.user))
+            .then(async ({ data }) => {
+                await loadCompanyLocale();
+                setUser(data.data.user);
+            })
             .catch(() => {
                 tokenStore.clear();
                 setUser(null);
@@ -47,13 +61,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .finally(() => setLoading(false));
     }, []);
 
-    const finishSignIn = useCallback((reply: LoginReply): boolean => {
+    const finishSignIn = useCallback(async (reply: LoginReply): Promise<boolean> => {
         const token = reply.data?.access_token;
         if (!token || !reply.data?.user) {
             return false;
         }
 
         tokenStore.set(token);
+        // Pages render with the company's formats from the start.
+        await loadCompanyLocale();
         setUser(reply.data.user);
 
         return true;
@@ -63,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         async (username: string, password: string): Promise<LoginResult> => {
             const { data } = await api.post<LoginReply>('/login', { username, password, device_id: deviceId() });
 
-            if (finishSignIn(data)) {
+            if (await finishSignIn(data)) {
                 return { kind: 'signed-in' };
             }
 
@@ -81,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         async (username: string, otp: string): Promise<void> => {
             const { data } = await api.post<LoginReply>('/login/verify-otp', { username, otp, device_id: deviceId() });
 
-            if (!finishSignIn(data)) {
+            if (!(await finishSignIn(data))) {
                 throw new Error(data.message ?? 'Verification failed. Please sign in again.');
             }
         },

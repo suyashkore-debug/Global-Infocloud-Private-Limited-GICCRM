@@ -104,6 +104,7 @@ Route::middleware('throttle:600,1')->group(function () {
 // Forgot password (HRMS's reset, relayed): a few tries per minute.
 // New company sign-up (/newcompany): a CRM-only company and its first admin.
 Route::post('/company-signup', [CompanySignupController::class, 'store'])->middleware('throttle:5,60');
+Route::get('/company-signup/countries', [CompanySignupController::class, 'countries']);
 
 Route::post('/forgot-password/send-otp', [PasswordResetController::class, 'sendOtp'])->middleware('throttle:3,1');
 Route::post('/forgot-password/verify-otp', [PasswordResetController::class, 'verifyOtp'])->middleware('throttle:10,1');

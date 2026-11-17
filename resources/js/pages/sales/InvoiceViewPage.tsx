@@ -189,7 +189,7 @@ export default function InvoiceViewPage() {
                                     {invoice.customer?.name}
                                 </Link>
                                 <AddressLines address={invoice.billing} />
-                                {invoice.customer?.vat && <p>GSTIN: {invoice.customer.vat}</p>}
+                                {invoice.customer?.vat && <p>{invoice.customer.tax_label ?? 'GSTIN'}: {invoice.customer.vat}</p>}
                                 {invoice.include_shipping && invoice.show_shipping_on_invoice && (
                                     <div className="mt-3">
                                         <p className="font-semibold text-gray-800">Ship To:</p>

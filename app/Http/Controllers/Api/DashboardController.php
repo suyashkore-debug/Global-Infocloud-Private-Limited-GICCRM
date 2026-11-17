@@ -18,6 +18,7 @@ use App\Models\TaskTimer;
 use App\Models\Ticket;
 use App\Models\TicketStatus;
 use App\Models\User;
+use App\Support\CompanyTime;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,7 +81,7 @@ class DashboardController extends Controller
     /** Calendar dates as GIC's people live them (the app clock is UTC). */
     private static function today(): Carbon
     {
-        return Carbon::today('Asia/Kolkata');
+        return Carbon::today(CompanyTime::zone());
     }
 
     /** @return array<string, mixed> */
@@ -149,7 +150,7 @@ class DashboardController extends Controller
     {
         $from = self::today()->subDays(13);
         $byDay = $leads->where('created_at', '>=', $from->copy()->utc())->pluck('created_at')
-            ->map(fn ($at) => Carbon::parse($at)->setTimezone('Asia/Kolkata')->toDateString())->countBy();
+            ->map(fn ($at) => Carbon::parse($at)->setTimezone(CompanyTime::zone())->toDateString())->countBy();
 
         return collect(range(0, 13))->map(fn ($i) => (int) ($byDay[$from->copy()->addDays($i)->toDateString()] ?? 0))->all();
     }

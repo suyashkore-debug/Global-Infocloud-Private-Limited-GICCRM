@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ContractType;
 use App\Models\Currency;
+use App\Support\CountryProfile;
+use App\Support\TaxNumber;
 use App\Models\CustomerGroup;
 use App\Models\EstimateRequestStatus;
 use App\Models\ExpenseCategory;
@@ -121,7 +123,13 @@ class SetupController extends Controller
      */
     public function appOptions(): JsonResponse
     {
-        return response()->json(['data' => collect(Options::PUBLIC)->mapWithKeys(fn ($name) => [$name => Options::get($name)])]);
+        // The company's default currency formats amounts that carry none of their own.
+        $currency = Currency::where('is_default', true)->first(['name', 'symbol', 'placement']);
+
+        return response()->json(['data' => [
+            ...collect(Options::PUBLIC)->mapWithKeys(fn ($name) => [$name => Options::get($name)])->all(),
+            'currency' => $currency?->only(['name', 'symbol', 'placement']),
+        ]]);
     }
 
     /** Setup → reCAPTCHA: the site key, and whether a secret key is saved (never the key itself). */
@@ -168,9 +176,34 @@ class SetupController extends Controller
             'options.*' => ['nullable', 'string', 'max:65000'],
         ]);
 
+        $oldCountry = Options::get('company_country');
+        // The company's tax number in its (new) country's format; PAN is India's and must match the GSTIN.
+        if (array_key_exists('company_vat', $data['options']) || array_key_exists('company_pan', $data['options'])) {
+            $country = (string) ($data['options']['company_country'] ?? $oldCountry ?: 'India');
+            $vat = TaxNumber::normalize($data['options']['company_vat'] ?? Options::get('company_vat'));
+            $pan = TaxNumber::hasPan($country) ? TaxNumber::normalize($data['options']['company_pan'] ?? Options::get('company_pan')) : null;
+            $pan ??= TaxNumber::hasPan($country) ? TaxNumber::panFromGstin($vat) : null;
+            // Numbers saved before these checks stay as they are until they or the country change.
+            $same = $country === ($oldCountry ?: 'India');
+            validator(['company_vat' => $vat, 'company_pan' => $pan], [
+                'company_vat' => ['nullable', 'string', 'max:50', ...($same && $vat === TaxNumber::normalize(Options::get('company_vat')) ? [] : [TaxNumber::rule($country)])],
+                'company_pan' => ['nullable', 'string', ...($same && $pan === TaxNumber::normalize(Options::get('company_pan')) ? [] : [TaxNumber::panRule($country, $vat)])],
+            ])->validate();
+            $data['options']['company_vat'] = (string) $vat;
+            $data['options']['company_pan'] = (string) $pan;
+        }
         foreach ($data['options'] as $name => $value) {
             if (array_key_exists($name, Options::DEFAULTS) && $name !== 'recaptcha_secret_key') {
                 Options::set($name, $value);
+            }
+        }
+        // A new country: its number format, and its tax number name unless that was changed too.
+        $country = (string) ($data['options']['company_country'] ?? '');
+        if ($country !== '' && $country !== $oldCountry) {
+            $profile = CountryProfile::for($country);
+            Options::set('locale', $profile['locale']);
+            if (! array_key_exists('tax_id_label', $data['options']) || $data['options']['tax_id_label'] === Options::DEFAULTS['tax_id_label']) {
+                Options::set('tax_id_label', $profile['tax_label']);
             }
         }
 

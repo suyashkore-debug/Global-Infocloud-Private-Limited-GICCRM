@@ -94,6 +94,44 @@ it('refuses to open or change another company\'s records by id', function () {
         ->and(Task::withoutGlobalScopes()->find($a['task']->id))->not->toBeNull();
 });
 
+it('keeps each company\'s settings, country, tax number, lists, web forms and vendors to itself', function () {
+    $a = companyWithSecrets();
+    $this->putJson('/api/setup/options', ['options' => ['company_name' => 'ZXQ-SECRET Pvt Ltd', 'company_country' => 'India', 'company_vat' => '27ABCDE1234F1Z5', 'company_address' => 'ZXQ-SECRET Road', 'timezone' => 'Asia/Kolkata']])->assertOk();
+    $currency = $this->postJson('/api/setup/currencies', ['name' => 'ZXQ-SECRET', 'symbol' => 'Z', 'decimal_separator' => '.', 'placement' => 'before'])->assertCreated()->json('data.id');
+    $tax = $this->postJson('/api/setup/taxes', ['name' => 'ZXQ-SECRET Tax', 'rate' => 5])->assertCreated()->json('data.id');
+    $form = $this->postJson('/api/lead-forms', secretWebForm('ZXQ-SECRET Form'))->assertCreated()->json('data.id');
+    $vendor = $this->postJson('/api/purchase/vendors', ['name' => 'ZXQ-SECRET Vendor', 'vat' => '27ABCDE1234F1Z5'])->assertCreated()->json('data.id');
+    $this->putJson("/api/leads/{$a['lead']->id}", ['name' => 'ZXQ-SECRET Lead edited', 'lead_status_id' => $a['lead']->lead_status_id, 'lead_source_id' => $a['lead']->lead_source_id])->assertOk();
+
+    // Company B, in the UAE.
+    signIn(companyAdmin(Company::factory()->create()));
+    $this->putJson('/api/setup/options', ['options' => ['company_name' => 'Gulf Co', 'company_country' => 'United Arab Emirates', 'company_vat' => '100123456700003', 'timezone' => 'Asia/Dubai']])->assertOk();
+
+    foreach (['setup/options', 'app-options', 'setup/currencies', 'setup/taxes', 'setup/lead-statuses', 'setup/payment-modes', 'lead-forms', 'purchase/vendors', 'leads', 'activity-log', 'dashboard/widgets'] as $url) {
+        $response = $this->getJson("/api/{$url}");
+        expect($response->status())->toBeLessThan(500, "GET /api/{$url} failed")
+            ->and($response->getContent())->not->toContain('ZXQ-SECRET', "GET /api/{$url} shows company A's data")
+            ->and($response->getContent())->not->toContain('27ABCDE1234F1Z5', "GET /api/{$url} shows company A's GSTIN");
+    }
+    expect($this->getJson("/api/purchase/vendors/{$vendor}")->status())->toBeIn([403, 404])
+        ->and($this->putJson("/api/setup/currencies/{$currency}", ['name' => 'hacked', 'symbol' => 'H', 'decimal_separator' => '.', 'placement' => 'before'])->status())->toBeIn([403, 404])
+        ->and($this->deleteJson("/api/setup/taxes/{$tax}")->status())->toBeIn([403, 404])
+        ->and($this->putJson("/api/lead-forms/{$form}", secretWebForm('hacked'))->status())->toBeIn([403, 404])
+        ->and($this->patchJson("/api/lead-forms/{$form}/active", ['active' => false])->status())->toBeIn([403, 404])
+        ->and($this->postJson("/api/leads/{$a['lead']->id}/activities", ['description' => 'hacked'])->status())->toBeIn([403, 404])
+        ->and($this->putJson("/api/staff-members/{$a['staff']->id}", ['first_name' => 'hacked', 'email' => 'h@x.test'])->status())->toBeIn([403, 404]);
+
+    // B's own settings are its own; A's stay as they were.
+    $this->getJson('/api/app-options')->assertJsonPath('data.timezone', 'Asia/Dubai')->assertJsonPath('data.tax_id_label', 'TRN');
+    expect(App\Services\Options::get('company_vat', $a['company']->id))->toBe('27ABCDE1234F1Z5')
+        ->and(App\Services\Options::get('timezone', $a['company']->id))->toBe('Asia/Kolkata')
+        ->and(App\Services\Options::get('company_name', $a['company']->id))->toBe('ZXQ-SECRET Pvt Ltd')
+        ->and(App\Models\Currency::withoutGlobalScopes()->find($currency)->name)->toBe('ZXQ-SECRET')
+        ->and(App\Models\Tax::withoutGlobalScopes()->find($tax))->not->toBeNull()
+        ->and(App\Models\Vendor::withoutGlobalScopes()->find($vendor)->name)->toBe('ZXQ-SECRET Vendor')
+        ->and(User::find($a['staff']->id)->first_name)->toBe('ZXQ-SECRET');
+});
+
 it('rejects another company\'s ids when saving records', function () {
     $a = companyWithSecrets();
     signIn(companyAdmin(Company::factory()->create()));
@@ -105,3 +143,15 @@ it('rejects another company\'s ids when saving records', function () {
     $this->postJson('/api/projects', ['name' => 'Mine', 'customer_id' => $a['customer']->id, 'start_date' => today()->toDateString(), 'billing_type' => 1, 'status' => 1])->assertJsonValidationErrors('customer_id');
     $this->postJson('/api/lead-forms', ['name' => 'F', 'fields' => [['type' => 'text', 'name' => 'name', 'label' => 'Name']], 'notify_ids' => [$a['staff']->id]])->assertJsonValidationErrors('notify_ids.0');
 });
+
+/** @return array<string, mixed> */
+function secretWebForm(string $name): array
+{
+    DefaultLookups::ensureLeadLists();
+
+    return [
+        'name' => $name, 'fields' => [['type' => 'text', 'name' => 'name', 'label' => 'Name', 'required' => true]],
+        'lead_status_id' => App\Models\LeadStatus::value('id'), 'lead_source_id' => App\Models\LeadSource::value('id'),
+        'submit_btn_name' => 'Send', 'submit_btn_bg_color' => '#fa6010', 'submit_btn_text_color' => '#ffffff', 'submit_action' => 'message', 'success_submit_msg' => 'Thanks!',
+    ];
+}

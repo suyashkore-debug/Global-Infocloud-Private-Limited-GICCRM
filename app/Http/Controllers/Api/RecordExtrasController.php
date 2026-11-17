@@ -14,6 +14,7 @@ use App\Models\Note;
 use App\Models\Reminder;
 use App\Models\Ticket;
 use App\Services\LeadService;
+use App\Support\CompanyTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -107,7 +108,7 @@ class RecordExtrasController extends Controller
         ]);
 
         if ($record instanceof Lead) {
-            $record->logActivity('Added reminder for '.$reminder->remind_at->setTimezone('Asia/Kolkata')->format('d M Y, h:i A').' ('.($reminder->user?->full_name ?? '—').')');
+            $record->logActivity('Added reminder for '.$reminder->remind_at->setTimezone(CompanyTime::zone())->format('d M Y, h:i A').' ('.($reminder->user?->full_name ?? '—').')');
         }
 
         return new ReminderResource($reminder->load('user'));
@@ -117,7 +118,7 @@ class RecordExtrasController extends Controller
     {
         abort_unless(in_array((int) $request->user()->id, [(int) $reminder->user_id, (int) $reminder->created_by], true) || $request->user()->isAdmin(), 403);
         $reminder->delete();
-        self::leadOf($reminder->remindable_type, $reminder->remindable_id)?->logActivity('Deleted reminder for '.$reminder->remind_at->setTimezone('Asia/Kolkata')->format('d M Y, h:i A'));
+        self::leadOf($reminder->remindable_type, $reminder->remindable_id)?->logActivity('Deleted reminder for '.$reminder->remind_at->setTimezone(CompanyTime::zone())->format('d M Y, h:i A'));
 
         return response()->json(['message' => 'Reminder deleted.']);
     }

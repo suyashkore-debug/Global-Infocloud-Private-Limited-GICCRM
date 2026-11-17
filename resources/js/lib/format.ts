@@ -1,6 +1,32 @@
-const dateFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-const dateTimeFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-const moneyFormatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 });
+/** The company's way of writing dates, times and money (its country, Setup → Company Information). */
+export type AppLocale = { locale: string; timeZone?: string; currency: { name: string; symbol: string; placement: string } };
+
+let current: AppLocale = { locale: 'en-IN', timeZone: undefined, currency: { name: 'INR', symbol: '₹', placement: 'before' } };
+let dateFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+let stampFormatter = dateFormatter;
+let dateTimeFormatter = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+/** Set once the company's settings are known (after login); unknown values keep the defaults. */
+export function configureLocale(next: Partial<AppLocale>): void {
+    const locale = next.locale && Intl.DateTimeFormat.supportedLocalesOf(next.locale).length ? next.locale : current.locale;
+    let timeZone = next.timeZone || undefined;
+    try {
+        new Intl.DateTimeFormat(locale, { timeZone });
+    } catch {
+        timeZone = undefined;
+    }
+    current = { locale, timeZone, currency: next.currency ?? current.currency };
+    dateFormatter = new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric' });
+    stampFormatter = new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric', timeZone });
+    dateTimeFormatter = new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone });
+}
+
+export const appLocale = (): string => current.locale;
+
+/** The company's timezone (undefined: the browser's). */
+export const appTimeZone = (): string | undefined => current.timeZone;
+
+export const appCurrency = (): AppLocale['currency'] => current.currency;
 
 /** "2026-10-20" or an ISO timestamp → "20 Oct 2026". */
 export function formatDate(value: string | null | undefined): string {
@@ -8,7 +34,8 @@ export function formatDate(value: string | null | undefined): string {
         return '—';
     }
 
-    return dateFormatter.format(parseDate(value));
+    // A plain date is a calendar day; a timestamp is read in the company's timezone.
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? dateFormatter.format(parseDate(value)) : stampFormatter.format(new Date(value));
 }
 
 export function formatDateTime(value: string | null | undefined): string {
@@ -33,7 +60,9 @@ export function formatClock(seconds: number): string {
 }
 
 export function formatMoney(value: number | string | null | undefined): string {
-    return moneyFormatter.format(Number(value ?? 0));
+    const amount = Number(value ?? 0).toLocaleString(current.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    return current.currency.placement === 'after' ? `${amount} ${current.currency.symbol}` : `${current.currency.symbol}${amount}`;
 }
 
 export function formatBytes(bytes: number): string {

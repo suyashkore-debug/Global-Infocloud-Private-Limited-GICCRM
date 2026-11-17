@@ -21,6 +21,8 @@ import { PaymentsTable } from '../sales/PaymentsPage';
 import type { Contact, Currency, CustomerFull, Project } from '../../types';
 import { CustomFieldInputs, useCustomFields } from '../../components/customfields/CustomFields';
 import { useAppOptions } from '../../hooks/useAppOptions';
+import { panFromGstin, taxInfo, taxProblem, useCountryProfiles } from '../../hooks/useCountryProfiles';
+import { COUNTRIES } from '../../lib/countries';
 import { usePageCrumb } from '../../layouts/Breadcrumbs';
 
 const TABS = [
@@ -223,6 +225,15 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
     }, []);
 
     const set = <K extends keyof ProfileState>(key: K, value: ProfileState[K]) => setForm((f) => ({ ...f, [key]: value }));
+    // The tax number as the customer's country writes it (GSTIN + PAN in India, TRN in the UAE, VAT No. in the UK …).
+    const profiles = useCountryProfiles();
+    const tax = taxInfo(profiles, form.country, appOptions?.company_country, appOptions?.tax_id_label);
+    const taxHint = taxProblem(tax, form.vat);
+    const setVat = (value: string) =>
+        setForm((f) => {
+            const pan = panFromGstin(tax, value);
+            return { ...f, vat: value.toUpperCase(), company_pan: pan && !f.company_pan ? pan : f.company_pan };
+        });
     const text = (key: keyof ProfileState) => (e: { target: { value: string } }) => set(key, e.target.value as never);
 
     async function save() {
@@ -297,21 +308,25 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
                                 <Field label="Phone" error={errors.phone}>
                                     <Input value={form.phone} onChange={text('phone')} placeholder="98765 43210" />
                                 </Field>
-                                <Field label="GST Number" error={errors.vat}>
-                                    <Input value={form.vat} onChange={text('vat')} placeholder="27ABCDE1234F1Z5" />
+                                <Field label={tax.label} error={errors.vat ?? taxHint ?? undefined} hint={tax.hasPan ? 'PAN is filled in from the GSTIN.' : `As written in ${form.country || appOptions?.company_country || 'India'}.`}>
+                                    <Input value={form.vat} onChange={(e) => setVat(e.target.value)} placeholder={tax.example ?? ''} />
                                 </Field>
-                                <Field label="PAN" error={errors.company_pan}>
-                                    <Input value={form.company_pan} onChange={text('company_pan')} placeholder="ABCDE1234F" />
-                                </Field>
-                                <Field label="GST Type" error={errors.gst_type}>
-                                    <Select value={form.gst_type} onChange={text('gst_type')}>
-                                        <option value="">—</option>
-                                        <option value="regular">Regular</option>
-                                        <option value="composition">Composition</option>
-                                        <option value="unregistered">Unregistered</option>
-                                        <option value="overseas">Overseas</option>
-                                    </Select>
-                                </Field>
+                                {tax.hasPan && (
+                                    <>
+                                        <Field label="PAN" error={errors.company_pan}>
+                                            <Input value={form.company_pan} onChange={(e) => set('company_pan', e.target.value.toUpperCase())} placeholder="ABCDE1234F" maxLength={10} />
+                                        </Field>
+                                        <Field label="GST Type" error={errors.gst_type}>
+                                            <Select value={form.gst_type} onChange={text('gst_type')}>
+                                                <option value="">—</option>
+                                                <option value="regular">Regular</option>
+                                                <option value="composition">Composition</option>
+                                                <option value="unregistered">Unregistered</option>
+                                                <option value="overseas">Overseas</option>
+                                            </Select>
+                                        </Field>
+                                    </>
+                                )}
                                 <Field label="Website" error={errors.website}>
                                     <Input value={form.website} onChange={text('website')} placeholder="www.example.com" />
                                 </Field>
@@ -364,8 +379,15 @@ function ProfileForm({ customer, onSaved }: { customer: CustomerFull | null; onS
                                 <Field label="Zip Code">
                                     <Input value={form.zip} onChange={text('zip')} />
                                 </Field>
-                                <Field label="Country">
-                                    <Input value={form.country} onChange={text('country')} />
+                                <Field label="Country" error={errors.country} hint="Sets how its tax number is checked and printed.">
+                                    <Select value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value, company_pan: taxInfo(profiles, e.target.value, appOptions?.company_country).hasPan ? f.company_pan : '' }))}>
+                                        <option value="">—</option>
+                                        {(COUNTRIES.includes(form.country) || !form.country ? COUNTRIES : [form.country, ...COUNTRIES]).map((c) => (
+                                            <option key={c} value={c}>
+                                                {c}
+                                            </option>
+                                        ))}
+                                    </Select>
                                 </Field>
                             </div>
                         </FormSection>

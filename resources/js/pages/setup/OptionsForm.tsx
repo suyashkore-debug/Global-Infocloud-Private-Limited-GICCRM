@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Check, ChevronDown } from 'lucide-react';
-import { api, errorMessage } from '../../lib/api';
+import { api, errorMessage, fieldErrors } from '../../lib/api';
 import { Button, Field, Input, inputClass, Menu, Select, Spinner, Textarea } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 
@@ -18,6 +18,10 @@ export interface OptionField {
     placeholder?: string;
     /** A second setting on the same line, as radio buttons on the right (e.g. a sort and its direction). */
     beside?: { name: string; options: Choice[] };
+    /** Changes to the field from the values being edited (e.g. a label by country); null hides it. */
+    adapt?: (values: Record<string, string>) => Partial<OptionField> | null;
+    /** Rewrites a typed value (e.g. upper case), and may set other settings with it. */
+    onInput?: (value: string, values: Record<string, string>) => Record<string, string>;
 }
 
 export interface OptionSection {
@@ -111,6 +115,7 @@ export default function OptionsForm({ sections }: { sections: OptionSection[] })
     const toast = useToast();
     const [values, setValues] = useState<Record<string, string> | null>(null);
     const [saving, setSaving] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     // ?focus=<option name> (e.g. from Import Leads → "options"): scroll to that setting and highlight it.
     const [params] = useSearchParams();
     const [focused, setFocused] = useState<string | null>(params.get('focus'));
@@ -133,7 +138,10 @@ export default function OptionsForm({ sections }: { sections: OptionSection[] })
         return <Spinner />;
     }
 
-    const set = (name: string, value: string) => setValues({ ...values, [name]: value });
+    const set = (name: string, value: string) => {
+        const field = sections.flatMap((s) => s.fields).find((f) => f.name === name);
+        setValues(field?.onInput ? { ...values, ...field.onInput(value, values) } : { ...values, [name]: value });
+    };
 
     async function save() {
         setSaving(true);
@@ -141,9 +149,13 @@ export default function OptionsForm({ sections }: { sections: OptionSection[] })
         try {
             const { data } = await api.put<{ data: Record<string, string> }>('/setup/options', { options: Object.fromEntries(names.map((n) => [n, values![n] ?? ''])) });
             setValues(data.data);
+            setErrors({});
             toast('Settings saved.');
         } catch (e) {
-            toast(errorMessage(e), 'error');
+            // A setting the server refused (e.g. a tax number in the wrong format) shows under it.
+            const errs = Object.fromEntries(Object.entries(fieldErrors(e)).map(([k, v]) => [k.replace(/^options\./, ''), v]));
+            setErrors(errs);
+            toast(Object.values(errs)[0] ?? errorMessage(e), 'error');
         } finally {
             setSaving(false);
         }
@@ -204,18 +216,23 @@ export default function OptionsForm({ sections }: { sections: OptionSection[] })
                     </Select>
                 );
             default:
-                return <Input type={field.type === 'number' ? 'number' : 'text'} value={value} onChange={(e) => set(field.name, e.target.value)} />;
+                return <Input type={field.type === 'number' ? 'number' : 'text'} value={value} placeholder={field.placeholder} onChange={(e) => set(field.name, e.target.value)} />;
         }
     }
 
-    function setting(field: OptionField, stacked: boolean): ReactNode {
+    function setting(base: OptionField, stacked: boolean): ReactNode {
+        const change = base.adapt ? base.adapt(values!) : {};
+        if (change === null) {
+            return null;
+        }
+        const field = { ...base, ...change };
         const block = field.type === 'yesno' || field.type === 'radios' || field.type === 'multiselect';
         const labelled = block ? (
             <Block label={field.label} hint={field.hint}>
                 {control(field)}
             </Block>
         ) : (
-            <Field label={field.label} hint={field.hint}>
+            <Field label={field.label} hint={field.hint} error={errors[field.name]}>
                 {control(field)}
             </Field>
         );

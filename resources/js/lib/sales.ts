@@ -1,4 +1,5 @@
 import type { LineTax, SalesLine } from '../types';
+import { appCurrency, appLocale } from './format';
 
 export const INVOICE_STATUSES = [
     { id: 1, name: 'Unpaid', color: '#dc2626' },
@@ -80,10 +81,12 @@ export function calculateTotals(lines: SalesLine[], discountType: string | null,
 }
 
 export function money(value: number | string | null | undefined, currency?: { symbol: string; placement: string } | null): string {
-    const formatted = Number(value ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const symbol = currency?.symbol ?? '₹';
+    const formatted = Number(value ?? 0).toLocaleString(appLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // No currency of its own: the company's default one.
+    const own = currency ?? appCurrency();
+    const symbol = own.symbol;
 
-    return currency?.placement === 'after' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
+    return own.placement === 'after' ? `${formatted} ${symbol}` : `${symbol}${formatted}`;
 }
 
 export function taxKey(tax: LineTax): string {

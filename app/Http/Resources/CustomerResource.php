@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Customer;
+use App\Support\TaxNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,6 +31,8 @@ class CustomerResource extends JsonResource
             'zip' => $this->zip,
             'country' => $this->country,
             'company_pan' => $this->company_pan,
+            // What its tax number is called in its country (GSTIN, TRN, VAT No. …).
+            'tax_label' => TaxNumber::label($this->country),
             'gst_type' => $this->gst_type,
             'default_currency_id' => $this->default_currency_id,
             'billing' => collect(['street', 'city', 'state', 'zip', 'country'])->mapWithKeys(fn ($f) => [$f => $this->{"billing_{$f}"}]),

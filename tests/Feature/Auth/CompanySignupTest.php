@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Queue;
 function signupPayload(array $overrides = []): array
 {
     return [
-        'company_name' => 'Acme Packaging', 'short_code' => 'acme', 'company_phone' => '020 1234',
+        'company_name' => 'Acme Packaging', 'country' => 'India', 'short_code' => 'acme', 'company_phone' => '020 1234',
         'first_name' => 'Asha', 'last_name' => 'Rao', 'email' => 'asha@acme.test', 'username' => 'asha',
         'password' => 'acme-pass-1', 'password_confirmation' => 'acme-pass-1', ...$overrides,
     ];
@@ -87,4 +87,34 @@ it('takes the logo, GSTIN and PAN at sign-up and lets the admin change the logo 
 
     signIn(staffMember($company));
     $this->deleteJson('/api/setup/company-logo')->assertForbidden();
+});
+
+it('sets a new company up for its country: timezone, currency, number format, tax number and phone code', function () {
+    Http::fake();
+    $this->getJson('/api/company-signup/countries')->assertOk()
+        ->assertJsonPath('data.United Arab Emirates.timezone', 'Asia/Dubai')
+        ->assertJsonPath('data.United Arab Emirates.currency', 'AED');
+
+    // PAN is India's; elsewhere the tax number is free text.
+    $this->postJson('/api/company-signup', signupPayload(['country' => 'United Arab Emirates', 'gstin' => '100123456700003', 'pan' => 'ABCDE1234F']))->assertJsonValidationErrors('pan');
+    $this->postJson('/api/company-signup', signupPayload(['country' => 'United Arab Emirates', 'gstin' => '100123456700003', 'timezone' => 'Not/AZone']))->assertJsonValidationErrors('timezone');
+    $this->postJson('/api/company-signup', signupPayload(['country' => 'United Arab Emirates', 'gstin' => '100123456700003']))->assertCreated();
+
+    $company = Company::where('company_name', 'Acme Packaging')->first();
+    expect(Options::get('timezone', $company->id))->toBe('Asia/Dubai')
+        ->and(Options::get('locale', $company->id))->toBe('en-AE')
+        ->and(Options::get('tax_id_label', $company->id))->toBe('TRN')
+        ->and(Options::get('company_vat', $company->id))->toBe('100123456700003')
+        ->and(Options::get('whatsapp_country_code', $company->id))->toBe('971')
+        ->and(Options::get('customer_default_country', $company->id))->toBe('United Arab Emirates')
+        ->and(App\Models\Currency::withoutGlobalScopes()->where('company_id', $company->id)->where('is_default', true)->value('name'))->toBe('AED');
+
+    signIn(User::where('email', 'asha@acme.test')->first());
+    $this->getJson('/api/app-options')->assertJsonPath('data.timezone', 'Asia/Dubai')->assertJsonPath('data.locale', 'en-AE')
+        ->assertJsonPath('data.currency.symbol', 'AED');
+    expect(App\Support\CompanyTime::zone())->toBe('Asia/Dubai');
+
+    // Changing the country later in Setup brings its number format and tax number name.
+    $this->putJson('/api/setup/options', ['options' => ['company_country' => 'United Kingdom']])->assertOk();
+    expect(Options::get('locale'))->toBe('en-GB')->and(Options::get('tax_id_label'))->toBe('VAT No.')->and(Options::get('timezone'))->toBe('Asia/Dubai');
 });

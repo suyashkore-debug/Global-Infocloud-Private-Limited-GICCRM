@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { api } from '../lib/api';
 import { PROJECT_STATUSES, TASK_PRIORITIES, TASK_STATUSES, optionById } from '../lib/constants';
 import { emit, TASKS_CHANGED, TIMERS_CHANGED, TODOS_CHANGED } from '../lib/events';
-import { formatDate, formatDuration, isOverdue } from '../lib/format';
+import { appLocale, appTimeZone, formatDate, formatDuration, isOverdue } from '../lib/format';
 import { useApi } from '../hooks/useApi';
 import { money } from '../lib/sales';
 import ColumnPairChart from '../components/charts/ColumnPairChart';
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                 <span className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-accent/10 blur-2xl" />
                 <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
                     <div>
-                        <p className="text-[13px] font-medium text-blue-100/70">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        <p className="text-[13px] font-medium text-blue-100/70">{new Date().toLocaleDateString(appLocale(), { timeZone: appTimeZone(), weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         <h1 className="mt-1 font-display text-[26px] font-extrabold leading-tight">
                             {greeting()}, {user?.first_name ?? user?.full_name} 👋
                         </h1>
@@ -293,10 +293,10 @@ function WeekStrip({ days }: { days: { date: string; count: number }[] }) {
                             key={d.date}
                             type="button"
                             onClick={() => navigate('/tasks')}
-                            title={`${d.count} task${d.count === 1 ? '' : 's'} due ${i === 0 ? 'today (incl. overdue)' : date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}`}
+                            title={`${d.count} task${d.count === 1 ? '' : 's'} due ${i === 0 ? 'today (incl. overdue)' : date.toLocaleDateString(appLocale(), { weekday: 'long', day: 'numeric', month: 'short' })}`}
                             className={`flex w-12 flex-col items-center rounded-xl py-2 transition sm:w-14 ${i === 0 ? 'bg-white text-brand shadow-md' : 'bg-white/[0.07] text-white ring-1 ring-white/10 hover:bg-white/[0.14]'}`}
                         >
-                            <span className={`text-[10.5px] font-semibold uppercase ${i === 0 ? 'text-accent' : 'text-blue-100/60'}`}>{i === 0 ? 'Today' : date.toLocaleDateString('en-IN', { weekday: 'short' })}</span>
+                            <span className={`text-[10.5px] font-semibold uppercase ${i === 0 ? 'text-accent' : 'text-blue-100/60'}`}>{i === 0 ? 'Today' : date.toLocaleDateString(appLocale(), { weekday: 'short' })}</span>
                             <span className="text-[18px] font-bold leading-tight">{date.getDate()}</span>
                             <span className={`mt-1 h-5 min-w-[1.25rem] rounded-full px-1.5 text-center text-[11px] font-bold leading-5 ${d.count ? (i === 0 ? 'bg-accent text-white' : 'bg-white/90 text-brand') : i === 0 ? 'text-slate-300' : 'text-blue-100/30'}`}>{d.count || '·'}</span>
                         </button>

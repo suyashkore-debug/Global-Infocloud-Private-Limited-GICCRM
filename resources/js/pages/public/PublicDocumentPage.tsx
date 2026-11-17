@@ -166,7 +166,7 @@ export default function PublicDocumentPage({ type }: { type: DocType }) {
                                     <p className="font-semibold text-gray-800">{type === 'proposal' ? 'To:' : 'Bill To:'}</p>
                                     <p className="font-semibold">{type === 'proposal' ? (doc.proposal_to as string) : doc.customer?.name}</p>
                                     {doc.billing && <AddressLines address={doc.billing} />}
-                                    {doc.customer?.vat && <p>GSTIN: {doc.customer.vat}</p>}
+                                    {doc.customer?.vat && <p>{doc.customer.tax_label ?? 'GSTIN'}: {doc.customer.vat}</p>}
                                 </div>
                             }
                             info={[
