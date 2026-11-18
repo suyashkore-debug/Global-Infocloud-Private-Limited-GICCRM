@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatus;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Support\Workspace;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -260,7 +261,8 @@ class InvoiceService
                     $copy = $invoice->replicate(['number', 'status', 'sent', 'sent_at', 'hash', 'repeat_every', 'recurring_type', 'cycles', 'total_cycles', 'last_recurring_date']);
                     $dueDays = $invoice->due_date ? (int) $invoice->date->diffInDays($invoice->due_date) : null;
                     $copy->fill([
-                        'number' => Options::takeNextNumber('next_invoice_number', $invoice->company_id),
+                        // Numbered in the invoice's workspace.
+                        'number' => Workspace::withSettingsOf($invoice, fn () => Options::takeNextNumber('next_invoice_number', $invoice->company_id)),
                         'date' => $next,
                         'due_date' => $dueDays !== null ? $next->addDays($dueDays) : null,
                         'status' => InvoiceStatus::Unpaid,

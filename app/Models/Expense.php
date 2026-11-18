@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Expense extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'expense_category_id', 'name', 'amount', 'currency_id', 'tax_id', 'tax2_id', 'date', 'customer_id',
@@ -122,5 +123,11 @@ class Expense extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['recurring_from_id' => Expense::class, 'project_id' => Project::class, 'customer_id' => Customer::class];
     }
 }

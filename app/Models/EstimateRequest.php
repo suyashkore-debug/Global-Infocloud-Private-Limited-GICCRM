@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasTags;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class EstimateRequest extends Model
 {
-    use BelongsToCompany, HasTags;
+    use BelongsToCompany, HasTags, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'email', 'submission', 'estimate_request_form_id', 'estimate_request_status_id', 'assigned_id',

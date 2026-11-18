@@ -56,7 +56,7 @@ class CalendarController extends Controller
         // Lead follow-ups on their day and time (the company's), overdue ones in red.
         if ($show('show_lead_follow_ups_on_calendar')) {
             $zone = CompanyTime::zone();
-            Lead::visibleTo($user)->whereNotNull('next_follow_up_at')
+            Lead::visibleTo($user)->inWorkspace($user)->whereNotNull('next_follow_up_at')
                 ->where('next_follow_up_at', '>=', Carbon::parse($from, $zone)->startOfDay()->utc())
                 ->where('next_follow_up_at', '<=', Carbon::parse($to, $zone)->endOfDay()->utc())
                 ->get(['id', 'name', 'company', 'next_follow_up_at', 'follow_up_note'])

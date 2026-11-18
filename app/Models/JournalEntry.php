@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JournalEntry extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     protected $fillable = ['company_id', 'number', 'journal_date', 'reference', 'description', 'amount', 'created_by'];
 

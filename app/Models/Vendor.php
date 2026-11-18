@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Vendor extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'vendor_code', 'name', 'vat', 'phone', 'email', 'website', 'address', 'city', 'state', 'zip', 'country',

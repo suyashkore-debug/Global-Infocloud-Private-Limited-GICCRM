@@ -140,7 +140,7 @@ class ReportController extends Controller
         $this->allow($request);
         $year = $this->year($request);
         $expenses = Expense::whereYear('date', $year)->when($request->boolean('exclude_billable'), fn ($q) => $q->where('billable', false))->with(['tax', 'tax2'])->get();
-        $categories = ExpenseCategory::orderBy('name')->get(['id', 'name']);
+        $categories = ExpenseCategory::forWorkspace()->orderBy('name')->get(['id', 'name']);
 
         $rows = $categories->map(fn ($c) => [
             'category' => $c->name,
@@ -173,19 +173,19 @@ class ReportController extends Controller
     {
         $this->allow($request);
         $year = $this->year($request);
-        $leads = Lead::whereYear('created_at', $year)->get(['id', 'lead_source_id', 'customer_id', 'created_at', 'converted_at']);
-        $converted = Lead::whereYear('converted_at', $year)->whereNotNull('customer_id')->get(['id', 'converted_at']);
+        $leads = Lead::inWorkspace($request->user())->whereYear('created_at', $year)->get(['id', 'lead_source_id', 'customer_id', 'created_at', 'converted_at']);
+        $converted = Lead::inWorkspace($request->user())->whereYear('converted_at', $year)->whereNotNull('customer_id')->get(['id', 'converted_at']);
 
         return response()->json(['data' => [
             'months' => self::MONTHS,
             'new' => $this->monthly($leads, fn ($l) => $l->created_at->month, fn ($g) => $g->count()),
             'converted' => $this->monthly($converted, fn ($l) => $l->converted_at->month, fn ($g) => $g->count()),
-            'sources' => LeadSource::orderBy('name')->get()->map(fn ($s) => [
+            'sources' => LeadSource::forWorkspace()->orderBy('name')->get()->map(fn ($s) => [
                 'source' => $s->name,
                 'leads' => $leads->where('lead_source_id', $s->id)->count(),
                 'converted' => $leads->where('lead_source_id', $s->id)->whereNotNull('customer_id')->count(),
             ])->filter(fn ($r) => $r['leads'] > 0)->values(),
-            'this_week_converted' => Lead::whereNotNull('customer_id')->where('converted_at', '>=', now()->startOfWeek())->count(),
+            'this_week_converted' => Lead::inWorkspace($request->user())->whereNotNull('customer_id')->where('converted_at', '>=', now()->startOfWeek())->count(),
         ]]);
     }
 

@@ -154,8 +154,10 @@ class EmailSettingsController extends Controller
 
     public function logs(Request $request): JsonResponse
     {
-        $this->admin($request);
+        $company = $this->admin($request);
         $page = EmailLog::query()
+            // The open workspace's e-mails (the default workspace's have no workspace_id).
+            ->where('workspace_id', Options::workspaceId($company))
             ->when($request->string('status')->value(), fn ($q, $s) => $q->where('status', $s))
             ->when($request->string('search')->trim()->value(), fn ($q, $s) => $q->where(fn ($w) => $w->where('to', 'like', "%{$s}%")->orWhere('subject', 'like', "%{$s}%")))
             ->latest('id')->paginate(30);

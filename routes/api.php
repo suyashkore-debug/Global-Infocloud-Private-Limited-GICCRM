@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\WorkspaceFromQuery;
 use App\Http\Controllers\Api\AccountingController;
 use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\AttachmentController;
@@ -91,15 +92,15 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/login/verify-otp', [AuthController::class, 'verifyLoginOtp'])->name('login.verify-otp');
 });
 
-// WhatsApp webhook (Meta): replies from leads and delivery receipts, per company.
-Route::middleware('throttle:600,1')->group(function () {
+// WhatsApp webhook (Meta): replies from leads and delivery receipts, per company (and workspace, ?workspace=).
+Route::middleware(['throttle:600,1', WorkspaceFromQuery::class])->group(function () {
     Route::get('/whatsapp/webhook/{company}', [WhatsAppController::class, 'verify'])->whereNumber('company');
     Route::post('/whatsapp/webhook/{company}', [WhatsAppController::class, 'webhook'])->whereNumber('company');
     Route::post('/whatsapp/bird/{company}', [WhatsAppController::class, 'birdWebhook'])->whereNumber('company');
 });
 
 // Exotel webhooks: the result of each click-to-call, and incoming calls (Passthru applet).
-Route::middleware('throttle:600,1')->group(function () {
+Route::middleware(['throttle:600,1', WorkspaceFromQuery::class])->group(function () {
     Route::post('/calls/exotel/{company}/{token}/status', [TelephonyController::class, 'status'])->whereNumber('company');
     Route::match(['get', 'post'], '/calls/exotel/{company}/{token}/incoming', [TelephonyController::class, 'incoming'])->whereNumber('company');
 });
@@ -248,6 +249,7 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::get('/leads/import', [LeadImportController::class, 'show']);
     Route::get('/leads/import/sample', [LeadImportController::class, 'sample']);
     Route::get('/leads/follow-ups', [LeadController::class, 'followUpSummary']);
+    Route::get('/leads/workspaces', [LeadController::class, 'workspaces']);
     Route::get('/leads/dashboard', LeadDashboardController::class);
     Route::post('/leads/import', [LeadImportController::class, 'store'])->middleware('throttle:20,1');
     Route::post('/leads/move', [LeadController::class, 'move']);

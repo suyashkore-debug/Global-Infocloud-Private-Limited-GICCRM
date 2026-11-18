@@ -154,8 +154,8 @@ class PortalController extends Controller
         abort_unless($this->contact($request)->canPortal('support'), 403);
 
         return response()->json(['data' => [
-            'departments' => SupportDepartment::where('hide_from_client', false)->orderBy('name')->get(['id', 'name']),
-            'priorities' => TicketPriority::orderBy('id')->get(['id', 'name']),
+            'departments' => SupportDepartment::forWorkspace()->where('hide_from_client', false)->orderBy('name')->get(['id', 'name']),
+            'priorities' => TicketPriority::forWorkspace()->orderBy('id')->get(['id', 'name']),
         ]]);
     }
 

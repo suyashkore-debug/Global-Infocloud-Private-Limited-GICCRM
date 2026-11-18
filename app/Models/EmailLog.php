@@ -9,5 +9,5 @@ class EmailLog extends Model
 {
     use BelongsToCompany;
 
-    protected $fillable = ['company_id', 'template', 'to', 'cc', 'subject', 'rel_type', 'rel_id', 'status', 'error', 'user_id'];
+    protected $fillable = ['company_id', 'workspace_id', 'template', 'to', 'cc', 'subject', 'rel_type', 'rel_id', 'status', 'error', 'user_id'];
 }

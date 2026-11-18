@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasTags;
 use App\Support\TimerRounding;
 use Database\Factories\TaskFactory;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Task extends Model
 {
     /** @use HasFactory<TaskFactory> */
-    use BelongsToCompany, HasFactory, HasTags;
+    use BelongsToCompany, HasFactory, HasTags, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'project_id', 'lead_id', 'rel_type', 'rel_id', 'milestone_id', 'name', 'description', 'priority', 'status',
@@ -179,5 +180,11 @@ class Task extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['recurring_from_id' => Task::class, 'project_id' => Project::class, 'invoice_id' => Invoice::class, 'lead_id' => Lead::class];
     }
 }

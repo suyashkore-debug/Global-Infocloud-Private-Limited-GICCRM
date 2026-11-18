@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
-    use BelongsToCompany, HasFactory;
+    use BelongsToCompany, HasFactory, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'name', 'contact_name', 'email', 'phone', 'website', 'vat',

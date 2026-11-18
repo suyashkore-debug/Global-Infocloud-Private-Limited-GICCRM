@@ -7,6 +7,7 @@ use App\Http\Resources\CustomerResource;
 use App\Http\Resources\LeadResource;
 use App\Models\EmailLog;
 use App\Models\Lead;
+use App\Models\LeadPipeline;
 use App\Models\LeadStatus;
 use App\Models\User;
 use App\Services\DefaultLookups;
@@ -69,19 +70,53 @@ class LeadController extends Controller
 
         $summary = (clone $base)->selectRaw('lead_status_id, count(*) as total, sum(lead_value) as value')->groupBy('lead_status_id')->get()->keyBy('lead_status_id');
 
+        // Pipelines (TeleCRM workspaces): the ones this person works in, each with its count; with
+        // more than one, the list and kanban show one pipeline (the one asked for, else the default).
+        DefaultLookups::ensureLeadLists();
+        $statuses = LeadStatus::orderBy('status_order')->get();
+        $pipelines = LeadPipeline::listFor($user);
+        $pipeline = $pipelines->firstWhere('id', $request->integer('pipeline_id')) ?? LeadPipeline::current($user) ?? $pipelines->firstWhere('is_default', true) ?? $pipelines->first();
+        if ($pipeline) {
+            $statuses = $statuses->where('pipeline_id', $pipeline->id)->values();
+            $base->whereIn('lead_status_id', $statuses->pluck('id'));
+        }
+        $pipelineMeta = $pipelines->map(fn (LeadPipeline $p) => [
+            ...$p->only(['id', 'name', 'color', 'is_default']),
+            'count' => (int) LeadStatus::where('pipeline_id', $p->id)->pluck('id')->sum(fn ($id) => (int) ($summary[$id]->total ?? 0)),
+        ]);
+
         // Picked status chips filter the rows; the chips keep counting every status.
         $base->when($request->has('status'), fn (Builder $q) => $q->whereIn('lead_status_id', array_map('intval', (array) $request->input('status'))));
         $base->with(['status', 'source', 'assigned', 'tags', 'customer:id,name'])->withCount(['notes', 'attachments']);
 
-        $leads = $request->boolean('kanban') ? $this->kanbanColumns($base, $request) : $this->sorted(clone $base, $request)->paginate(min(100, max(10, $request->integer('per_page', 25))));
+        $leads = $request->boolean('kanban') ? $this->kanbanColumns($base, $request, $statuses->pluck('id')) : $this->sorted(clone $base, $request)->paginate(min(100, max(10, $request->integer('per_page', 25))));
 
         return LeadResource::collection($leads)->additional(['meta' => [
-            'summary' => LeadStatus::orderBy('status_order')->get()->map(fn (LeadStatus $s) => [
+            'pipelines' => $pipelineMeta,
+            'pipeline_id' => $pipeline?->id,
+            'summary' => $statuses->map(fn (LeadStatus $s) => [
                 ...$s->only(['id', 'name', 'color', 'is_default']),
                 'count' => (int) ($summary[$s->id]->total ?? 0),
                 'value' => round((float) ($summary[$s->id]->value ?? 0), 2),
             ]),
         ]]);
+    }
+
+    /**
+     * The lead workspaces for the header's switcher: each with its open leads this person sees.
+     */
+    public function workspaces(Request $request): JsonResponse
+    {
+        DefaultLookups::ensureLeadLists();
+        $user = $request->user();
+        $counts = Lead::query()->visibleTo($user)->where('lost', false)->where('junk', false)
+            ->join('lead_statuses', 'lead_statuses.id', '=', 'leads.lead_status_id')
+            ->selectRaw('lead_statuses.pipeline_id, count(*) as n')->groupBy('lead_statuses.pipeline_id')->pluck('n', 'pipeline_id');
+
+        return response()->json(['data' => LeadPipeline::listFor($user)->map(fn (LeadPipeline $p) => [
+            ...$p->only(['id', 'name', 'color', 'is_default']),
+            'count' => (int) ($counts[$p->id] ?? 0),
+        ])]);
     }
 
     /**
@@ -94,7 +129,7 @@ class LeadController extends Controller
      * @param  Builder<Lead>  $base
      * @return \Illuminate\Support\Collection<int, Lead>
      */
-    private function kanbanColumns(Builder $base, Request $request)
+    private function kanbanColumns(Builder $base, Request $request, \Illuminate\Support\Collection $statusIds)
     {
         $columns = ['dateadded' => 'created_at', 'lastcontact' => 'last_contact_at', 'leadorder' => 'lead_order'];
         $sort = $request->input('kanban_sort', Options::get('default_leads_kanban_sort'));
@@ -103,7 +138,7 @@ class LeadController extends Controller
         $limit = max(1, min(500, (int) Options::get('leads_kanban_limit') ?: 50));
         $more = array_map('intval', (array) $request->input('more', []));
 
-        return LeadStatus::orderBy('status_order')->pluck('id')->flatMap(fn ($statusId) => (clone $base)
+        return $statusIds->flatMap(fn ($statusId) => (clone $base)
             ->where('lead_status_id', $statusId)
             ->orderBy($column, $direction)->orderBy('id', $direction)
             ->limit(min(2000, $limit + max(0, $more[$statusId] ?? 0)))->get());
@@ -135,6 +170,10 @@ class LeadController extends Controller
     public function show(Lead $lead): LeadResource
     {
         $this->authorize('view', $lead);
+        // Opened from another workspace (a link): the app switches to the lead's.
+        if ($workspace = LeadStatus::whereKey($lead->lead_status_id)->value('pipeline_id')) {
+            \App\Support\Workspace::open((int) $workspace);
+        }
 
         return new LeadResource($this->loadForView($lead));
     }
@@ -270,7 +309,7 @@ class LeadController extends Controller
         $zone = CompanyTime::zone();
         $startOfToday = Carbon::now($zone)->startOfDay()->utc();
         $endOfToday = Carbon::now($zone)->endOfDay()->utc();
-        $base = Lead::query()->visibleTo($request->user())->whereNotNull('next_follow_up_at');
+        $base = Lead::query()->visibleTo($request->user())->inWorkspace($request->user())->whereNotNull('next_follow_up_at');
 
         return response()->json(['data' => [
             'overdue' => (clone $base)->where('next_follow_up_at', '<', now())->count(),

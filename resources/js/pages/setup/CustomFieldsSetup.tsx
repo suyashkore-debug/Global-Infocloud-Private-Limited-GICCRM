@@ -40,7 +40,8 @@ const moduleLabel = (id: string) => MODULES.find((m) => m.id === id)?.label ?? i
 
 /** Perfex Setup → Custom Fields. */
 export default function CustomFieldsSetup() {
-    const { data, reload } = useApi<{ data: CustomFieldDef[] }>('/custom-fields');
+    const { data, reload } = useApi<{ data: (CustomFieldDef & { workspace_id?: number | null })[]; meta?: WorkspaceMeta }>('/custom-fields');
+    const workspaces = data?.meta?.workspaces ?? null;
     const [editing, setEditing] = useState<CustomFieldDef | 'new' | null>(null);
 
     async function remove(f: CustomFieldDef) {
@@ -74,6 +75,7 @@ export default function CustomFieldsSetup() {
                                     <th>Type</th>
                                     <th>Slug</th>
                                     <th>Active</th>
+                                    {workspaces && <th>Workspace</th>}
                                     <th />
                                 </tr>
                             </thead>
@@ -91,6 +93,7 @@ export default function CustomFieldsSetup() {
                                         <td>{TYPES.find((t) => t.id === f.type)?.label}</td>
                                         <td className="text-xs text-gray-500">{f.slug}</td>
                                         <td>{f.active ? 'Yes' : 'No'}</td>
+                                        {workspaces && <td className="text-gray-500">{workspaces.find((w) => w.id === f.workspace_id)?.name ?? 'All workspaces'}</td>}
                                         <td className="text-right">
                                             <button type="button" onClick={() => remove(f)} className="text-xs text-red-600 hover:underline">
                                                 Delete
@@ -100,7 +103,7 @@ export default function CustomFieldsSetup() {
                                 ))}
                                 {data.data.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="text-center text-gray-500">
+                                        <td colSpan={workspaces ? 8 : 7} className="text-center text-gray-500">
                                             No custom fields yet.
                                         </td>
                                     </tr>
@@ -113,6 +116,8 @@ export default function CustomFieldsSetup() {
             {editing && (
                 <FieldEditor
                     field={editing === 'new' ? null : editing}
+                    workspaces={workspaces}
+                    openWorkspace={data?.meta?.workspace_id ?? null}
                     onClose={() => setEditing(null)}
                     onSaved={() => {
                         setEditing(null);
@@ -125,7 +130,25 @@ export default function CustomFieldsSetup() {
     );
 }
 
-function FieldEditor({ field, onClose, onSaved }: { field: CustomFieldDef | null; onClose: () => void; onSaved: () => void }) {
+/** With several workspaces: the workspaces, and the one open in the header. */
+interface WorkspaceMeta {
+    workspace_id?: number | null;
+    workspaces?: { id: number; name: string }[];
+}
+
+function FieldEditor({
+    field,
+    workspaces,
+    openWorkspace,
+    onClose,
+    onSaved,
+}: {
+    field: (CustomFieldDef & { workspace_id?: number | null }) | null;
+    workspaces: { id: number; name: string }[] | null;
+    openWorkspace: number | null;
+    onClose: () => void;
+    onSaved: () => void;
+}) {
     const toast = useToast();
     const locked = (field?.values_count ?? 0) > 0;
     const [f, setF] = useState({
@@ -141,6 +164,8 @@ function FieldEditor({ field, onClose, onSaved }: { field: CustomFieldDef | null
         only_admin: field?.only_admin ?? false,
         show_on_table: field?.show_on_table ?? false,
         show_on_pdf: field?.show_on_pdf ?? false,
+        // For one workspace or all ('').
+        workspace_id: String((field ? field.workspace_id : openWorkspace) ?? ''),
     });
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -158,6 +183,7 @@ function FieldEditor({ field, onClose, onSaved }: { field: CustomFieldDef | null
             field_order: Number(f.field_order) || 0,
             bs_column: Number(f.bs_column),
             show_on_pdf: pdfAllowed ? f.show_on_pdf : false,
+            ...(workspaces ? { workspace_id: f.workspace_id ? Number(f.workspace_id) : null } : { workspace_id: undefined }),
         };
         try {
             await (field ? api.put(`/custom-fields/${field.id}`, body) : api.post('/custom-fields', body));
@@ -231,6 +257,18 @@ function FieldEditor({ field, onClose, onSaved }: { field: CustomFieldDef | null
                             <option value="3">Quarter</option>
                         </Select>
                     </Field>
+                    {workspaces && (
+                        <Field label="Workspace" hint="Shown only in this workspace, or in all of them.">
+                            <Select value={f.workspace_id} onChange={(e) => set({ workspace_id: e.target.value })}>
+                                <option value="">All workspaces</option>
+                                {workspaces.map((w) => (
+                                    <option key={w.id} value={w.id}>
+                                        {w.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        </Field>
+                    )}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                     <Checkbox label="Disabled" checked={!f.active} onChange={(v) => set({ active: !v })} />

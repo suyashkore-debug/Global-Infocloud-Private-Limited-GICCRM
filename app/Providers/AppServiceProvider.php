@@ -33,6 +33,13 @@ use App\Models\TaskTimer;
 use App\Models\Ticket;
 use App\Observers\ActivityLogObserver;
 use App\Services\CustomFields;
+use App\Services\Options;
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Sanctum\Sanctum;
@@ -56,6 +63,29 @@ class AppServiceProvider extends ServiceProvider
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
 
         $this->bindThroughParent();
+
+        // A record opened from another workspace: the app switches to that workspace (header X-Record-Workspace).
+        Event::listen(RequestHandled::class, function (RequestHandled $event) {
+            if ($id = $event->request->attributes->get('record_workspace')) {
+                $event->response->headers->set('X-Record-Workspace', (string) $id);
+            }
+            // A public page or webhook pinned its record's workspace for this request only.
+            Options::releaseWorkspace();
+        });
+
+        // A queued job uses the settings of the workspace it was dispatched in (its e-mail account,
+        // WhatsApp number, templates…), then the worker goes back to none.
+        Queue::createPayloadUsing(fn () => ['options_workspace' => Options::forJob()]);
+        $states = [];
+        Event::listen(JobProcessing::class, function (JobProcessing $event) use (&$states) {
+            $states[] = Options::state();
+            Options::useWorkspace($event->job->payload()['options_workspace'] ?? null);
+        });
+        $back = function () use (&$states) {
+            Options::restore(array_pop($states) ?? [null, false]);
+        };
+        Event::listen(JobProcessed::class, $back);
+        Event::listen(JobExceptionOccurred::class, $back);
 
         // A deleted record takes its custom field values with it.
         foreach (CustomFields::RECORD_TYPES as $fieldTo => $model) {

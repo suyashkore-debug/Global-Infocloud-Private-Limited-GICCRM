@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { LEAD_WORKSPACE_CHANGED } from '../lib/leadWorkspace';
 
 export type AppOptions = Record<string, string>;
 
@@ -12,6 +13,11 @@ const load = () => (cache ??= api.get<{ data: AppOptions }>('/app-options').then
 export function reloadAppOptions(): void {
     cache = null;
     window.dispatchEvent(new Event(CHANGED));
+}
+
+// Each workspace can have its own settings (menu, defaults).
+if (typeof window !== 'undefined') {
+    window.addEventListener(LEAD_WORKSPACE_CHANGED, reloadAppOptions);
 }
 
 /**

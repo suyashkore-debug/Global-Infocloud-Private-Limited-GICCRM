@@ -43,6 +43,8 @@ import { TaskModalHost, useTaskModals } from '../components/tasks/TaskModalHost'
 import { ALWAYS_SHOWN, MENU_ICONS, SIDEBAR_DEFAULT, arrange, parseMenu } from '../lib/menuSetup';
 import CommandPalette, { type PaletteAction, type PaletteLink } from './CommandPalette';
 import { Breadcrumbs, CrumbProvider } from './Breadcrumbs';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { getLeadWorkspace, LEAD_WORKSPACE_CHANGED } from '../lib/leadWorkspace';
 import { ChatIcon, CompanySwitcher, NewsfeedIcon, NotificationsBell, TodosIcon } from './HeaderWidgets';
 
 interface MenuNode {
@@ -115,6 +117,14 @@ function Shell() {
     const [logoFailed, setLogoFailed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
+    // The lead workspace picked in the header: a change re-opens the page with its data.
+    const [workspace, setWorkspace] = useState(getLeadWorkspace);
+    useEffect(() => {
+        const follow = (e: Event) => setWorkspace((e as CustomEvent<number>).detail);
+        window.addEventListener(LEAD_WORKSPACE_CHANGED, follow);
+
+        return () => window.removeEventListener(LEAD_WORKSPACE_CHANGED, follow);
+    }, []);
     const { canInstall, install } = useInstallApp();
     // Desktop sidebar: full (230px) or icons only (72px); remembered on this browser.
     const [collapsed, setCollapsed] = useState(() => {
@@ -483,6 +493,7 @@ function Shell() {
                         <kbd className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-sans text-[10.5px] font-semibold text-slate-500">K</kbd>
                     </span>
                 </button>
+                <WorkspaceSwitcher />
                 <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} links={paletteLinks} actions={paletteActions} />
                 <div className="ml-auto flex items-center gap-2">
                     <Menu
@@ -548,7 +559,7 @@ function Shell() {
                 {location.pathname.startsWith('/chat') ? (
                     <Outlet />
                 ) : (
-                    <div key={location.pathname} className="page-enter mx-auto w-full max-w-[1440px]">
+                    <div key={`${location.pathname}:${workspace ?? 0}`} className="page-enter mx-auto w-full max-w-[1440px]">
                         <Breadcrumbs links={paletteLinks} pathname={location.pathname} />
                         <Outlet />
                     </div>

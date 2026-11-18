@@ -102,7 +102,7 @@ class ProposalService
                 'due_date' => $this->invoices->defaultDueDate($date),
                 'terms' => Options::get('predefined_terms_invoice'),
                 'client_note' => Options::get('predefined_clientnote_invoice'),
-                'allowed_payment_modes' => PaymentMode::where('active', true)->where('expenses_only', false)->where('selected_by_default', true)->pluck('id')->all(),
+                'allowed_payment_modes' => PaymentMode::forWorkspace()->where('active', true)->where('expenses_only', false)->where('selected_by_default', true)->pluck('id')->all(),
             ]);
             $proposal->update(['invoice_id' => $invoice->id, 'converted_at' => now(), 'status' => ProposalStatus::Accepted]);
 

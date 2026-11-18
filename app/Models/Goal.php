@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Goal extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     /** @var array<int, string> Perfex goal types. */
     public const TYPES = [

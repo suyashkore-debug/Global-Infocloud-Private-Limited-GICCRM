@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class CalendarEvent extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     protected $fillable = ['company_id', 'title', 'description', 'start', 'end', 'public', 'color', 'reminder_before', 'reminder_before_type', 'start_notified', 'user_id'];
 

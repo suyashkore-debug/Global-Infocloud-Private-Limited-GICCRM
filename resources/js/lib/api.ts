@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { readStorage, writeStorage } from './storage';
+import { getLeadWorkspace, setLeadWorkspace } from './leadWorkspace';
 
 const TOKEN_KEY = 'projects_token';
 
@@ -31,6 +32,11 @@ api.interceptors.request.use((config) => {
     if (company) {
         config.headers['X-Company-Id'] = company;
     }
+    // The lead workspace picked in the header: lead lists, dashboards, calendar and reports show only its leads.
+    const workspace = getLeadWorkspace();
+    if (workspace) {
+        config.headers['X-Lead-Workspace'] = String(workspace);
+    }
 
     return config;
 });
@@ -43,7 +49,15 @@ export function onUnauthorized(handler: () => void): void {
 }
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // A record of another workspace was opened (a link from a notification): switch to its workspace.
+        const recordWorkspace = Number(response.headers?.['x-record-workspace']);
+        if (recordWorkspace && recordWorkspace !== getLeadWorkspace()) {
+            setLeadWorkspace(recordWorkspace);
+        }
+
+        return response;
+    },
     (error) => {
         if (axios.isAxiosError(error) && error.response?.status === 401 && tokenStore.get()) {
             tokenStore.clear();

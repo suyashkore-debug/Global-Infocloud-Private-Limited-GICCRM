@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\SharedAcrossWorkspaces;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomField extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, SharedAcrossWorkspaces;
 
     public const TYPES = ['input', 'number', 'textarea', 'select', 'multiselect', 'checkbox', 'date_picker', 'date_picker_time', 'colorpicker', 'link'];
 

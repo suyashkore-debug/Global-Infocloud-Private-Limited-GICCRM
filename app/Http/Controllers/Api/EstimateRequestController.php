@@ -41,7 +41,7 @@ class EstimateRequestController extends Controller
             ->when($request->integer('form_id'), fn ($q, $f) => $q->where('estimate_request_form_id', $f))
             ->when($request->string('search')->trim()->value(), fn ($q, $s) => $q->where(fn ($w) => $w->where('email', 'like', "%{$s}%")->orWhere('submission', 'like', "%{$s}%")));
 
-        $summary = EstimateRequestStatus::orderBy('status_order')->get()->map(fn ($s) => [
+        $summary = EstimateRequestStatus::forWorkspace()->orderBy('status_order')->get()->map(fn ($s) => [
             'id' => $s->id, 'name' => $s->name, 'color' => $s->color, 'flag' => $s->flag,
             'count' => (clone $query)->where('estimate_request_status_id', $s->id)->count(),
         ]);

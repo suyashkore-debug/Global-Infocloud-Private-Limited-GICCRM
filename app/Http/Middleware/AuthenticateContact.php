@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Company;
 use App\Models\ContactToken;
+use App\Services\Options;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,6 +34,7 @@ class AuthenticateContact
         // Company scopes, options and new rows use the customer's company (see CurrentCompany).
         $request->attributes->set('portal_company_id', (int) $customer->company_id);
 
-        return $next($request);
+        // With the settings of the customer's workspace.
+        return Options::within($customer->workspace_id ? (int) $customer->workspace_id : null, fn () => $next($request));
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Models\LeadStatus;
 use App\Models\User;
 use App\Services\LeadStatusMessages;
+use App\Support\Workspace;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -25,7 +26,8 @@ class SendLeadStatusUpdate implements ShouldQueue
         $user = User::withoutGlobalScopes()->find($this->userId);
         $status = LeadStatus::withoutGlobalScopes()->find($this->statusId);
         if ($lead && $user && $status) {
-            $messages->deliver($lead, $status, $user, $this->token);
+            // With the settings of the lead's workspace (its e-mail account, WhatsApp number, texts).
+            Workspace::withSettingsOf($lead, fn () => $messages->deliver($lead, $status, $user, $this->token));
         }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\EstimateRequestStatus;
 use App\Models\LeadSource;
+use App\Models\LeadPipeline;
 use App\Models\LeadStatus;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
@@ -41,6 +42,16 @@ class DefaultLookups
 
     public static function ensureLeadLists(): void
     {
+        // Every company has its "Sales" pipeline; statuses not in a pipeline are in the default one.
+        if (CurrentCompany::id()) {
+            if (! LeadPipeline::exists()) {
+                LeadPipeline::create(['name' => 'Sales', 'is_default' => true]);
+            }
+            $default = LeadPipeline::orderByDesc('is_default')->orderBy('sort_order')->value('id');
+            if (LeadStatus::whereNull('pipeline_id')->exists()) {
+                LeadStatus::whereNull('pipeline_id')->update(['pipeline_id' => $default]);
+            }
+        }
         if (! LeadStatus::exists()) {
             foreach (self::LEAD_STATUSES as $status) {
                 LeadStatus::create($status);

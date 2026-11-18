@@ -167,7 +167,7 @@ class DashboardWidgetsController extends Controller
             ];
         }
         if ($user->can('viewAny', Lead::class)) {
-            $leads = Lead::visibleTo($user);
+            $leads = Lead::visibleTo($user)->inWorkspace($user);
             $stats['leads_converted'] = ['count' => (clone $leads)->whereNotNull('customer_id')->count(), 'total' => (clone $leads)->count()];
         }
         $projects = Project::visibleTo($user);

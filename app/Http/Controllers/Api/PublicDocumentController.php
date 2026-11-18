@@ -18,6 +18,7 @@ use App\Services\Emails;
 use App\Services\Notifier;
 use App\Services\Options;
 use App\Services\SalesPdf;
+use App\Support\Workspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -132,6 +133,8 @@ class PublicDocumentController extends Controller
         // Drafts are not shown to customers; a trashed or hidden contract neither.
         abort_if($document instanceof Invoice && $document->status === InvoiceStatus::Draft, 404);
         abort_if($document instanceof Contract && ($document->trash || $document->not_visible_to_client), 404);
+        // Shown with its workspace's settings (PDF, e-mails); released when the request ends.
+        Options::useWorkspace(Workspace::settingsOf($document) ?: null);
 
         return $document;
     }

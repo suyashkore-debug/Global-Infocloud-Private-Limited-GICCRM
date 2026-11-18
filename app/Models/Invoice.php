@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvoiceStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasSalesItems;
 use App\Models\Concerns\HasTags;
 use App\Services\Options;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
-    use BelongsToCompany, HasFactory, HasSalesItems, HasTags;
+    use BelongsToCompany, HasFactory, HasSalesItems, HasTags, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'customer_id', 'project_id', 'currency_id', 'number', 'prefix', 'number_format', 'date', 'due_date',
@@ -146,5 +147,11 @@ class Invoice extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class)->orderBy('date')->orderBy('id');
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['recurring_from_id' => Invoice::class, 'customer_id' => Customer::class, 'project_id' => Project::class];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\PurchaseDocument;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class PurchaseInvoice extends Model
 {
-    use BelongsToCompany, PurchaseDocument;
+    use BelongsToCompany, PurchaseDocument, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'number', 'invoice_number', 'vendor_invoice_number', 'vendor_id', 'purchase_order_id', 'currency_id', 'invoice_date', 'due_date',
@@ -67,5 +68,11 @@ class PurchaseInvoice extends Model
     public function amountDue(): float
     {
         return round((float) $this->total - $this->amountPaid(), 2);
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['purchase_order_id' => PurchaseOrder::class, 'vendor_id' => Vendor::class];
     }
 }

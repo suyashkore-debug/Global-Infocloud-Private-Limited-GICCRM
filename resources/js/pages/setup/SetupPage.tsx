@@ -37,6 +37,7 @@ import {
     UserRound,
     Users,
     Wallet,
+    Workflow,
     Wrench,
     type LucideIcon,
 } from 'lucide-react';
@@ -48,10 +49,12 @@ import BackupSetup from './BackupSetup';
 import CallsSetup from './CallsSetup';
 import CompanyLogoSetup from './CompanyLogoSetup';
 import RecaptchaSetup from './RecaptchaSetup';
+import { LeadPipelinesList, LeadStatusesList } from './LeadPipelineLists';
 import StaffMembersSetup from './StaffMembersSetup';
 import CustomFieldsSetup from './CustomFieldsSetup';
 import { EmailLogList, EmailSettingsForm, EmailTemplatesList } from './EmailSetup';
 import ListEditor from './ListEditor';
+import SetupWorkspaceNote from './SetupWorkspaceNote';
 import OptionsForm, { type OptionSection } from './OptionsForm';
 import MenuSetup, { type MenuDefault } from './MenuSetup';
 import { useAppOptions } from '../../hooks/useAppOptions';
@@ -111,6 +114,7 @@ const GROUPS = [
             { id: 'expense-categories', label: 'Expense Categories', icon: Wallet },
             { id: 'contract-types', label: 'Contract Types', icon: FileSignature },
             { id: 'vendor-categories', label: 'Vendor Categories', icon: ShoppingCart },
+            { id: 'lead-pipelines', label: 'Lead Workspaces', icon: Workflow },
             { id: 'lead-statuses', label: 'Lead Statuses', icon: CircleDot },
             { id: 'lead-sources', label: 'Lead Sources', icon: Share2 },
             { id: 'support-departments', label: 'Support Departments', icon: Network },
@@ -304,6 +308,7 @@ export default function SetupPage() {
                         <current.icon className="h-[18px] w-[18px] text-accent" />
                         {currentLabel}
                     </h3>
+                    <SetupWorkspaceNote tab={tab} />
 
             {tab === 'company' && <CompanyLogoSetup />}
             {tab === 'company' && (
@@ -547,26 +552,20 @@ export default function SetupPage() {
                 />
             )}
 
-            {(tab === 'lead-statuses' || tab === 'ticket-statuses' || tab === 'estimate-request-statuses') && (
-                <ListEditor<{ id: number; name: string; color: string; status_order: number; is_default?: boolean; notify_lead?: boolean; system_key?: string | null; flag?: string | null }, { name: string; color: string; status_order: string; notify_lead?: boolean }>
+            {tab === 'lead-pipelines' && <LeadPipelinesList staff={staff} />}
+            {tab === 'lead-statuses' && <LeadStatusesList staff={staff} />}
+
+            {(tab === 'ticket-statuses' || tab === 'estimate-request-statuses') && (
+                <ListEditor<{ id: number; name: string; color: string; status_order: number; is_default?: boolean; system_key?: string | null; flag?: string | null }, { name: string; color: string; status_order: string }>
                     key={tab}
                     list={tab}
-                    title={tab === 'lead-statuses' ? 'Lead Status' : tab === 'ticket-statuses' ? 'Ticket Status' : 'Request Status'}
+                    title={tab === 'ticket-statuses' ? 'Ticket Status' : 'Request Status'}
                     columns={[
-                        { label: 'Name', render: (st) => <span style={{ color: st.color }} className="font-medium">{st.name}{st.is_default ? ' (converted leads)' : ''}{st.system_key || st.flag ? ' (built-in)' : ''}</span> },
+                        { label: 'Name', render: (st) => <span style={{ color: st.color }} className="font-medium">{st.name}{st.system_key || st.flag ? ' (built-in)' : ''}</span> },
                         { label: 'Order', render: (st) => st.status_order },
-                        ...(tab === 'lead-statuses'
-                            ? [
-                                  {
-                                      label: 'Message to lead',
-                                      render: (st: { notify_lead?: boolean }) =>
-                                          st.notify_lead ? <span className="font-semibold text-emerald-600">E-mail + WhatsApp</span> : <span className="text-slate-400">No</span>,
-                                  },
-                              ]
-                            : []),
                     ]}
-                    blank={tab === 'lead-statuses' ? { name: '', color: '#28B8DA', status_order: '0', notify_lead: true } : { name: '', color: '#28B8DA', status_order: '0' }}
-                    toForm={(st) => ({ name: st.name, color: st.color, status_order: String(st.status_order ?? 0), ...(tab === 'lead-statuses' ? { notify_lead: !!st.notify_lead } : {}) })}
+                    blank={{ name: '', color: '#28B8DA', status_order: '0' }}
+                    toForm={(st) => ({ name: st.name, color: st.color, status_order: String(st.status_order ?? 0) })}
                     renderForm={(f, set, e) => (
                         <>
                             <Field label="Name" required error={e.name}>
@@ -578,11 +577,6 @@ export default function SetupPage() {
                             <Field label="Order">
                                 <Input type="number" value={f.status_order} onChange={(ev) => set({ status_order: ev.target.value })} />
                             </Field>
-                            {tab === 'lead-statuses' && (
-                                <Field label="Message to lead" hint="Both drafts are in Setup → Leads → Messages to the lead on status change.">
-                                    <Checkbox label="Send the lead an e-mail and WhatsApp message when it moves to this status" checked={!!f.notify_lead} onChange={(v) => set({ notify_lead: v })} />
-                                </Field>
-                            )}
                         </>
                     )}
                 />

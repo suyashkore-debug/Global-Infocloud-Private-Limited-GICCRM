@@ -531,6 +531,8 @@ export interface LeadStatus {
     status_order?: number;
     count?: number;
     value?: number;
+    pipeline_id?: number | null;
+    pipeline_name?: string | null;
 }
 
 export interface Lead {

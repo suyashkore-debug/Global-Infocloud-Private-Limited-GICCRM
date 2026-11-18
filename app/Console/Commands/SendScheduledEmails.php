@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ScheduledEmail;
 use App\Services\DocumentMailer;
+use App\Support\Workspace;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -26,7 +27,8 @@ class SendScheduledEmails extends Command
                 $class = DocumentMailer::TYPES[$email->rel_type][0] ?? null;
                 $document = $class ? $class::find($email->rel_id) : null;
                 if ($document) {
-                    DocumentMailer::deliver($email->rel_type, $document, $email->only(['recipients', 'cc', 'attach_pdf', 'subject', 'message']));
+                    // With the settings of the document's workspace (PDF, template, e-mail account).
+                    Workspace::withSettingsOf($document, fn () => DocumentMailer::deliver($email->rel_type, $document, $email->only(['recipients', 'cc', 'attach_pdf', 'subject', 'message'])));
                 }
             } catch (Throwable $e) {
                 report($e);

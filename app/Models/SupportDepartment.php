@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\SharedAcrossWorkspaces;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  */
 class SupportDepartment extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, SharedAcrossWorkspaces;
 
     protected $fillable = ['company_id', 'name', 'email', 'hide_from_client'];
 

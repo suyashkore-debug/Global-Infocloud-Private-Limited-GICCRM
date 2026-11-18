@@ -120,11 +120,11 @@ class DashboardController extends Controller
     /** @return array<string, mixed> */
     private function leadPipeline(User $user): array
     {
-        $leads = Lead::visibleTo($user)->where('lost', false)->where('junk', false);
+        $leads = Lead::visibleTo($user)->inWorkspace($user)->where('lost', false)->where('junk', false);
         $counts = (clone $leads)->selectRaw('lead_status_id, count(*) as total, sum(lead_value) as value')->groupBy('lead_status_id')->get()->keyBy('lead_status_id');
 
         return [
-            'statuses' => LeadStatus::orderBy('status_order')->get()->map(fn (LeadStatus $s) => [
+            'statuses' => LeadStatus::inWorkspace($user)->orderBy('status_order')->get()->map(fn (LeadStatus $s) => [
                 'name' => $s->name,
                 'color' => $s->color,
                 'count' => (int) ($counts[$s->id]->total ?? 0),
@@ -134,7 +134,7 @@ class DashboardController extends Controller
             // The same stretch of last month (1st to today's date), for a fair comparison.
             'new_last_month' => (clone $leads)->where('created_at', '>=', self::today()->subMonthNoOverflow()->startOfMonth()->utc())
                 ->where('created_at', '<', self::today()->subMonthNoOverflow()->addDay()->utc())->count(),
-            'converted_this_month' => Lead::visibleTo($user)->where('converted_at', '>=', self::today()->startOfMonth()->utc())->count(),
+            'converted_this_month' => Lead::visibleTo($user)->inWorkspace($user)->where('converted_at', '>=', self::today()->startOfMonth()->utc())->count(),
             'daily' => $this->newLeadsPerDay(clone $leads),
             'hot' => $this->hotLeads(clone $leads),
             'to_call' => $this->leadsToCall(clone $leads),
@@ -199,7 +199,7 @@ class DashboardController extends Controller
     {
         $counts = Ticket::visibleTo($user)->whereNull('merged_into_id')->selectRaw('ticket_status_id, count(*) as total')->groupBy('ticket_status_id')->pluck('total', 'ticket_status_id');
 
-        return TicketStatus::orderBy('status_order')->get()
+        return TicketStatus::forWorkspace()->orderBy('status_order')->get()
             ->map(fn (TicketStatus $s) => ['name' => $s->name, 'color' => $s->color, 'count' => (int) ($counts[$s->id] ?? 0), 'closed' => $s->system_key === 'closed'])
             ->values()->all();
     }

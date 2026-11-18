@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EstimateStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasSalesItems;
 use App\Models\Concerns\HasTags;
 use App\Models\Concerns\SalesDocument;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Estimate extends Model
 {
-    use BelongsToCompany, HasSalesItems, HasTags, SalesDocument;
+    use BelongsToCompany, HasSalesItems, HasTags, SalesDocument, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'customer_id', 'project_id', 'currency_id', 'subtotal', 'total_tax', 'total', 'adjustment', 'discount_percent', 'discount_total', 'discount_type', 'show_quantity_as', 'created_by',
@@ -80,5 +81,11 @@ class Estimate extends Model
     public function saleAgent(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sale_agent_id');
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['customer_id' => Customer::class, 'project_id' => Project::class];
     }
 }

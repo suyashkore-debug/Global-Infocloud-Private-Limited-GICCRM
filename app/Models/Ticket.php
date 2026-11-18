@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasTags;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class Ticket extends Model
 {
-    use BelongsToCompany, HasTags;
+    use BelongsToCompany, HasTags, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'subject', 'message', 'customer_id', 'contact_id', 'name', 'email', 'cc', 'support_department_id',
@@ -135,5 +136,11 @@ class Ticket extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['project_id' => Project::class, 'customer_id' => Customer::class];
     }
 }

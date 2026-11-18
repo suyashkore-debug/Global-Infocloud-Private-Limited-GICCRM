@@ -95,17 +95,23 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
         setTab('profile');
         setErrors({});
         setLead(null);
-        Promise.all([api.get<{ data: LeadStatus[] }>('/setup/lead-statuses'), api.get<{ data: { id: number; name: string }[] }>('/setup/lead-sources')]).then(async ([s, src]) => {
-            setStatuses(s.data.data);
+        Promise.all([api.get<{ data: LeadStatus[]; meta?: { workspace_id: number | null } }>('/setup/lead-statuses'), api.get<{ data: { id: number; name: string }[] }>('/setup/lead-sources')]).then(async ([s, src]) => {
+            // A new lead is made in the workspace open in the header: only its statuses.
+            const workspace = s.data.meta?.workspace_id ?? null;
+            const choices = !leadId && workspace ? s.data.data.filter((x) => x.pipeline_id === workspace) : s.data.data;
+            setStatuses(choices);
             setSources(src.data.data);
             if (!leadId) {
                 setEditing(true);
-                // Settings → Leads: default status and source of a new lead.
+                // Settings → Leads: default status and source of a new lead (the default status only if it is in this workspace).
                 const defaults = await appOptionsLoad();
+                const inWorkspace = (id: unknown) => choices.some((x) => String(x.id) === String(id));
                 setForm({
                     ...blank,
                     country: defaults.customer_default_country || 'India',
-                    lead_status_id: String(defaultStatusId ?? (defaults.leads_default_status || s.data.data[0]?.id || '')),
+                    lead_status_id: String(
+                        (inWorkspace(defaultStatusId) ? defaultStatusId : null) ?? (inWorkspace(defaults.leads_default_status) ? defaults.leads_default_status : choices[0]?.id) ?? '',
+                    ),
                     lead_source_id: String(defaults.leads_default_source || src.data.data[0]?.id || ''),
                 });
             }
@@ -296,11 +302,24 @@ export default function LeadModal({ open, leadId, defaultStatusId, onClose, onCh
                                     <div className="grid gap-4 sm:grid-cols-3">
                                         <Field label="Status" required error={errors.lead_status_id}>
                                             <Select value={form.lead_status_id} onChange={set('lead_status_id')}>
-                                                {statuses.map((s) => (
-                                                    <option key={s.id} value={s.id}>
-                                                        {s.name}
-                                                    </option>
-                                                ))}
+                                                {/* With several pipelines: their statuses in groups (a lead can be moved to another pipeline here). */}
+                                                {new Set(statuses.map((s) => s.pipeline_name ?? '')).size > 1
+                                                    ? [...new Set(statuses.map((s) => s.pipeline_name ?? ''))].map((pipe) => (
+                                                          <optgroup key={pipe} label={pipe || 'Other'}>
+                                                              {statuses
+                                                                  .filter((s) => (s.pipeline_name ?? '') === pipe)
+                                                                  .map((s) => (
+                                                                      <option key={s.id} value={s.id}>
+                                                                          {s.name}
+                                                                      </option>
+                                                                  ))}
+                                                          </optgroup>
+                                                      ))
+                                                    : statuses.map((s) => (
+                                                          <option key={s.id} value={s.id}>
+                                                              {s.name}
+                                                          </option>
+                                                      ))}
                                             </Select>
                                         </Field>
                                         <Field label="Source" required error={errors.lead_source_id}>

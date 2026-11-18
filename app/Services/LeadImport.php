@@ -79,7 +79,7 @@ class LeadImport
     {
         $this->customFields = CustomFields::definitions('leads', $user);
         $this->statuses = LeadStatus::orderBy('status_order')->get();
-        $this->sources = LeadSource::orderBy('name')->get();
+        $this->sources = LeadSource::forWorkspace()->orderBy('name')->get();
         $this->staff = User::where('company_id', $user->company_id)->where('is_active', true)->get(['id', 'full_name', 'email', 'username']);
     }
 
@@ -131,6 +131,11 @@ class LeadImport
      */
     public function run(string $path, array $options): array
     {
+        // Leads go into the workspace of the chosen status: a Status column names its statuses only.
+        $workspace = $this->statuses->firstWhere('id', $options['status_id'] ?? 0)?->pipeline_id;
+        if ($workspace) {
+            $this->statuses = $this->statuses->where('pipeline_id', $workspace)->values();
+        }
         [$header, $rows] = $this->readRows($path);
         $mapping = $this->mapping($header, $options['mapping'] ?? null);
         $mapped = array_filter($mapping);

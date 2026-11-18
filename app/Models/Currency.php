@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\SharedAcrossWorkspaces;
 use App\Services\Options;
 use App\Support\CountryProfile;
 use Illuminate\Database\Eloquent\Model;
 
 class Currency extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, SharedAcrossWorkspaces;
 
     protected $fillable = ['company_id', 'name', 'symbol', 'decimal_separator', 'thousand_separator', 'placement', 'is_default'];
 

@@ -33,7 +33,7 @@ class LeadDashboardController extends Controller
         $zone = CompanyTime::zone();
         [$from, $to, $prevFrom, $prevTo] = $this->range($data['period'] ?? '30d', CarbonImmutable::now($zone));
         $utc = fn (CarbonImmutable $d) => $d->utc();
-        $visible = fn () => Lead::query()->visibleTo($user);
+        $visible = fn () => Lead::query()->visibleTo($user)->inWorkspace($user);
         $between = fn (Builder $q, string $column, CarbonImmutable $a, CarbonImmutable $b) => $q->where($column, '>=', $utc($a))->where($column, '<', $utc($b));
 
         $created = $between($visible(), 'created_at', $from, $to)->get(['id', 'lead_source_id', 'customer_id', 'created_at']);
@@ -46,6 +46,8 @@ class LeadDashboardController extends Controller
         $endOfToday = $utc(CarbonImmutable::now($zone)->endOfDay());
 
         return response()->json(['data' => [
+            // The workspace shown (picked in the header), when there are several.
+            'workspace' => \App\Models\LeadPipeline::current($user)?->name,
             'period' => ['key' => $data['period'] ?? '30d', 'from' => $from->toDateString(), 'to' => $to->subSecond()->toDateString()],
             'kpis' => [
                 'new' => $created->count(),
@@ -59,12 +61,12 @@ class LeadDashboardController extends Controller
                 'due_today' => $visible()->whereNotNull('next_follow_up_at')->whereBetween('next_follow_up_at', [$now, $endOfToday])->count(),
             ],
             'trend' => $this->trend($created, $converted, $from, $to, $zone),
-            'sources' => LeadSource::orderBy('name')->get(['id', 'name'])->map(fn ($s) => [
+            'sources' => LeadSource::forWorkspace()->orderBy('name')->get(['id', 'name'])->map(fn ($s) => [
                 'source' => $s->name,
                 'leads' => $created->where('lead_source_id', $s->id)->count(),
                 'converted' => $converted->where('lead_source_id', $s->id)->count(),
             ])->filter(fn ($r) => $r['leads'] > 0 || $r['converted'] > 0)->sortByDesc('leads')->values(),
-            'pipeline' => LeadStatus::orderBy('status_order')->get(['id', 'name', 'color'])->map(fn ($s) => [
+            'pipeline' => LeadStatus::inWorkspace($user)->orderBy('status_order')->get(['id', 'name', 'color'])->map(fn ($s) => [
                 'id' => $s->id,
                 'name' => $s->name,
                 'color' => $s->color,

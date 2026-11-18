@@ -6,6 +6,7 @@ use App\Models\Lead;
 use App\Models\LeadCall;
 use App\Models\User;
 use App\Support\PhoneNumber;
+use App\Support\Workspace;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Carbon;
@@ -101,12 +102,12 @@ class Exotel
 
     public static function statusUrl(int $companyId): string
     {
-        return url("/api/calls/exotel/{$companyId}/".self::webhookToken($companyId).'/status');
+        return url("/api/calls/exotel/{$companyId}/".self::webhookToken($companyId).'/status').Workspace::webhookQuery($companyId);
     }
 
     public static function incomingUrl(int $companyId): string
     {
-        return url("/api/calls/exotel/{$companyId}/".self::webhookToken($companyId).'/incoming');
+        return url("/api/calls/exotel/{$companyId}/".self::webhookToken($companyId).'/incoming').Workspace::webhookQuery($companyId);
     }
 
     /**

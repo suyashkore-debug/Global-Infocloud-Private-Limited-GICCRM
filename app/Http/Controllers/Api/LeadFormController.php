@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\LeadForm;
+use App\Models\LeadPipeline;
+use App\Models\LeadStatus;
+use App\Services\DefaultLookups;
+use App\Services\Options;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -19,8 +23,17 @@ class LeadFormController extends Controller
     public function index(Request $request): JsonResponse
     {
         abort_unless($request->user()->isAdmin(), 403);
+        $forms = LeadForm::withCount('leads')->latest()->get();
 
-        return response()->json(['data' => LeadForm::withCount('leads')->latest()->get()]);
+        // Only the forms of the workspace open in the header (a form on "Default" fills the default status's workspace).
+        if ($workspace = LeadPipeline::current($request->user())) {
+            DefaultLookups::ensureLeadLists();
+            $statuses = LeadStatus::pluck('pipeline_id', 'id');
+            $default = (int) Options::get('leads_default_status') ?: LeadStatus::orderBy('status_order')->value('id');
+            $forms = $forms->filter(fn (LeadForm $f) => (int) ($statuses[$f->lead_status_id ?? $default] ?? 0) === $workspace->id)->values();
+        }
+
+        return response()->json(['data' => $forms]);
     }
 
     public function store(Request $request): JsonResponse

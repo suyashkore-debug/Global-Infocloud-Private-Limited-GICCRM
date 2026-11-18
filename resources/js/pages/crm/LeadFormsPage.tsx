@@ -112,6 +112,7 @@ const embedCode = (key: string) => `<iframe width="600" height="850" src="${publ
 
 /** What a field fills on the lead, for the builder's badges. */
 type Named = { id: number; name: string };
+type StatusRow = Named & { pipeline_id?: number | null; pipeline_name?: string | null };
 
 /**
  * Status and source lists, and which one a form on "default" gives its leads: Setup → Leads, else
@@ -119,14 +120,17 @@ type Named = { id: number; name: string };
  */
 function useLeadLists() {
     const options = useAppOptions();
-    const statuses = useApi<{ data: Named[] }>('/setup/lead-statuses');
+    const statuses = useApi<{ data: StatusRow[]; meta?: { workspace_id: number | null } }>('/setup/lead-statuses');
     const sources = useApi<{ data: Named[] }>('/setup/lead-sources');
     const statusList = statuses.data?.data ?? [];
     const sourceList = sources.data?.data ?? [];
     const defaultStatus = statusList.find((s) => String(s.id) === options?.leads_default_status) ?? statusList[0];
     const defaultSource = sourceList.find((s) => String(s.id) === options?.leads_default_source) ?? [...sourceList].sort((a, b) => a.id - b.id)[0];
+    // Lead workspaces (from the statuses), and the one open in the header.
+    const workspaces = [...new Map(statusList.filter((s) => s.pipeline_id).map((s) => [s.pipeline_id!, { id: s.pipeline_id!, name: s.pipeline_name ?? '' }])).values()];
+    const workspaceOf = (statusId: number | string | null | undefined) => (statusList.find((s) => String(s.id) === String(statusId)) ?? defaultStatus)?.pipeline_id ?? null;
 
-    return { statusList, sourceList, defaultStatus, defaultSource };
+    return { statusList, sourceList, defaultStatus, defaultSource, workspaces, workspaceOf, openWorkspace: statuses.data?.meta?.workspace_id ?? null, loaded: !!statuses.data && !!options };
 }
 
 function fillsLabel(name: string, custom: CustomFieldDef[]): string {
@@ -194,6 +198,12 @@ export default function LeadFormsPage() {
             </div>
             <p className="max-w-3xl text-[13.5px] text-slate-500">
                 Put these forms on your website (a link or an embedded form). Every submission becomes a lead with the status, source and responsible person you choose, and your team is notified.
+                {lists.workspaces.length > 1 && lists.openWorkspace && (
+                    <>
+                        {' '}
+                        Showing the forms of the <b className="text-slate-700">{lists.workspaces.find((w) => w.id === lists.openWorkspace)?.name}</b> workspace (change it at the top).
+                    </>
+                )}
             </p>
             {!data ? (
                 <Spinner />
@@ -307,6 +317,8 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
     const lists = useLeadLists();
     const [custom, setCustom] = useState<CustomFieldDef[]>([]);
     const [tab, setTab] = useState<Tab>('build');
+    // The form's leads go into this workspace (a new form starts in the one open in the header).
+    const [workspace, setWorkspace] = useState<number | null>(null);
     const [state, setState] = useState({
         name: form?.name ?? '',
         fields: form?.fields ?? DEFAULT_FIELDS,
@@ -342,6 +354,14 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
     }, []);
 
     const set = (patch: Partial<typeof state>) => setState((s) => ({ ...s, ...patch }));
+    const currentWorkspace = workspace ?? (form || !lists.openWorkspace ? lists.workspaceOf(state.lead_status_id) : lists.openWorkspace);
+    useEffect(() => {
+        // A new form made in another workspace than the default status's: start on that workspace's first status.
+        if (!form && lists.loaded && lists.openWorkspace && !state.lead_status_id && lists.defaultStatus?.pipeline_id !== lists.openWorkspace) {
+            set({ lead_status_id: String(lists.statusList.find((s) => s.pipeline_id === lists.openWorkspace)?.id ?? '') });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lists.loaded]);
     const setField = (i: number, patch: Partial<FormField>) => set({ fields: state.fields.map((f, fi) => (fi === i ? { ...f, ...patch } : f)) });
     const move = (i: number, dir: -1 | 1) => {
         const next = [...state.fields];
@@ -576,10 +596,31 @@ function FormEditor({ form, onClose, onSaved }: { form: LeadWebForm | null; onCl
                                     )}
                                 </div>
                             </Field>
+                            {lists.workspaces.length > 1 && (
+                                <Field label="Workspace" hint="The leads from this form go into this workspace.">
+                                    <Select
+                                        value={String(currentWorkspace ?? '')}
+                                        onChange={(e) => {
+                                            const id = Number(e.target.value);
+                                            setWorkspace(id);
+                                            // Its first status (or "Default" when the default status is in it).
+                                            set({ lead_status_id: lists.defaultStatus?.pipeline_id === id ? '' : String(lists.statusList.find((s) => s.pipeline_id === id)?.id ?? '') });
+                                        }}
+                                    >
+                                        {lists.workspaces.map((w) => (
+                                            <option key={w.id} value={w.id}>
+                                                {w.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </Field>
+                            )}
                             <Field label="Status">
                                 <Select value={state.lead_status_id} onChange={(e) => set({ lead_status_id: e.target.value })}>
-                                    <option value="">Default{lists.defaultStatus ? ` (${lists.defaultStatus.name})` : ''} · Setup → Leads</option>
-                                    {lists.statusList.map((s) => (
+                                    {(!currentWorkspace || lists.defaultStatus?.pipeline_id === currentWorkspace) && (
+                                        <option value="">Default{lists.defaultStatus ? ` (${lists.defaultStatus.name})` : ''} · Setup → Leads</option>
+                                    )}
+                                    {lists.statusList.filter((s) => !currentWorkspace || s.pipeline_id === currentWorkspace).map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.name}
                                         </option>

@@ -161,7 +161,7 @@ class ExportController extends Controller
             'leads' => [
                 'name' => 'Leads', 'date' => 'created_at', 'date_label' => 'Date created', 'custom_fields' => 'leads',
                 'can' => fn (User $u) => $u->can('viewAny', Lead::class),
-                'query' => fn (User $u) => Lead::query()->visibleTo($u)->with(['status', 'source']),
+                'query' => fn (User $u) => Lead::query()->visibleTo($u)->inWorkspace($u)->with(['status', 'source']),
                 'columns' => [
                     'ID' => fn ($l) => $l->id, 'Name' => fn ($l) => $l->name, 'Position' => fn ($l) => $l->title, 'Company' => fn ($l) => $l->company, 'Email' => fn ($l) => $l->email,
                     'Phone' => fn ($l) => $l->phone, 'Website' => fn ($l) => $l->website, 'City' => fn ($l) => $l->city, 'State' => fn ($l) => $l->state, 'Country' => fn ($l) => $l->country,

@@ -12,6 +12,7 @@ type Status = {
     color: string;
     notify_lead: boolean;
     is_default: boolean;
+    pipeline_name?: string | null;
 };
 type Settings = {
     lead_status_notify_staff: boolean;
@@ -115,6 +116,7 @@ export default function LeadStatusMessages() {
 
     const set = (patch: Partial<Settings>) => setForm({ ...form, ...patch });
     const ticked = form.statuses.filter((s) => s.notify_lead);
+    const manyPipelines = new Set(form.statuses.map((s) => s.pipeline_name)).size > 1;
     const sample: Record<string, string> = {
         lead_name: 'Ravi Patil',
         lead_status: ticked[0]?.name ?? form.statuses[0]?.name ?? 'Proposal Sent',
@@ -235,6 +237,7 @@ export default function LeadStatusMessages() {
                                 className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12.5px] font-semibold transition ${s.notify_lead ? 'border-brand bg-brand text-white' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
                             >
                                 {s.notify_lead ? <Check className="h-3.5 w-3.5" /> : <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />}
+                                {manyPipelines && s.pipeline_name ? <span className="font-normal opacity-75">{s.pipeline_name} ·</span> : null}
                                 {s.name}
                             </button>
                         ))}

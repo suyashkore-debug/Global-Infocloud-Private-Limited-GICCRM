@@ -20,6 +20,7 @@ use App\Models\Proposal;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\Workspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -35,21 +36,31 @@ class Emails
      */
     public static function ensureTemplates(int $companyId): void
     {
-        $existing = EmailTemplate::withoutGlobalScopes()->where('company_id', $companyId)->pluck('slug')->all();
+        $common = fn () => EmailTemplate::withoutGlobalScopes()->where('company_id', $companyId)->whereNull('workspace_id');
+        $existing = $common()->pluck('slug')->all();
         $defaults = json_decode((string) file_get_contents(database_path('data/email_templates.json')), true);
 
         foreach ($defaults as $t) {
             if (! in_array($t['slug'], $existing, true)) {
-                EmailTemplate::create([...$t, 'company_id' => $companyId]);
+                EmailTemplate::withoutGlobalScopes()->create([...$t, 'company_id' => $companyId, 'workspace_id' => null]);
+            }
+        }
+
+        // Another workspace starts with a copy of the default workspace's templates, then has its own.
+        if ($workspace = Options::workspaceId($companyId)) {
+            $own = EmailTemplate::withoutGlobalScopes()->where('company_id', $companyId)->where('workspace_id', $workspace)->pluck('slug')->all();
+            foreach ($common()->whereNotIn('slug', $own)->get() as $t) {
+                EmailTemplate::withoutGlobalScopes()->create([...$t->only(['type', 'slug', 'name', 'subject', 'message', 'from_name', 'plaintext', 'active']), 'company_id' => $companyId, 'workspace_id' => $workspace]);
             }
         }
     }
 
+    /** The template of the workspace whose settings apply now. */
     public static function template(string $slug, int $companyId): ?EmailTemplate
     {
         self::ensureTemplates($companyId);
 
-        return EmailTemplate::withoutGlobalScopes()->where('company_id', $companyId)->where('slug', $slug)->first();
+        return EmailTemplate::withoutGlobalScopes()->where('company_id', $companyId)->where('workspace_id', Options::workspaceId($companyId))->where('slug', $slug)->first();
     }
 
     /**
@@ -83,6 +94,17 @@ class Emails
      */
     public static function send(string $slug, int $companyId, string|array $to, array $fields, array $options = []): ?EmailLog
     {
+        // With the template, e-mail account and log of the record's workspace.
+        return Workspace::withSettingsOf($options['rel'] ?? null, fn () => self::sendNow($slug, $companyId, $to, $fields, $options));
+    }
+
+    /**
+     * @param  string|array<int, string>  $to
+     * @param  array<string, string|null>  $fields
+     * @param  array<string, mixed>  $options
+     */
+    private static function sendNow(string $slug, int $companyId, string|array $to, array $fields, array $options): ?EmailLog
+    {
         $to = array_values(array_unique(array_filter(array_map(fn ($e) => strtolower(trim((string) $e)), (array) $to), fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL))));
         $template = self::template($slug, $companyId);
         if (! $template || $to === [] || (! $template->active && ! ($options['force'] ?? false))) {
@@ -95,6 +117,7 @@ class Emails
 
         $log = EmailLog::create([
             'company_id' => $companyId,
+            'workspace_id' => Options::workspaceId($companyId),
             'template' => $slug,
             'to' => implode(', ', $to),
             'cc' => $cc ? implode(', ', $cc) : null,

@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\SharedAcrossWorkspaces;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentMode extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, SharedAcrossWorkspaces;
 
     protected $fillable = ['company_id', 'name', 'description', 'show_on_pdf', 'invoices_only', 'expenses_only', 'selected_by_default', 'active'];
 

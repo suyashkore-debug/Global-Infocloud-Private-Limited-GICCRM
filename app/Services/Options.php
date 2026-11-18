@@ -3,15 +3,19 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\LeadPipeline;
 use App\Models\Option;
 use App\Support\CurrentCompany;
+use App\Support\Workspace;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Throwable;
 
 /**
- * Company settings (Perfex get_option / update_option), with Perfex's defaults.
+ * Company settings (Perfex get_option / update_option), with Perfex's defaults. A workspace other
+ * than the default one has the settings it changed of its own and follows the default one's for
+ * the rest; the company's details (COMMON) are the same everywhere.
  */
 class Options
 {
@@ -159,8 +163,38 @@ class Options
         'pur_vendor_note' => '',
     ];
 
-    /** @var array<int, array<string, string>> */
+    /** @var array<int, array<int, array<string, string|null>>> company => workspace (0: common) => name => value */
     private static array $cache = [];
+
+    /** @var array<int, array<int, bool>> company => workspace id => is_default */
+    private static array $workspaces = [];
+
+    /** The workspace pinned for a job, public page or webhook (useWorkspace), instead of the header's. */
+    private static ?int $pinned = null;
+
+    private static bool $isPinned = false;
+
+    /**
+     * The company's own details, the same in every workspace (Setup → Company Information). Any
+     * other setting can be a workspace's own.
+     */
+    public const COMMON = [
+        'company_name', 'company_address', 'company_city', 'company_state', 'company_zip', 'company_country', 'company_phone',
+        'company_vat', 'company_pan', 'company_email', 'timezone', 'locale', 'tax_id_label',
+    ];
+
+    /**
+     * Number counters and their prefix: a workspace with a prefix of its own counts its own
+     * numbers; one using the default workspace's prefix shares its counter (no number twice).
+     */
+    public const COUNTERS = [
+        'next_invoice_number' => 'invoice_prefix',
+        'next_estimate_number' => 'estimate_prefix',
+        'next_credit_note_number' => 'credit_note_prefix',
+        'next_pr_number' => 'pur_request_prefix',
+        'next_po_number' => 'pur_order_prefix',
+        'next_pur_inv_number' => 'pur_inv_prefix',
+    ];
 
     /** Settings every staff member's screens may read (no secrets). */
     public const PUBLIC = [
@@ -169,12 +203,145 @@ class Options
         'calendar_first_day', 'lead_unique_validation', 'allow_non_admin_members_to_import_leads', 'leads_kanban_limit', 'lead_modal_class', 'default_leads_kanban_sort', 'default_leads_kanban_sort_type',
     ];
 
+    /**
+     * Use this workspace's settings (for a job, public page or webhook of one of its records)
+     * instead of the one open in the header. Null: the default workspace's.
+     */
+    public static function useWorkspace(?int $workspaceId): void
+    {
+        self::$pinned = $workspaceId ?: null;
+        self::$isPinned = true;
+    }
+
+    /** Back to the workspace open in the header. */
+    public static function releaseWorkspace(): void
+    {
+        self::$pinned = null;
+        self::$isPinned = false;
+    }
+
+    /**
+     * Run with one workspace's settings, then go back.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function within(?int $workspaceId, callable $callback): mixed
+    {
+        [$pinned, $isPinned] = [self::$pinned, self::$isPinned];
+        self::useWorkspace($workspaceId);
+        try {
+            return $callback();
+        } finally {
+            [self::$pinned, self::$isPinned] = [$pinned, $isPinned];
+        }
+    }
+
+    /**
+     * The workspace whose own settings apply now, or null for the common ones (the default
+     * workspace, a company with one workspace, or no workspace known).
+     */
+    public static function workspaceId(?int $companyId = null): ?int
+    {
+        $companyId ??= (int) CurrentCompany::id();
+        if (self::$isPinned) {
+            $id = self::$pinned;
+        } else {
+            $open = Workspace::filter();
+            $id = $open && (int) $open->company_id === $companyId ? (int) $open->id : null;
+        }
+        if (! $id) {
+            return null;
+        }
+        self::$workspaces[$companyId] ??= LeadPipeline::withoutGlobalScopes()->where('company_id', $companyId)->pluck('is_default', 'id')->map(fn ($d) => (bool) $d)->all();
+
+        return (self::$workspaces[$companyId][$id] ?? null) === false ? $id : null;
+    }
+
+    /** The workspace a setting is read from / saved for now: null for the common value. */
+    private static function scopeFor(string $name, int $companyId): ?int
+    {
+        if (in_array($name, self::COMMON, true)) {
+            return null;
+        }
+        $workspace = self::workspaceId($companyId);
+        if ($workspace && isset(self::COUNTERS[$name]) && ! array_key_exists(self::COUNTERS[$name], self::rows($companyId)[$workspace] ?? [])) {
+            return null;
+        }
+
+        return $workspace;
+    }
+
+    /** @return array<int, array<string, string|null>> */
+    private static function rows(int $companyId): array
+    {
+        if (! isset(self::$cache[$companyId])) {
+            $rows = [];
+            foreach (Option::withoutGlobalScopes()->where('company_id', $companyId)->get(['workspace_id', 'name', 'value']) as $row) {
+                $rows[(int) $row->workspace_id][$row->name] = $row->value;
+            }
+            self::$cache[$companyId] = $rows;
+        }
+
+        return self::$cache[$companyId];
+    }
+
     public static function get(string $name, ?int $companyId = null): string
     {
         $companyId ??= (int) CurrentCompany::id();
-        self::$cache[$companyId] ??= Option::withoutGlobalScopes()->where('company_id', $companyId)->pluck('value', 'name')->all();
+        $workspace = self::scopeFor($name, $companyId);
+        if ($workspace) {
+            $own = self::rows($companyId)[$workspace] ?? [];
+            if (array_key_exists($name, $own)) {
+                return (string) $own[$name];
+            }
+            // A workspace's own counter starts at 1.
+            if (isset(self::COUNTERS[$name])) {
+                return self::DEFAULTS[$name];
+            }
+        }
 
-        return (string) (self::$cache[$companyId][$name] ?? self::DEFAULTS[$name] ?? '');
+        return self::common($name, $companyId);
+    }
+
+    /** The default workspace's (common) value of a setting. */
+    public static function common(string $name, ?int $companyId = null): string
+    {
+        $companyId ??= (int) CurrentCompany::id();
+
+        return (string) (self::rows($companyId)[0][$name] ?? self::DEFAULTS[$name] ?? '');
+    }
+
+    /**
+     * The settings the open workspace has of its own (changed from the default workspace's).
+     *
+     * @return array<int, string>
+     */
+    public static function ownNames(?int $companyId = null): array
+    {
+        $companyId ??= (int) CurrentCompany::id();
+        $workspace = self::workspaceId($companyId);
+
+        return $workspace ? array_keys(self::rows($companyId)[$workspace] ?? []) : [];
+    }
+
+    /**
+     * Another workspace numbering with this prefix of its own (two workspaces with one prefix
+     * would give the same number twice), or null.
+     */
+    public static function prefixTakenBy(string $prefixName, string $value, ?int $companyId = null): ?int
+    {
+        $companyId ??= (int) CurrentCompany::id();
+        $mine = (int) self::workspaceId($companyId);
+        foreach (self::rows($companyId) as $id => $values) {
+            if ($id !== 0 && $id !== $mine && isset($values[$prefixName]) && trim((string) $values[$prefixName]) === trim($value)) {
+                return $id;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -209,27 +376,54 @@ class Options
      */
     public static function secret(string $name, int $companyId): string
     {
-        $stored = self::get($name, $companyId);
-        if ($stored === '') {
-            return '';
-        }
-        try {
-            return Crypt::decryptString($stored);
-        } catch (Throwable) {
-            return '';
-        }
+        return self::decrypt(self::get($name, $companyId));
     }
 
     public static function setSecret(string $name, string $plain, int $companyId): void
     {
+        $workspace = self::scopeFor($name, $companyId);
+        if ($workspace && $plain !== '' && $plain === self::decrypt(self::common($name, $companyId))) {
+            self::forget($name, $companyId);
+
+            return;
+        }
         self::set($name, $plain === '' ? '' : Crypt::encryptString($plain), $companyId);
     }
 
+    /**
+     * Save a setting: for the open workspace when it isn't the default one (the same value as
+     * the default workspace's just follows that one), else the common value.
+     */
     public static function set(string $name, ?string $value, ?int $companyId = null): void
     {
         $companyId ??= (int) CurrentCompany::id();
-        Option::withoutGlobalScopes()->updateOrCreate(['company_id' => $companyId, 'name' => $name], ['value' => $value]);
+        $workspace = self::scopeFor($name, $companyId);
+        if ($workspace && ! isset(self::COUNTERS[$name]) && (string) $value === self::common($name, $companyId)) {
+            self::forget($name, $companyId);
+
+            return;
+        }
+        Option::withoutGlobalScopes()->updateOrCreate(['company_id' => $companyId, 'workspace_id' => $workspace, 'name' => $name], ['value' => $value]);
         unset(self::$cache[$companyId]);
+    }
+
+    /** The open workspace follows the default workspace's value of this setting again. */
+    public static function forget(string $name, ?int $companyId = null): void
+    {
+        $companyId ??= (int) CurrentCompany::id();
+        if ($workspace = self::workspaceId($companyId)) {
+            Option::withoutGlobalScopes()->where('company_id', $companyId)->where('workspace_id', $workspace)->where('name', $name)->delete();
+            unset(self::$cache[$companyId]);
+        }
+    }
+
+    private static function decrypt(string $stored): string
+    {
+        try {
+            return $stored === '' ? '' : Crypt::decryptString($stored);
+        } catch (Throwable) {
+            return '';
+        }
     }
 
     /**
@@ -259,8 +453,41 @@ class Options
         };
     }
 
+    /**
+     * The workspace whose settings a job dispatched now should use (queued jobs carry it).
+     */
+    public static function forJob(): ?int
+    {
+        if (self::$isPinned) {
+            return self::$pinned;
+        }
+        $company = CurrentCompany::id();
+
+        return $company ? self::workspaceId($company) : null;
+    }
+
+    /** @return array{0: ?int, 1: bool} */
+    public static function state(): array
+    {
+        return [self::$pinned, self::$isPinned];
+    }
+
+    /** @param  array{0: ?int, 1: bool}  $state */
+    public static function restore(array $state): void
+    {
+        [self::$pinned, self::$isPinned] = $state;
+    }
+
+    /** Workspaces were added, removed or a new default picked. */
+    public static function forgetWorkspaces(): void
+    {
+        self::$workspaces = [];
+    }
+
     public static function flush(): void
     {
         self::$cache = [];
+        self::$workspaces = [];
+        self::releaseWorkspace();
     }
 }

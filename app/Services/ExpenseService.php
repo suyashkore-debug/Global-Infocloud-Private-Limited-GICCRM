@@ -67,7 +67,7 @@ class ExpenseService
                 'due_date' => $this->invoices->defaultDueDate($today),
                 'terms' => Options::get('predefined_terms_invoice'),
                 'client_note' => Options::get('predefined_clientnote_invoice'),
-                'allowed_payment_modes' => PaymentMode::where('active', true)->where('expenses_only', false)->where('selected_by_default', true)->pluck('id')->all(),
+                'allowed_payment_modes' => PaymentMode::forWorkspace()->where('active', true)->where('expenses_only', false)->where('selected_by_default', true)->pluck('id')->all(),
                 'items' => [[
                     'description' => trim($expense->category->name.($expense->name ? ' - '.$expense->name : '')),
                     'long_description' => $expense->note,

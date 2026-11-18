@@ -6,6 +6,7 @@ use App\Enums\BillingType;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasTags;
 use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
-    use BelongsToCompany, HasFactory, HasTags;
+    use BelongsToCompany, HasFactory, HasTags, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'customer_id', 'name', 'description', 'workspace_link', 'status', 'customer_settings', 'billing_type', 'project_cost',
@@ -215,5 +216,11 @@ class Project extends Model
     public function files(): HasMany
     {
         return $this->hasMany(Attachment::class)->where('attachable_type', self::class);
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['customer_id' => Customer::class];
     }
 }

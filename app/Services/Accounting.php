@@ -128,7 +128,7 @@ class Accounting
                 $entry->update($fields);
                 AccountTransaction::where('rel_type', 'journal_entry')->where('rel_id', $entry->id)->delete();
             } else {
-                $entry = JournalEntry::create([...$fields, 'number' => (int) JournalEntry::max('number') + 1, 'created_by' => Auth::id()]);
+                $entry = JournalEntry::create([...$fields, 'number' => (int) JournalEntry::withoutGlobalScope('workspace')->max('number') + 1, 'created_by' => Auth::id()]);
             }
             foreach ($lines as $l) {
                 AccountTransaction::create([

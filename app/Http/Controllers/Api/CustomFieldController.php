@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\CustomField;
 use App\Models\CustomFieldValue;
 use App\Models\Lead;
+use App\Models\LeadPipeline;
 use App\Services\CustomFields;
+use App\Support\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -21,7 +23,9 @@ class CustomFieldController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403);
 
-        return response()->json(['data' => CustomField::withCount('values')->orderBy('field_to')->orderBy('field_order')->get()]);
+        $meta = LeadPipeline::count() > 1 ? ['workspace_id' => Workspace::filterId(), 'workspaces' => LeadPipeline::orderBy('sort_order')->orderBy('id')->get(['id', 'name'])] : [];
+
+        return response()->json(['data' => CustomField::forWorkspace()->withCount('values')->orderBy('field_to')->orderBy('field_order')->get(), 'meta' => $meta]);
     }
 
     public function store(Request $request): JsonResponse
@@ -129,6 +133,12 @@ class CustomFieldController extends Controller
         }
         $data['field_order'] ??= 0;
         $data['bs_column'] ??= 12;
+        // For one workspace, or all (empty); a new field without a choice is the open workspace's.
+        if ($request->exists('workspace_id')) {
+            $data['workspace_id'] = $request->validate(['workspace_id' => ['nullable', 'integer', Rule::exists('lead_pipelines', 'id')->where('company_id', $request->user()->company_id)]])['workspace_id'] ?? null;
+        } elseif (! $request->route('customField')) {
+            $data['workspace_id'] = Workspace::filterId() ?: null;
+        }
 
         return $data;
     }

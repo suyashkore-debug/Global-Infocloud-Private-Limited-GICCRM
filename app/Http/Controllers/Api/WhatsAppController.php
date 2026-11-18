@@ -7,6 +7,7 @@ use App\Models\Lead;
 use App\Models\WhatsappMessage;
 use App\Services\Options;
 use App\Services\WhatsApp;
+use App\Support\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -97,9 +98,9 @@ class WhatsAppController extends Controller
             ...collect(WhatsApp::KEYS)->mapWithKeys(fn ($k) => [$k => Options::get($k, $company)])->all(),
             'has_access_token' => Options::secret('whatsapp_access_token', $company) !== '',
             'has_app_secret' => Options::secret('whatsapp_app_secret', $company) !== '',
-            'webhook_url' => url("/api/whatsapp/webhook/{$company}"),
+            'webhook_url' => url("/api/whatsapp/webhook/{$company}").Workspace::webhookQuery($company),
             'has_bird_access_key' => Options::secret('whatsapp_bird_access_key', $company) !== '',
-            'bird_webhook_url' => url("/api/whatsapp/bird/{$company}"),
+            'bird_webhook_url' => url("/api/whatsapp/bird/{$company}").Workspace::webhookQuery($company),
             // Typed into Bird's webhook subscription, so admins see it.
             'bird_signing_key' => WhatsApp::birdSigningKey($company),
         ]]);
@@ -185,7 +186,7 @@ class WhatsAppController extends Controller
     public function birdWebhook(Request $request, int $company): Response
     {
         $raw = $request->getContent();
-        $urls = [$request->fullUrl(), url("/api/whatsapp/bird/{$company}")];
+        $urls = [$request->fullUrl(), url("/api/whatsapp/bird/{$company}").Workspace::webhookQuery($company)];
         if (! WhatsApp::configured($company) || ! WhatsApp::bird($company)
             || ! WhatsApp::validBirdSignature($company, $raw, $urls, $request->header('messagebird-request-timestamp'), $request->header('messagebird-signature'))) {
             return response('Forbidden', 403);

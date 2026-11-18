@@ -241,6 +241,11 @@ class PublicLeadFormController extends Controller
 
     private function form(string $key): LeadForm
     {
-        return LeadForm::withoutGlobalScopes()->where('form_key', $key)->where('active', true)->firstOrFail();
+        $form = LeadForm::withoutGlobalScopes()->where('form_key', $key)->where('active', true)->firstOrFail();
+        // The form's workspace (its status's): its reCAPTCHA, default status and source, e-mails.
+        $workspace = $form->lead_status_id ? LeadStatus::withoutGlobalScopes()->whereKey($form->lead_status_id)->value('pipeline_id') : null;
+        Options::useWorkspace($workspace ? (int) $workspace : null);
+
+        return $form;
     }
 }

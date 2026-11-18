@@ -54,7 +54,7 @@ class TicketController extends Controller
             ->paginate($request->integer('per_page', 25));
 
         return TicketResource::collection($tickets)->additional(['meta' => [
-            'summary' => TicketStatus::orderBy('status_order')->get()->map(fn (TicketStatus $s) => [
+            'summary' => TicketStatus::forWorkspace()->orderBy('status_order')->get()->map(fn (TicketStatus $s) => [
                 ...$s->only(['id', 'name', 'color', 'system_key']),
                 'count' => (int) ($counts[$s->id] ?? 0),
             ]),

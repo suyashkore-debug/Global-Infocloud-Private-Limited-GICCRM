@@ -89,7 +89,7 @@ class InvoiceController extends Controller
             'due_date' => $this->invoices->defaultDueDate($date),
             'terms' => Options::get('predefined_terms_invoice'),
             'client_note' => Options::get('predefined_clientnote_invoice'),
-            'allowed_payment_modes' => PaymentMode::where('active', true)->where('expenses_only', false)->where('selected_by_default', true)->pluck('id'),
+            'allowed_payment_modes' => PaymentMode::forWorkspace()->where('active', true)->where('expenses_only', false)->where('selected_by_default', true)->pluck('id'),
         ]]);
     }
 

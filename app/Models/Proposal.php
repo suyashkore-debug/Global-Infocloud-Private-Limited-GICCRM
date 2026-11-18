@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProposalStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasSalesItems;
 use App\Models\Concerns\HasTags;
 use App\Models\Concerns\SalesDocument;
@@ -26,7 +27,7 @@ class Proposal extends Model
         return Attribute::make(set: fn (?string $value) => RichText::clean($value));
     }
 
-    use BelongsToCompany, HasSalesItems, HasTags, SalesDocument;
+    use BelongsToCompany, HasSalesItems, HasTags, SalesDocument, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'customer_id', 'project_id', 'currency_id', 'subtotal', 'total_tax', 'total', 'adjustment', 'discount_percent', 'discount_total', 'discount_type', 'show_quantity_as', 'created_by',
@@ -106,5 +107,11 @@ class Proposal extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['customer_id' => Customer::class, 'project_id' => Project::class, 'lead_id' => Lead::class];
     }
 }

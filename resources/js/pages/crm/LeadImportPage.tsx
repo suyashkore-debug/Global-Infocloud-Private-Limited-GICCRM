@@ -67,12 +67,14 @@ export default function LeadImportPage() {
     const navigate = useNavigate();
     const staff = useStaff();
     const setup = useApi<{ data: Setup }>('/leads/import');
-    const statuses = useApi<{ data: { id: number; name: string }[] }>('/setup/lead-statuses');
+    const statuses = useApi<{ data: { id: number; name: string; pipeline_id?: number | null; pipeline_name?: string | null }[]; meta?: { workspace_id: number | null; workspace_ids?: number[] } }>('/setup/lead-statuses');
     const sources = useApi<{ data: { id: number; name: string }[] }>('/setup/lead-sources');
     const input = useRef<HTMLInputElement>(null);
     const [file, setFile] = useState<File | null>(null);
     const [dragging, setDragging] = useState(false);
     const [form, setForm] = useState({ status_id: '', source_id: '' });
+    // The workspace the leads go into (the one open in the header to begin with).
+    const [workspace, setWorkspace] = useState<number | null>(null);
     const [assignees, setAssignees] = useState<number[]>([]);
     // What each column fills; null until the file is read (then matched by headings).
     const [mapping, setMapping] = useState<(string | null)[] | null>(null);
@@ -84,14 +86,21 @@ export default function LeadImportPage() {
     // Start from Setup → Leads defaults, else the first status / source.
     useEffect(() => {
         if (setup.data && statuses.data && sources.data) {
+            const open = statuses.data.meta?.workspace_id ?? null;
+            const inOpen = statuses.data.data.filter((s) => !open || s.pipeline_id === open);
+            const fallback = inOpen.find((s) => String(s.id) === setup.data!.data.default_status_id) ?? inOpen[0];
+            setWorkspace((w) => w ?? open);
             setForm((f) => ({
                 ...f,
-                status_id: f.status_id || setup.data!.data.default_status_id || String(statuses.data!.data[0]?.id ?? ''),
+                status_id: f.status_id || String(fallback?.id ?? ''),
                 source_id: f.source_id || setup.data!.data.default_source_id || String(sources.data!.data[0]?.id ?? ''),
             }));
         }
     }, [setup.data, statuses.data, sources.data]);
 
+    // The workspaces this person works in.
+    const mine = statuses.data?.meta?.workspace_ids;
+    const workspaces = [...new Map((statuses.data?.data ?? []).filter((s) => s.pipeline_id && (!mine || mine.includes(s.pipeline_id))).map((s) => [s.pipeline_id!, { id: s.pipeline_id!, name: s.pipeline_name ?? '' }])).values()];
     if (setup.error) {
         return <ErrorNote message={setup.error} />;
     }
@@ -297,9 +306,27 @@ export default function LeadImportPage() {
                             {errors.file && <p className="mt-1.5 text-xs text-red-600">{errors.file}</p>}
                         </div>
                         <div className="space-y-4">
+                            {workspaces.length > 1 && (
+                                <Field label="Workspace" hint="The leads go into this workspace; a Status column is matched to its statuses.">
+                                    <Select
+                                        value={String(workspace ?? '')}
+                                        onChange={(e) => {
+                                            const id = Number(e.target.value);
+                                            setWorkspace(id);
+                                            setForm({ ...form, status_id: String(statuses.data!.data.find((s) => s.pipeline_id === id)?.id ?? '') });
+                                        }}
+                                    >
+                                        {workspaces.map((w) => (
+                                            <option key={w.id} value={w.id}>
+                                                {w.name}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </Field>
+                            )}
                             <Field label="Status (fallback)" required error={errors.status_id} hint="Used when a row's Status is empty or not found.">
                                 <Select value={form.status_id} onChange={(e) => setForm({ ...form, status_id: e.target.value })}>
-                                    {statuses.data.data.map((s) => (
+                                    {statuses.data.data.filter((s) => !workspace || s.pipeline_id === workspace).map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.name}
                                         </option>

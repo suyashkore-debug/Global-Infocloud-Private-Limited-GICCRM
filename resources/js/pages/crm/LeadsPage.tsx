@@ -11,6 +11,7 @@ import { Avatar, Button, EmptyState, ErrorNote, Input, Menu, Pagination, Spinner
 import { ColumnFilter, FilterPanel, type FilterRule, type LeadSort } from './LeadFilters';
 import { DEFAULT_SORT, useLeadViews, ViewTabs, type LeadView } from './LeadViews';
 import { readStorage, writeStorage } from '../../lib/storage';
+import { getLeadWorkspace, LEAD_WORKSPACE_CHANGED } from '../../lib/leadWorkspace';
 import { useToast } from '../../components/ui/Toast';
 import type { Lead, LeadStatus, Paginated } from '../../types';
 import LeadModal from './LeadModal';
@@ -34,7 +35,8 @@ const OPTIONAL_COLUMNS: [string, string][] = [
     ['customer', 'Converted to customer'],
 ];
 
-type LeadList = Paginated<Lead> & { meta: { summary: LeadStatus[] } };
+type PipelineTab = { id: number; name: string; color: string; is_default: boolean; count: number };
+type LeadList = Paginated<Lead> & { meta: { summary: LeadStatus[]; pipelines?: PipelineTab[]; pipeline_id?: number | null } };
 
 /** How the kanban's cards can be ordered (Perfex's kanban sort). */
 const KANBAN_SORTS: [string, string][] = [
@@ -56,6 +58,8 @@ export default function LeadsPage() {
     const [search, setSearch] = useState('');
     // Perfex: click the status summary to filter by those statuses.
     const [statuses, setStatuses] = useState<number[]>([]);
+    // The lead workspace picked in the header (remembered in this browser).
+    const [pipelineId, setPipelineId] = useState<number | null>(getLeadWorkspace);
     const [selected, setSelected] = useState<number[]>([]);
     // The open view (built-in or saved): its filter rules and sort, which the panel edits.
     const leadStatuses = useApi<{ data: LeadStatus[] }>('/setup/lead-statuses');
@@ -138,6 +142,7 @@ export default function LeadsPage() {
 
     const { data, loading, error, reload, setData } = useApi<LeadList>(ready ? '/leads' : null, {
         search,
+        pipeline_id: pipelineId ?? undefined,
         kanban: view === 'kanban' ? 1 : undefined,
         page: view === 'list' ? page : undefined,
         rules: rules.length ? JSON.stringify(rules) : undefined,
@@ -149,6 +154,22 @@ export default function LeadsPage() {
     const [followUpKey, setFollowUpKey] = useState(0);
     useEffect(() => setFollowUpKey((k) => k + 1), [data]);
     const filterCtx = { statuses: data?.meta.summary ?? leadStatuses.data?.data ?? [], sources: sources.data?.data ?? [] };
+    const pipelines = data?.meta.pipelines ?? [];
+    const pipeline = pipelines.find((p) => p.id === data?.meta.pipeline_id) ?? null;
+    useEffect(() => {
+        const follow = (e: Event) => {
+            setPipelineId((e as CustomEvent<number>).detail);
+            setStatuses([]);
+            setMore({});
+            setPage(1);
+            setSelected([]);
+        };
+        window.addEventListener(LEAD_WORKSPACE_CHANGED, follow);
+
+        return () => window.removeEventListener(LEAD_WORKSPACE_CHANGED, follow);
+    }, []);
+    // New leads start in the open pipeline (its first status) unless it is the default one.
+    const newLeadStatus = pipeline && !pipeline.is_default ? data?.meta.summary[0]?.id : undefined;
     const total = data ? (view === 'list' ? data.meta.total : data.meta.summary.reduce((a, s) => a + (s.count ?? 0), 0)) : null;
     // A column header: click the name to sort (server side), the funnel to filter by the column.
     const head = (label: string, opts: { sortKey?: string; field?: string; className?: string } = {}) => (
@@ -217,7 +238,7 @@ export default function LeadsPage() {
                     <h4 className="page-title">Leads</h4>
                     {data && (
                         <p className="mt-1 text-[13px] text-slate-500">
-                            <b className="text-slate-700">{data.meta.summary.reduce((a, s) => a + (s.count ?? 0), 0)}</b> leads in the pipeline · worth{' '}
+                            <b className="text-slate-700">{data.meta.summary.reduce((a, s) => a + (s.count ?? 0), 0)}</b> leads{pipelines.length > 1 && pipeline ? <> in the <b className="text-slate-700">{pipeline.name}</b> workspace</> : ' in the pipeline'} · worth{' '}
                             <b className="text-slate-700">{money(data.meta.summary.reduce((a, s) => a + Number(s.value ?? 0), 0))}</b>
                         </p>
                     )}
@@ -256,7 +277,7 @@ export default function LeadsPage() {
                             <Globe className="h-4 w-4" /> Web to Lead
                         </Button>
                     )}
-                    <Button onClick={() => setNewOpen({})}>
+                    <Button onClick={() => setNewOpen({ statusId: newLeadStatus })}>
                         <Plus className="h-4 w-4" /> New Lead
                     </Button>
                 </div>
@@ -466,9 +487,10 @@ export default function LeadsPage() {
                                                         ))}
                                                     </div>
                                                 )}
-                                                <div className="mt-2.5 flex items-center gap-2 border-t border-slate-100 pt-2.5">
-                                                    {lead.source?.name && <span className="truncate rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">{lead.source.name}</span>}
-                                                    {lead.lead_value && <span className="text-[12px] font-semibold text-slate-700">{money(lead.lead_value)}</span>}
+                                                {/* Wraps onto a second line on narrow cards instead of squeezing (source, value, follow-up, age, owner). */}
+                                                <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-slate-100 pt-2.5">
+                                                    {lead.source?.name && <span className="max-w-[9rem] truncate rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600" title={lead.source.name}>{lead.source.name}</span>}
+                                                    {lead.lead_value && <span className="shrink-0 whitespace-nowrap text-[12px] font-semibold text-slate-700">{money(lead.lead_value)}</span>}
                                                     {(lead.notes_count ?? 0) > 0 && (
                                                         <span className="inline-flex items-center gap-0.5 text-[11px] text-slate-400" title={`${lead.notes_count} notes`}>
                                                             <StickyNote className="h-3 w-3" />
@@ -482,11 +504,13 @@ export default function LeadsPage() {
                                                         </span>
                                                     )}
                                                     {lead.next_follow_up_at && <FollowUpChip at={lead.next_follow_up_at} compact />}
-                                                    <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] text-slate-400" title={lead.last_contact_at ? `Last contact ${timeAgo(lead.last_contact_at)}` : undefined}>
-                                                        <Clock className="h-3 w-3" />
-                                                        {timeAgo(lead.created_at)}
+                                                    <span className="ml-auto inline-flex shrink-0 items-center gap-2">
+                                                        <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-slate-400" title={lead.last_contact_at ? `Last contact ${timeAgo(lead.last_contact_at)}` : undefined}>
+                                                            <Clock className="h-3 w-3" />
+                                                            {timeAgo(lead.created_at)}
+                                                        </span>
+                                                        {lead.assigned && <Avatar id={lead.assigned.id} name={lead.assigned.full_name} size="sm" />}
                                                     </span>
-                                                    {lead.assigned && <Avatar id={lead.assigned.id} name={lead.assigned.full_name} size="sm" />}
                                                 </div>
                                             </div>
                                         ))}

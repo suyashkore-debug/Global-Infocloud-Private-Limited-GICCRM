@@ -22,6 +22,7 @@ const PERIODS: { id: Period; label: string; previous: string }[] = [
 const SERIES = { new: '#2a78d6', converted: '#eb6834' };
 
 interface Dashboard {
+    workspace?: string | null;
     period: { key: Period; from: string; to: string };
     kpis: { new: number; new_prev: number; converted: number; converted_prev: number; contacted: number; open: number; open_value: number; overdue: number; due_today: number };
     trend: { labels: string[]; new: number[]; converted: number[] };
@@ -123,7 +124,7 @@ export default function LeadsDashboardPage() {
                         <h4 className="flex items-center gap-2 font-display text-[26px] font-extrabold tracking-tight">
                             <Sparkles className="h-6 w-6 text-[#ffb48a]" /> Leads Dashboard
                         </h4>
-                        <p className="mt-1 text-[13.5px] text-blue-100/80">How your leads are doing{d ? ` · ${d.period.from === d.period.to ? d.period.from : `${d.period.from} → ${d.period.to}`}` : ''}</p>
+                        <p className="mt-1 text-[13.5px] text-blue-100/80">How your leads are doing{d?.workspace ? ` in the ${d.workspace} workspace` : ''}{d ? ` · ${d.period.from === d.period.to ? d.period.from : `${d.period.from} → ${d.period.to}`}` : ''}</p>
                     </div>
                     <div className="flex flex-wrap gap-1 rounded-2xl bg-white/10 p-1 ring-1 ring-white/15 backdrop-blur" role="group" aria-label="Period">
                         {PERIODS.map((p) => (

@@ -64,7 +64,7 @@ class SearchController extends Controller
         }
 
         if ($user->can('viewAny', Lead::class)) {
-            $groups['leads'] = Lead::query()->visibleTo($user)
+            $groups['leads'] = Lead::query()->visibleTo($user)->inWorkspace($user)
                 ->where(fn (Builder $w) => $w->where('name', 'like', $like)->orWhere('company', 'like', $like)->orWhere('email', 'like', $like)->orWhere('phone', 'like', $like))
                 ->latest('id')->limit(self::PER_GROUP)->get()
                 ->map(fn (Lead $l) => $this->hit($l->id, "#{$l->id} {$l->name}", $l->company, "/leads?lead={$l->id}"));

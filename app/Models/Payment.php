@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Payment extends Model
 {
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     protected $fillable = ['company_id', 'invoice_id', 'amount', 'payment_mode_id', 'payment_method', 'date', 'transaction_id', 'note', 'created_by'];
 
@@ -34,5 +35,11 @@ class Payment extends Model
     public function paymentMode(): BelongsTo
     {
         return $this->belongsTo(PaymentMode::class);
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['invoice_id' => Invoice::class];
     }
 }

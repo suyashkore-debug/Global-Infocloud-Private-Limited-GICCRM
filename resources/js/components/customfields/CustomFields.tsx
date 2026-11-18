@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { LEAD_WORKSPACE_CHANGED } from '../../lib/leadWorkspace';
 import { formatDate, formatDateTime } from '../../lib/format';
 import { Field, Input, Select, Textarea } from '../ui';
 
@@ -24,6 +25,10 @@ export type CustomFieldDef = {
 };
 
 const definitionsCache = new Map<FieldTo, Promise<CustomFieldDef[]>>();
+// Each workspace can have its own fields.
+if (typeof window !== 'undefined') {
+    window.addEventListener(LEAD_WORKSPACE_CHANGED, () => definitionsCache.clear());
+}
 
 /** The active custom fields of a module (fetched once per page load). */
 export function fetchDefinitions(to: FieldTo): Promise<CustomFieldDef[]> {

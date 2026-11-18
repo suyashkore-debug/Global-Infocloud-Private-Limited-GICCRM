@@ -189,8 +189,8 @@ class ManagementDashboardController extends Controller
     private function leads(Collection $months, Carbon $from, Carbon $to, callable $key): array
     {
         $range = [$from->copy()->utc(), $to->copy()->endOfDay()->utc()];
-        $created = Lead::whereBetween('created_at', $range)->with('source:id,name')->get(['id', 'created_at', 'lead_source_id']);
-        $converted = Lead::whereBetween('converted_at', $range)->get(['id', 'converted_at']);
+        $created = Lead::inWorkspace(request()->user())->whereBetween('created_at', $range)->with('source:id,name')->get(['id', 'created_at', 'lead_source_id']);
+        $converted = Lead::inWorkspace(request()->user())->whereBetween('converted_at', $range)->get(['id', 'converted_at']);
         $local = fn ($date) => $key(Carbon::parse($date)->timezone(CompanyTime::zone()));
 
         return [

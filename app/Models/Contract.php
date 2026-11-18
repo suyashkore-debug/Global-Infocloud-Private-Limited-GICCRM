@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Support\RichText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -23,7 +24,7 @@ class Contract extends Model
         return Attribute::make(set: fn (?string $value) => RichText::clean($value));
     }
 
-    use BelongsToCompany;
+    use BelongsToCompany, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'subject', 'description', 'content', 'customer_id', 'contract_type_id', 'project_id', 'start_date',
@@ -108,5 +109,11 @@ class Contract extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['customer_id' => Customer::class, 'project_id' => Project::class];
     }
 }

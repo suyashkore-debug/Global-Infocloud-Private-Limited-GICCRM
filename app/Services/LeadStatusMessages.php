@@ -6,6 +6,7 @@ use App\Jobs\SendLeadStatusUpdate;
 use App\Models\Lead;
 use App\Models\LeadStatus;
 use App\Models\User;
+use App\Support\Workspace;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,7 +26,11 @@ class LeadStatusMessages
 
     public function changed(Lead $lead, ?User $by, ?int $fromStatusId): void
     {
-        DB::afterCommit(fn () => $this->queue($lead->fresh() ?? $lead, $by, $fromStatusId));
+        DB::afterCommit(function () use ($lead, $by, $fromStatusId) {
+            $lead = $lead->fresh() ?? $lead;
+            // The settings of the workspace the lead is now in.
+            Workspace::withSettingsOf($lead, fn () => $this->queue($lead, $by, $fromStatusId));
+        });
     }
 
     private function queue(Lead $lead, ?User $by, ?int $fromStatusId): void

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToCompany;
 use App\Models\Concerns\HasTags;
 use App\Support\LeadChangeLog;
+use App\Support\Workspace;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,10 +78,39 @@ class Lead extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
-        if ($user->hasPermission('leads', 'view')) {
+        if ($user->isAdmin()) {
             return;
         }
-        $query->where(fn ($q) => $q->where('assigned_id', $user->id)->orWhere('created_by', $user->id)->orWhere('is_public', true));
+        // Leads assigned to them always; others only in the pipelines they work in, and without
+        // "view all leads" only the ones they added or that are public.
+        $viewAll = $user->hasPermission('leads', 'view');
+        $query->where(fn ($q) => $q->where('assigned_id', $user->id)->orWhere(fn ($q) => $q
+            ->when(! $viewAll, fn ($q) => $q->where(fn ($q) => $q->where('created_by', $user->id)->orWhere('is_public', true)))
+            ->where(fn ($q) => $q->whereNull('lead_status_id')->orWhereIn('lead_status_id', LeadPipeline::statusIdsFor($user)))));
+    }
+
+    /**
+     * A lead opened by its link (its page, WhatsApp, calls, e-mails): the rest of the request
+     * works in the lead's workspace, with that workspace's settings.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $lead = parent::resolveRouteBinding($value, $field);
+        if ($lead && ($workspace = LeadStatus::withoutGlobalScopes()->whereKey($lead->lead_status_id)->value('pipeline_id'))) {
+            Workspace::open((int) $workspace);
+        }
+
+        return $lead;
+    }
+
+    /**
+     * Only the leads of the workspace picked in the header (all of them when the person has one).
+     */
+    public function scopeInWorkspace(Builder $query, User $user): void
+    {
+        if ($workspace = LeadPipeline::current($user)) {
+            $query->whereIn($query->qualifyColumn('lead_status_id'), LeadStatus::query()->select('id')->where('pipeline_id', $workspace->id));
+        }
     }
 
     /**

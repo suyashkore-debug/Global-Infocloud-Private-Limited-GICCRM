@@ -6,6 +6,7 @@ use App\Models\AppNotification;
 use App\Models\Contract;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use App\Support\Workspace;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -111,7 +112,7 @@ class ContractService
             ->whereNotNull('end_date')
             ->whereDate('end_date', '>=', today())
             ->each(function (Contract $contract) use (&$count) {
-                $days = (int) Options::get('contract_expiration_before', $contract->company_id);
+                $days = (int) Workspace::withSettingsOf($contract, fn () => Options::get('contract_expiration_before', $contract->company_id));
                 if ($contract->end_date->gt(today()->addDays($days))) {
                     return;
                 }

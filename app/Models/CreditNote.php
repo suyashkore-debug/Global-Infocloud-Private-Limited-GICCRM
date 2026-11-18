@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CreditNoteStatus;
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\HasSalesItems;
 use App\Models\Concerns\SalesDocument;
 use App\Services\Options;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CreditNote extends Model
 {
-    use BelongsToCompany, HasSalesItems, SalesDocument;
+    use BelongsToCompany, HasSalesItems, SalesDocument, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'customer_id', 'project_id', 'currency_id', 'subtotal', 'total_tax', 'total', 'adjustment', 'discount_percent', 'discount_total', 'discount_type', 'show_quantity_as', 'created_by',
@@ -70,5 +71,11 @@ class CreditNote extends Model
     public function refunds(): HasMany
     {
         return $this->hasMany(CreditNoteRefund::class);
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['customer_id' => Customer::class, 'project_id' => Project::class];
     }
 }

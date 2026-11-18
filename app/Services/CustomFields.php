@@ -53,7 +53,8 @@ class CustomFields
      */
     public static function definitions(string $fieldTo, User $user): Collection
     {
-        return CustomField::where('field_to', $fieldTo)->where('active', true)
+        // The open workspace's fields and the common ones.
+        return CustomField::forWorkspace()->where('field_to', $fieldTo)->where('active', true)
             ->when(! $user->isAdmin(), fn ($q) => $q->where('only_admin', false))
             ->orderBy('field_order')->orderBy('id')->get();
     }

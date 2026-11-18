@@ -34,7 +34,9 @@ class LeadStatusMessagesController extends Controller
             'whatsapp_message' => Options::get('lead_status_whatsapp_message', $company),
             'email_subject' => $template?->subject ?? '',
             'email_message' => $template?->message ?? '',
-            'statuses' => LeadStatus::orderBy('status_order')->get(['id', 'name', 'color', 'notify_lead', 'is_default']),
+            'statuses' => LeadStatus::with('pipeline:id,name,sort_order')->orderBy('status_order')->get(['id', 'name', 'color', 'notify_lead', 'is_default', 'pipeline_id'])
+                ->sortBy(fn (LeadStatus $s) => [$s->pipeline?->sort_order ?? 999, $s->pipeline_id, $s->status_order])->values()
+                ->map(fn (LeadStatus $s) => [...$s->only(['id', 'name', 'color', 'notify_lead', 'is_default']), 'pipeline_name' => $s->pipeline?->name]),
             // For the preview.
             'sample' => [
                 'companyname' => Options::companyName($company),

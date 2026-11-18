@@ -96,6 +96,7 @@ class LeadService
             }
 
             if ((int) $lead->lead_status_id !== (int) $oldStatus) {
+                $this->followPipelineRule($lead);
                 $this->touchStatusChange($lead);
                 $this->statusMessages->changed($lead, Auth::user(), $oldStatus ? (int) $oldStatus : null);
             }
@@ -120,10 +121,15 @@ class LeadService
                 continue;
             }
             $old = $lead->lead_status_id;
+            $oldAssigned = $lead->assigned_id;
             $lead->update(['lead_status_id' => $status->id, 'lead_order' => $position + 1]);
             if ((int) $old !== (int) $status->id) {
+                $this->followPipelineRule($lead);
                 $this->touchStatusChange($lead);
                 $this->statusMessages->changed($lead, $user, $old ? (int) $old : null);
+                if ((int) $lead->assigned_id !== (int) $oldAssigned) {
+                    $this->notifyAssigned($lead);
+                }
             }
         }
     }
@@ -152,6 +158,8 @@ class LeadService
 
         $customer = DB::transaction(function () use ($lead, $data) {
             $customer = Customer::create([
+                // In the lead's workspace (its status's).
+                'workspace_id' => LeadStatus::withoutGlobalScopes()->whereKey($lead->lead_status_id)->value('pipeline_id'),
                 'name' => ($data['name'] ?? null) ?: ($lead->company ?: $lead->name),
                 'phone' => $lead->phone,
                 'website' => $lead->website,
@@ -190,10 +198,14 @@ class LeadService
                 $customer->admins()->create(['user_id' => $lead->assigned_id]);
             }
             $lead->proposals()->update(['customer_id' => $customer->id]);
+            // The "Customer" status, when it is in the lead's own workspace; a lead of another
+            // workspace (e.g. Post-sales) stays where it is, marked converted.
+            $won = DefaultLookups::customerLeadStatus();
+            $current = LeadStatus::find($lead->lead_status_id);
             $lead->update([
                 'customer_id' => $customer->id,
                 'converted_at' => now(),
-                'lead_status_id' => DefaultLookups::customerLeadStatus()->id,
+                'lead_status_id' => ! $current || (int) $current->pipeline_id === (int) $won->pipeline_id ? $won->id : $current->id,
                 'lost' => false,
                 'junk' => false,
             ]);
@@ -237,6 +249,32 @@ class LeadService
             $lead->update(['last_contact_at' => $contactedAt]);
         }
         $lead->logActivity('Added note');
+    }
+
+    /**
+     * A status that hands leads on (Setup → Lead Statuses, e.g. Won → Post-sales): the lead moves
+     * to that status in the other pipeline, and goes to the pipeline's team in turn, to a chosen
+     * person, or stays with its owner. One step only (the next status's own rule does not run).
+     */
+    private function followPipelineRule(Lead $lead): void
+    {
+        $status = LeadStatus::find($lead->lead_status_id);
+        $target = $status?->move_to_status_id ? LeadStatus::with('pipeline')->find($status->move_to_status_id) : null;
+        if (! $target || $target->id === $status->id) {
+            return;
+        }
+
+        $assignee = match ($status->move_assign) {
+            'team' => $target->pipeline?->nextAssignee(),
+            'user' => User::where('company_id', $lead->company_id)->where('is_active', true)->whereKey($status->move_assign_user_id)->value('id'),
+            default => null,
+        };
+        $changes = ['lead_status_id' => $target->id];
+        if ($assignee && (int) $assignee !== (int) $lead->assigned_id) {
+            $changes += ['assigned_id' => (int) $assignee, 'assigned_at' => today()];
+        }
+        $lead->update($changes);
+        $lead->logActivity("Moved on to the {$target->pipeline?->name} workspace ({$target->name})");
     }
 
     /** The status changed (logged by the lead): note when. */

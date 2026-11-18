@@ -19,10 +19,10 @@ class LeadPolicy
 
     public function view(User $user, Lead $lead): bool
     {
-        return $user->hasPermission('leads', 'view')
-            || (int) $lead->assigned_id === (int) $user->id
-            || (int) $lead->created_by === (int) $user->id
-            || $lead->is_public;
+        // The same rule as the lists (Lead::visibleTo): their own leads, and the others in the
+        // pipelines they work in.
+        return $user->isAdmin() || (int) $lead->assigned_id === (int) $user->id
+            || Lead::query()->visibleTo($user)->whereKey($lead->id)->exists();
     }
 
     public function create(User $user): bool

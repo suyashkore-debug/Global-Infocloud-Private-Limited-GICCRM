@@ -12,5 +12,5 @@ class Option extends Model
 {
     use BelongsToCompany;
 
-    protected $fillable = ['company_id', 'name', 'value'];
+    protected $fillable = ['company_id', 'workspace_id', 'name', 'value'];
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToCompany;
+use App\Models\Concerns\BelongsToWorkspace;
 use App\Models\Concerns\PurchaseDocument;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrder extends Model
 {
-    use BelongsToCompany, PurchaseDocument;
+    use BelongsToCompany, PurchaseDocument, BelongsToWorkspace;
 
     protected $fillable = [
         'company_id', 'number', 'code', 'name', 'vendor_id', 'purchase_request_id', 'project_id', 'currency_id', 'order_date', 'delivery_date',
@@ -61,5 +62,11 @@ class PurchaseOrder extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(PurchaseInvoice::class);
+    }
+
+    /** The record a new one takes its workspace from (BelongsToWorkspace). */
+    public function workspaceParents(): array
+    {
+        return ['purchase_request_id' => PurchaseRequest::class, 'vendor_id' => Vendor::class, 'project_id' => Project::class];
     }
 }
