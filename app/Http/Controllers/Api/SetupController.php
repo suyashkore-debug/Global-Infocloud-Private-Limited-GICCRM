@@ -80,6 +80,7 @@ class SetupController extends Controller
             'name' => ['required', 'string', 'max:50'],
             'status_order' => ['nullable', 'integer', 'min:0'],
             'color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'notify_lead' => ['boolean'],
         ]],
         'lead-sources' => ['model' => LeadSource::class, 'order' => 'name', 'rules' => [
             'name' => ['required', 'string', 'max:150'],

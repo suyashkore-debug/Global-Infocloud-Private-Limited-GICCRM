@@ -5,6 +5,7 @@ import { useApi } from '../../hooks/useApi';
 import { Button, EmptyState, Input, Spinner } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import OptionsForm from './OptionsForm';
+import LeadStatusMessages from './LeadStatusMessages';
 import { confirmDialog } from '../../components/ui/Dialogs';
 
 const yes = 'yesno' as const;
@@ -78,58 +79,61 @@ export function LeadsSettings() {
     }
 
     return (
-        <OptionsForm
-            sections={[
-                {
-                    title: 'Leads',
-                    stacked: true,
-                    fields: [
-                        { name: 'leads_kanban_limit', label: 'Limit leads kanban rows per status', type: 'number', hint: 'How many leads each kanban column shows; the rest are in the list view.' },
-                        // As Perfex: the won status (Customer) is not offered as the default for new leads.
-                        { name: 'leads_default_status', label: 'Default status', type: 'select', options: opts(statuses.data.data.filter((s) => !s.is_default), 'Nothing selected') },
-                        { name: 'leads_default_source', label: 'Default source', type: 'select', options: opts(sources.data.data, 'Nothing selected') },
-                        {
-                            name: 'lead_unique_validation',
-                            label: 'Perform validation for duplicate lead on the following fields:',
-                            type: 'multiselect',
-                            placeholder: 'No validation',
-                            options: [
-                                { value: 'email', label: 'Email Address' },
-                                { value: 'phone', label: 'Phone' },
-                                { value: 'website', label: 'Website' },
-                                { value: 'company', label: 'Company' },
-                            ],
-                        },
-                        {
-                            name: 'auto_assign_customer_admin_after_lead_convert',
-                            label: 'Auto assign as admin to customer after convert',
-                            type: yes,
-                            hint: 'The staff member the lead is assigned to becomes the customer admin when the lead is converted.',
-                        },
-                        { name: 'allow_non_admin_members_to_import_leads', label: 'Allow non-admin staff members to import leads', type: yes },
-                        {
-                            name: 'default_leads_kanban_sort',
-                            label: 'Default leads kanban sort',
-                            type: 'select',
-                            options: [
-                                { value: 'dateadded', label: 'Date Created' },
-                                { value: 'leadorder', label: 'Kanban Order' },
-                                { value: 'lastcontact', label: 'Last Contact' },
-                            ],
-                            beside: {
-                                name: 'default_leads_kanban_sort_type',
+        <div className="space-y-5">
+            <OptionsForm
+                sections={[
+                    {
+                        title: 'Leads',
+                        stacked: true,
+                        fields: [
+                            { name: 'leads_kanban_limit', label: 'Limit leads kanban rows per status', type: 'number', hint: 'How many leads each kanban column shows; the rest are in the list view.' },
+                            // As Perfex: the won status (Customer) is not offered as the default for new leads.
+                            { name: 'leads_default_status', label: 'Default status', type: 'select', options: opts(statuses.data.data.filter((s) => !s.is_default), 'Nothing selected') },
+                            { name: 'leads_default_source', label: 'Default source', type: 'select', options: opts(sources.data.data, 'Nothing selected') },
+                            {
+                                name: 'lead_unique_validation',
+                                label: 'Perform validation for duplicate lead on the following fields:',
+                                type: 'multiselect',
+                                placeholder: 'No validation',
                                 options: [
-                                    { value: 'asc', label: 'Ascending' },
-                                    { value: 'desc', label: 'Descending' },
+                                    { value: 'email', label: 'Email Address' },
+                                    { value: 'phone', label: 'Phone' },
+                                    { value: 'website', label: 'Website' },
+                                    { value: 'company', label: 'Company' },
                                 ],
                             },
-                        },
-                        { name: 'lead_lock_after_convert_to_customer', label: 'Do not allow leads to be edited after they are converted to customers (administrators not applied)', type: yes },
-                        { name: 'lead_modal_class', label: 'Modal Width Class (modal-lg, modal-xl, modal-xxl)', type: 'text', hint: 'How wide a lead opens: modal-lg, modal-xl or modal-xxl.' },
-                    ],
-                },
-            ]}
-        />
+                            {
+                                name: 'auto_assign_customer_admin_after_lead_convert',
+                                label: 'Auto assign as admin to customer after convert',
+                                type: yes,
+                                hint: 'The staff member the lead is assigned to becomes the customer admin when the lead is converted.',
+                            },
+                            { name: 'allow_non_admin_members_to_import_leads', label: 'Allow non-admin staff members to import leads', type: yes },
+                            {
+                                name: 'default_leads_kanban_sort',
+                                label: 'Default leads kanban sort',
+                                type: 'select',
+                                options: [
+                                    { value: 'dateadded', label: 'Date Created' },
+                                    { value: 'leadorder', label: 'Kanban Order' },
+                                    { value: 'lastcontact', label: 'Last Contact' },
+                                ],
+                                beside: {
+                                    name: 'default_leads_kanban_sort_type',
+                                    options: [
+                                        { value: 'asc', label: 'Ascending' },
+                                        { value: 'desc', label: 'Descending' },
+                                    ],
+                                },
+                            },
+                            { name: 'lead_lock_after_convert_to_customer', label: 'Do not allow leads to be edited after they are converted to customers (administrators not applied)', type: yes },
+                            { name: 'lead_modal_class', label: 'Modal Width Class (modal-lg, modal-xl, modal-xxl)', type: 'text', hint: 'How wide a lead opens: modal-lg, modal-xl or modal-xxl.' },
+                        ],
+                    },
+                ]}
+            />
+            <LeadStatusMessages />
+        </div>
     );
 }
 

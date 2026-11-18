@@ -121,6 +121,8 @@ class WhatsAppController extends Controller
             'whatsapp_template_name' => ['nullable', 'string', 'max:191'],
             'whatsapp_template_language' => ['nullable', 'string', 'max:20'],
             'whatsapp_template_lead_name' => ['nullable', 'in:0,1'],
+            'whatsapp_status_template_name' => ['nullable', 'string', 'max:191'],
+            'whatsapp_status_template_version' => ['nullable', 'string', 'max:100'],
             'whatsapp_access_token' => ['nullable', 'string', 'max:2000'],
             'whatsapp_app_secret' => ['nullable', 'string', 'max:191'],
             'clear_access_token' => ['boolean'],

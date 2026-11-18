@@ -18,6 +18,8 @@ type WhatsAppSettings = {
     whatsapp_verify_token: string;
     whatsapp_country_code: string;
     whatsapp_template_name: string;
+    whatsapp_status_template_name: string;
+    whatsapp_status_template_version: string;
     whatsapp_template_language: string;
     whatsapp_template_lead_name: string;
     has_access_token: boolean;
@@ -189,6 +191,29 @@ export default function WhatsAppSetup() {
                                 <Input value={form.whatsapp_bird_template_param} onChange={(e) => set({ whatsapp_bird_template_param: e.target.value })} placeholder="name" />
                             </Field>
                         )}
+                    </div>
+                </div>
+                <div className="panel_s">
+                    <div className="panel-body space-y-3">
+                        <h5 className="text-[15px] font-semibold">Status Update Template</h5>
+                        <p className="text-xs text-gray-500">
+                            Sent when a lead's status changes and the lead has not messaged in the last 24 hours (inside 24 hours the WhatsApp draft from Setup → Leads goes instead).{' '}
+                            {bird
+                                ? 'Create it in Bird with two variables, name and status, e.g. “Hello {{name}}, your enquiry status is now: {{status}}.”'
+                                : 'Create it in Meta with {{1}} = the lead’s name and {{2}} = the status, e.g. “Hello {{1}}, your enquiry status is now: {{2}}.”'}{' '}
+                            Leave empty to always send the text.
+                        </p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label={bird ? 'Template Project ID' : 'Template Name'}>
+                                <Input value={form.whatsapp_status_template_name ?? ''} onChange={(e) => set({ whatsapp_status_template_name: e.target.value.trim() })} placeholder={bird ? '' : 'lead_status_update'} />
+                            </Field>
+                            {bird && (
+                                <Field label="Template Version ID" hint="Optional: the approved version to send.">
+                                    <Input value={form.whatsapp_status_template_version ?? ''} onChange={(e) => set({ whatsapp_status_template_version: e.target.value.trim() })} />
+                                </Field>
+                            )}
+                        </div>
+                        <p className="text-xs text-gray-500">Uses the same language / locale as the opening template.</p>
                     </div>
                 </div>
             </div>

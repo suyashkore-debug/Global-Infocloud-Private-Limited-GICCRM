@@ -548,16 +548,25 @@ export default function SetupPage() {
             )}
 
             {(tab === 'lead-statuses' || tab === 'ticket-statuses' || tab === 'estimate-request-statuses') && (
-                <ListEditor<{ id: number; name: string; color: string; status_order: number; is_default?: boolean; system_key?: string | null; flag?: string | null }, { name: string; color: string; status_order: string }>
+                <ListEditor<{ id: number; name: string; color: string; status_order: number; is_default?: boolean; notify_lead?: boolean; system_key?: string | null; flag?: string | null }, { name: string; color: string; status_order: string; notify_lead?: boolean }>
                     key={tab}
                     list={tab}
                     title={tab === 'lead-statuses' ? 'Lead Status' : tab === 'ticket-statuses' ? 'Ticket Status' : 'Request Status'}
                     columns={[
                         { label: 'Name', render: (st) => <span style={{ color: st.color }} className="font-medium">{st.name}{st.is_default ? ' (converted leads)' : ''}{st.system_key || st.flag ? ' (built-in)' : ''}</span> },
                         { label: 'Order', render: (st) => st.status_order },
+                        ...(tab === 'lead-statuses'
+                            ? [
+                                  {
+                                      label: 'Message to lead',
+                                      render: (st: { notify_lead?: boolean }) =>
+                                          st.notify_lead ? <span className="font-semibold text-emerald-600">E-mail + WhatsApp</span> : <span className="text-slate-400">No</span>,
+                                  },
+                              ]
+                            : []),
                     ]}
-                    blank={{ name: '', color: '#28B8DA', status_order: '0' }}
-                    toForm={(st) => ({ name: st.name, color: st.color, status_order: String(st.status_order ?? 0) })}
+                    blank={tab === 'lead-statuses' ? { name: '', color: '#28B8DA', status_order: '0', notify_lead: true } : { name: '', color: '#28B8DA', status_order: '0' }}
+                    toForm={(st) => ({ name: st.name, color: st.color, status_order: String(st.status_order ?? 0), ...(tab === 'lead-statuses' ? { notify_lead: !!st.notify_lead } : {}) })}
                     renderForm={(f, set, e) => (
                         <>
                             <Field label="Name" required error={e.name}>
@@ -569,6 +578,11 @@ export default function SetupPage() {
                             <Field label="Order">
                                 <Input type="number" value={f.status_order} onChange={(ev) => set({ status_order: ev.target.value })} />
                             </Field>
+                            {tab === 'lead-statuses' && (
+                                <Field label="Message to lead" hint="Both drafts are in Setup → Leads → Messages to the lead on status change.">
+                                    <Checkbox label="Send the lead an e-mail and WhatsApp message when it moves to this status" checked={!!f.notify_lead} onChange={(v) => set({ notify_lead: v })} />
+                                </Field>
+                            )}
                         </>
                     )}
                 />

@@ -110,6 +110,9 @@ class Options
         'whatsapp_verify_token' => '',
         'whatsapp_country_code' => '91',
         'whatsapp_template_name' => 'hello_world',
+        // The approved template for status updates outside WhatsApp's 24-hour window (empty: free text only).
+        'whatsapp_status_template_name' => '',
+        'whatsapp_status_template_version' => '',
         'whatsapp_template_language' => 'en_US',
         'whatsapp_template_lead_name' => '0',
         // Calls through Exotel (Setup → Calls). Mumbai accounts use api.in.exotel.com.
@@ -129,6 +132,11 @@ class Options
         'show_contracts_on_calendar' => '1',
         'show_reminders_on_calendar' => '1',
         'show_lead_follow_ups_on_calendar' => '1',
+        // Setup → Leads → Status updates: when a lead's status changes (statuses ticked in Setup → Lead Statuses).
+        'lead_status_notify_staff' => '1',
+        'lead_status_email_lead' => '1',
+        'lead_status_whatsapp_lead' => '1',
+        'lead_status_whatsapp_message' => "Hello {lead_name},\n\nThank you for your interest in {companyname}. Your enquiry status has been updated to: *{lead_status}*.\n\nIf you have any questions, just reply to this message.\n\nRegards,\nTeam {companyname}",
         // PDF (Perfex Settings → PDF).
         'pdf_format' => 'A4-PORTRAIT',
         'pdf_font_size' => '10',

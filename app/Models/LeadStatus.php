@@ -9,10 +9,10 @@ class LeadStatus extends Model
 {
     use BelongsToCompany;
 
-    protected $fillable = ['company_id', 'name', 'status_order', 'color', 'is_default'];
+    protected $fillable = ['company_id', 'name', 'status_order', 'color', 'is_default', 'notify_lead'];
 
     protected function casts(): array
     {
-        return ['is_default' => 'boolean'];
+        return ['is_default' => 'boolean', 'notify_lead' => 'boolean'];
     }
 }

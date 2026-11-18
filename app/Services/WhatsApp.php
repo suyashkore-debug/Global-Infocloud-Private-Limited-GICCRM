@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Lead;
+use App\Models\LeadStatus;
 use App\Models\User;
 use App\Models\WhatsappMessage;
 use App\Support\PhoneNumber;
@@ -26,7 +27,7 @@ class WhatsApp
     public const KEYS = [
         'whatsapp_provider', 'whatsapp_phone_number_id', 'whatsapp_verify_token', 'whatsapp_bird_workspace_id', 'whatsapp_bird_channel_id',
         'whatsapp_country_code', 'whatsapp_template_name', 'whatsapp_template_language', 'whatsapp_template_lead_name',
-        'whatsapp_bird_template_version', 'whatsapp_bird_template_param',
+        'whatsapp_bird_template_version', 'whatsapp_bird_template_param', 'whatsapp_status_template_name', 'whatsapp_status_template_version',
     ];
 
     /** Bird message statuses (whatsapp.outbound events) => our message status. */
@@ -103,7 +104,45 @@ class WhatsApp
             ])
             : array_filter(['name' => $name, 'language' => ['code' => $language], 'components' => $components]);
 
-        return $this->send($lead, $user, ['type' => 'template', 'template' => $name, 'body' => "Template: {$name}"], 'template', $template);
+        return $this->send($lead, $user, ['type' => 'template', 'template' => $name, 'body' => "Template: {$name}"], 'template', $template, 'Sent WhatsApp opening message');
+    }
+
+    /**
+     * The status update (Setup → Leads → Status updates): the company's text while the lead's
+     * 24-hour window is open, otherwise the approved status template (Setup → WhatsApp) with the
+     * lead's name and the status — or, with no such template, the text anyway (WhatsApp then says
+     * why it was not delivered, shown on the message).
+     */
+    public function sendStatusUpdate(Lead $lead, LeadStatus $status, User $user): WhatsappMessage
+    {
+        $company = (int) $lead->company_id;
+        $activity = "Sent the status update on WhatsApp ({$status->name})";
+        $name = Options::get('whatsapp_status_template_name', $company);
+        $open = self::windowEndsAt((string) self::normalize($lead->phone, $company), $company);
+
+        if ($open || $name === '') {
+            $body = LeadStatusMessages::whatsappText($lead);
+
+            return $this->send($lead, $user, ['type' => 'text', 'body' => $body], 'text', ['preview_url' => true, 'body' => $body], $activity, false);
+        }
+
+        $language = Options::get('whatsapp_template_language', $company) ?: 'en_US';
+        $template = self::bird($company)
+            ? array_filter([
+                'projectId' => $name,
+                'version' => Options::get('whatsapp_status_template_version', $company),
+                'locale' => str_replace('_', '-', $language),
+                'parameters' => [
+                    ['type' => 'string', 'key' => 'name', 'value' => $lead->name],
+                    ['type' => 'string', 'key' => 'status', 'value' => $status->name],
+                ],
+            ])
+            : ['name' => $name, 'language' => ['code' => $language], 'components' => [['type' => 'body', 'parameters' => [
+                ['type' => 'text', 'text' => $lead->name],
+                ['type' => 'text', 'text' => $status->name],
+            ]]]];
+
+        return $this->send($lead, $user, ['type' => 'template', 'template' => $name, 'body' => "Status update: {$status->name}"], 'template', $template, $activity, false);
     }
 
     /**
@@ -113,7 +152,7 @@ class WhatsApp
      * @param  array<string, mixed>  $row
      * @param  array<string, mixed>  $content  the text or template object, as the provider wants it
      */
-    private function send(Lead $lead, User $user, array $row, string $kind, array $content): WhatsappMessage
+    private function send(Lead $lead, User $user, array $row, string $kind, array $content, ?string $activity = null, bool $contact = true): WhatsappMessage
     {
         $company = (int) $lead->company_id;
         $to = (string) self::normalize($lead->phone, $company);
@@ -160,9 +199,11 @@ class WhatsApp
 
             if ($response->successful() && $id) {
                 $message->update(['status' => 'sent', 'wamid' => $id]);
-                $lead->update(['last_contact_at' => now()]);
-                if ($kind === 'template') {
-                    $lead->logActivity('Sent WhatsApp opening message');
+                if ($contact) {
+                    $lead->update(['last_contact_at' => now()]);
+                }
+                if ($activity) {
+                    $lead->activities()->create(['user_id' => $user->id, 'description' => $activity, 'custom' => false]);
                 }
             } else {
                 $message->update(['status' => 'failed', 'error' => $error ?? "WhatsApp returned HTTP {$response->status()}."]);

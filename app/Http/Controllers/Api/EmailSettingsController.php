@@ -32,7 +32,7 @@ class EmailSettingsController extends Controller
         'tasks' => ['task_name', 'task_description', 'task_status', 'task_priority', 'task_startdate', 'task_duedate', 'task_link', 'task_related', 'task_comment', 'task_user_take_action', 'staff_firstname', 'staff_lastname'],
         'project' => ['project_name', 'project_description', 'project_start_date', 'project_deadline', 'project_link', 'discussion_subject', 'discussion_description', 'discussion_link', 'discussion_comment', 'discussion_creator', 'file_creator', 'staff_firstname', 'staff_lastname'],
         'staff' => ['staff_firstname', 'staff_lastname', 'staff_email', 'staff_reminder_description', 'staff_reminder_date', 'staff_reminder_relation_name', 'staff_reminder_relation_link'],
-        'leads' => ['lead_name', 'lead_email', 'lead_position', 'lead_company', 'lead_phonenumber', 'lead_link', 'lead_assigned', 'staff_firstname', 'staff_lastname'],
+        'leads' => ['lead_name', 'lead_email', 'lead_position', 'lead_company', 'lead_phonenumber', 'lead_link', 'lead_assigned', 'lead_status', 'staff_firstname', 'staff_lastname'],
         'ticket' => ['ticket_id', 'ticket_subject', 'ticket_message', 'ticket_priority', 'ticket_department', 'ticket_status', 'ticket_url', 'ticket_public_url', 'staff_firstname', 'staff_lastname'],
         'subscriptions' => ['subscription_name', 'subscription_link'],
     ];

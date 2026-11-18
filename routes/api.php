@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\KnowledgeBaseController;
 use App\Http\Controllers\Api\LeadCallController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\LeadDashboardController;
+use App\Http\Controllers\Api\LeadStatusMessagesController;
 use App\Http\Controllers\Api\LeadFormController;
 use App\Http\Controllers\Api\LeadImportController;
 use App\Http\Controllers\Api\MailListController;
@@ -317,6 +318,8 @@ Route::middleware(['auth:sanctum', EnsureUserCanUseApp::class])->group(function 
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf']);
 
     // E-mail settings, templates and log (admins)
+    Route::get('/settings/lead-status-messages', [LeadStatusMessagesController::class, 'show']);
+    Route::put('/settings/lead-status-messages', [LeadStatusMessagesController::class, 'update']);
     Route::get('/settings/email', [EmailSettingsController::class, 'show']);
     Route::put('/settings/email', [EmailSettingsController::class, 'update']);
     Route::post('/settings/email/test', [EmailSettingsController::class, 'test']);

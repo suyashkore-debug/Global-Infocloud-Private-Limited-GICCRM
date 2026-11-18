@@ -13,6 +13,7 @@ use App\Models\EmailTemplate;
 use App\Models\Estimate;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\LeadStatus;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Proposal;
@@ -78,7 +79,7 @@ class Emails
      *
      * @param  string|array<int, string>  $to
      * @param  array<string, string|null>  $fields
-     * @param  array{cc?: array<int, string>, attachments?: array<int, array{name: string, mime: string, data: string}>, subject?: string|null, message?: string|null, rel?: Model|null, force?: bool}  $options
+     * @param  array{cc?: array<int, string>, attachments?: array<int, array{name: string, mime: string, data: string}>, subject?: string|null, message?: string|null, rel?: Model|null, force?: bool, user_id?: int|null}  $options
      */
     public static function send(string $slug, int $companyId, string|array $to, array $fields, array $options = []): ?EmailLog
     {
@@ -100,7 +101,7 @@ class Emails
             'subject' => mb_substr($mail['subject'], 0, 500),
             'rel_type' => $rel ? strtolower(class_basename($rel)) : null,
             'rel_id' => $rel?->getKey(),
-            'user_id' => Auth::id(),
+            'user_id' => $options['user_id'] ?? Auth::id(),
         ]);
 
         $from = CompanyMailer::from($companyId, $mail['from_name'] ?: null);
@@ -321,7 +322,8 @@ class Emails
             'lead_company' => $lead->company,
             'lead_phonenumber' => $lead->phone,
             'lead_link' => self::url('/leads?lead='.$lead->id),
-            'lead_assigned' => $lead->assigned_id ? User::find($lead->assigned_id)?->full_name : null,
+            'lead_assigned' => $lead->assigned_id ? User::withoutGlobalScopes()->find($lead->assigned_id)?->full_name : null,
+            'lead_status' => LeadStatus::withoutGlobalScopes()->find($lead->lead_status_id)?->name,
         ];
     }
 
@@ -365,12 +367,12 @@ class Emails
     }
 
     /**
-     * Replace {merge_fields}. Values are escaped in HTML (the e-mail signature is the admin's
-     * own HTML and is kept); fields without a value are removed.
+     * Replace {merge_fields}. Values are escaped in HTML (an e-mail signature written in HTML
+     * is kept as it is); fields without a value are removed.
      *
      * @param  array<string, string|null>  $fields
      */
-    private static function merge(string $text, array $fields, bool $html): string
+    public static function merge(string $text, array $fields, bool $html): string
     {
         return preg_replace_callback('/\{([a-z0-9_]+)\}/', function ($m) use ($fields, $html) {
             if (! array_key_exists($m[1], $fields)) {
@@ -378,7 +380,15 @@ class Emails
             }
             $value = (string) ($fields[$m[1]] ?? '');
 
-            return $html && $m[1] !== 'email_signature' ? nl2br(e($value)) : $value;
+            if (! $html) {
+                return $value;
+            }
+            // The signature may be the admin's own HTML (kept); typed as plain lines it keeps its line breaks.
+            if ($m[1] === 'email_signature' && $value !== strip_tags($value)) {
+                return $value;
+            }
+
+            return nl2br(e($value));
         }, $text) ?? $text;
     }
 

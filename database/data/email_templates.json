@@ -451,6 +451,16 @@
  },
  {
   "type": "leads",
+  "slug": "lead-status-changed",
+  "name": "Lead status changed - Sent to lead",
+  "subject": "Update on your enquiry with {companyname}",
+  "message": "<p>Dear {lead_name},</p>\r\n<p>Thank you for your interest in <strong>{companyname}</strong>.</p>\r\n<p>We would like to let you know that your enquiry has moved to the next stage: <strong>{lead_status}</strong>.</p>\r\n<p>If you have any questions, just reply to this e-mail and our team will get back to you.</p>\r\n<p>Kind Regards,<br />{email_signature}</p>",
+  "from_name": "{companyname}",
+  "plaintext": false,
+  "active": true
+ },
+ {
+  "type": "leads",
   "slug": "new-lead-assigned",
   "name": "New Lead Assigned to Staff Member",
   "subject": "New lead assigned to you",

@@ -26,7 +26,7 @@ class LeadService
         'lead_status_id', 'lead_source_id', 'assigned_id', 'lead_value', 'is_public', 'last_contact_at', 'next_follow_up_at', 'follow_up_note',
     ];
 
-    public function __construct(private Notifier $notifier) {}
+    public function __construct(private Notifier $notifier, private LeadStatusMessages $statusMessages) {}
 
     /**
      * Set, move or finish a lead's follow-up. Finishing it counts as contact (Last Contact = now)
@@ -97,6 +97,7 @@ class LeadService
 
             if ((int) $lead->lead_status_id !== (int) $oldStatus) {
                 $this->touchStatusChange($lead);
+                $this->statusMessages->changed($lead, Auth::user(), $oldStatus ? (int) $oldStatus : null);
             }
             if ((int) $lead->assigned_id !== (int) $oldAssigned) {
                 $this->notifyAssigned($lead);
@@ -122,6 +123,7 @@ class LeadService
             $lead->update(['lead_status_id' => $status->id, 'lead_order' => $position + 1]);
             if ((int) $old !== (int) $status->id) {
                 $this->touchStatusChange($lead);
+                $this->statusMessages->changed($lead, $user, $old ? (int) $old : null);
             }
         }
     }

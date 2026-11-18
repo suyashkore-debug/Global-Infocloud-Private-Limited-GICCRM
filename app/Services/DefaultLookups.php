@@ -23,8 +23,8 @@ class DefaultLookups
         ['name' => 'Proposal Sent', 'status_order' => 4, 'color' => '#34a4af'],
         ['name' => 'Future Prospect', 'status_order' => 4, 'color' => '#d4ac14'],
         ['name' => 'Demo Done', 'status_order' => 4, 'color' => '#9eebb4'],
-        ['name' => 'Customer', 'status_order' => 5, 'color' => '#19f03e', 'is_default' => true],
-        ['name' => 'Dead Lead', 'status_order' => 6, 'color' => '#ed1556'],
+        ['name' => 'Customer', 'status_order' => 5, 'color' => '#19f03e', 'is_default' => true, 'notify_lead' => false],
+        ['name' => 'Dead Lead', 'status_order' => 6, 'color' => '#ed1556', 'notify_lead' => false],
     ];
 
     private const LEAD_SOURCES = ['Google', 'Facebook', 'Just Dial', 'References', 'Inhouse Minning', 'Event Participation', 'GIC Website',

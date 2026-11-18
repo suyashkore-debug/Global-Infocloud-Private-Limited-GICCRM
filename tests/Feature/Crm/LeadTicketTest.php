@@ -61,8 +61,8 @@ it('moves a lead on the kanban, logging the status change', function () {
 
     $this->postJson('/api/leads/move', ['lead_status_id' => $demo, 'order' => [$id]])->assertOk();
 
-    $this->getJson("/api/leads/{$id}")->assertJsonPath('data.status.name', 'Demo Done')
-        ->assertJsonPath('data.activities.0.description', 'Status changed from New Lead to Demo Done');
+    $view = $this->getJson("/api/leads/{$id}")->assertJsonPath('data.status.name', 'Demo Done');
+    expect(collect($view->json('data.activities'))->pluck('description'))->toContain('Status changed from New Lead to Demo Done');
 });
 
 it('converts a lead into a customer with its primary contact and proposals', function () {
