@@ -51,7 +51,7 @@ class EstimateRequestController extends Controller
 
         return response()->json([
             'data' => collect($page->items())->map(fn ($r) => $this->row($r, $assigned[$r->assigned_id] ?? null)),
-            'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total(), 'summary' => $summary],
+            'meta' => ['current_page' => $page->currentPage(), 'from' => $page->firstItem(), 'last_page' => $page->lastPage(), 'total' => $page->total(), 'summary' => $summary],
         ]);
     }
 

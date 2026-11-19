@@ -126,3 +126,16 @@ export function parseDate(value: string): Date {
 export function isOverdue(dueDate: string | null | undefined, status: number): boolean {
     return !!dueDate && status !== 5 && parseDate(dueDate) < parseDate(todayIso());
 }
+
+/**
+ * The serial number shown in a list's "#" column: 1, 2, 3… continuing on later pages (page 2 of
+ * 25 a page starts at 26), from the page's meta.
+ */
+export function rowNumber(meta: { from?: unknown; current_page?: unknown; per_page?: unknown } | undefined, index: number): number {
+    const from = Number(meta?.from);
+    if (from > 0) {
+        return from + index;
+    }
+
+    return (Math.max(1, Number(meta?.current_page) || 1) - 1) * (Number(meta?.per_page) || 0) + index + 1;
+}

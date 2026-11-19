@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Queue;
  */
 function postSales(array $team): array
 {
-    DefaultLookups::ensureLeadLists();
+    salesWorkspace();
     $post = test()->postJson('/api/setup/lead-pipelines', ['name' => 'Post-sales', 'color' => '#eb6834', 'sort_order' => 1, 'member_ids' => array_map(fn ($u) => $u->id, $team)])
         ->assertCreated()->json('data.id');
     $onboarding = test()->postJson('/api/setup/lead-statuses', ['name' => 'Onboarding', 'color' => '#2a78d6', 'pipeline_id' => $post])->assertCreated()->json('data.id');
@@ -35,12 +35,16 @@ function pipelineLead(User $by, string $name, string $status = 'New Lead'): Lead
         'lead_source_id' => LeadSource::value('id'), 'created_by' => $by->id, 'assigned_id' => $by->id]);
 }
 
-it('starts every company with a Sales pipeline holding its statuses', function () {
+it('starts a company with no workspace; the first one made is the default and holds the statuses', function () {
     signIn(companyAdmin());
-    $rows = $this->getJson('/api/setup/lead-pipelines')->assertOk()->json('data');
+    expect($this->getJson('/api/setup/lead-pipelines')->assertOk()->json('data'))->toBe([])
+        ->and($this->getJson('/api/leads')->assertOk()->json('meta.pipelines'))->toBeEmpty()
+        ->and(LeadStatus::count())->toBe(8);
 
+    $this->postJson('/api/setup/lead-pipelines', ['name' => 'Pre-sales', 'color' => '#0b2c56'])->assertCreated();
+    $rows = $this->getJson('/api/setup/lead-pipelines')->json('data');
     expect($rows)->toHaveCount(1)
-        ->and($rows[0])->toMatchArray(['name' => 'Sales', 'is_default' => true, 'statuses_count' => 8])
+        ->and($rows[0])->toMatchArray(['name' => 'Pre-sales', 'is_default' => true, 'statuses_count' => 8])
         ->and(LeadStatus::whereNull('pipeline_id')->count())->toBe(0);
     // A new status goes into the default pipeline.
     $id = $this->postJson('/api/setup/lead-statuses', ['name' => 'Callback', 'color' => '#2a78d6'])->json('data.id');

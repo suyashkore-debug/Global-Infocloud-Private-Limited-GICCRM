@@ -2,7 +2,7 @@ import { useEffect, useState, type DragEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, Clock, Columns3, Filter, Globe, List, Paperclip, Plus, RefreshCw, Save, Search, Settings2, StickyNote, Target, Upload, UserCheck } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
-import { formatDate, timeAgo } from '../../lib/format';
+import { formatDate, timeAgo, rowNumber } from '../../lib/format';
 import { money } from '../../lib/sales';
 import { useApi } from '../../hooks/useApi';
 import { useAppOptions } from '../../hooks/useAppOptions';
@@ -581,12 +581,12 @@ export default function LeadsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.data.map((lead) => (
+                                {data.data.map((lead, n) => (
                                     <tr key={lead.id} className={`cursor-pointer ${lead.rating === 5 ? 'lead-hot-row' : ''}`} onClick={() => openLead(lead.id)}>
                                         <td onClick={(e) => e.stopPropagation()}>
                                             <input type="checkbox" aria-label={`Select ${lead.name}`} checked={selected.includes(lead.id)} onChange={(e) => setSelected(e.target.checked ? [...selected, lead.id] : selected.filter((id) => id !== lead.id))} />
                                         </td>
-                                        <td>{lead.id}</td>
+                                        <td>{rowNumber(data.meta, n)}</td>
                                         <td className="font-semibold text-brand">
                                             <span className="inline-flex items-center gap-2">
                                                 {lead.name}

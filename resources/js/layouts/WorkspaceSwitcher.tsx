@@ -28,8 +28,9 @@ export function WorkspaceSwitcher() {
     }
     const open = list.find((w) => w.id === current) ?? list.find((w) => w.is_default) ?? list[0];
 
-    // The page open reloads with the workspace's data (the layout re-opens it).
-    const pick = (id: number) => setLeadWorkspace(id);
+    // The page open reloads with the workspace's data (the layout re-opens it; a record's page
+    // goes to its list).
+    const pick = (id: number) => id !== open.id && setLeadWorkspace(id);
 
     return (
         <Menu

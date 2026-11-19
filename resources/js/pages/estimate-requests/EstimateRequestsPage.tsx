@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileInput, Search } from 'lucide-react';
-import { formatDateTime, timeAgo } from '../../lib/format';
+import { formatDateTime, timeAgo, rowNumber } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { useAuth } from '../../auth/AuthContext';
 import { useStaff } from '../../hooks/useStaff';
@@ -85,9 +85,9 @@ export default function EstimateRequestsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.data.map((r) => (
+                                {data.data.map((r, n) => (
                                     <tr key={r.id} className="cursor-pointer" onClick={() => navigate(`/estimate-requests/${r.id}`)}>
-                                        <td>{r.id}</td>
+                                        <td>{rowNumber(data.meta, n)}</td>
                                         <td className="font-medium text-blue-600">{r.email}</td>
                                         <td>{r.form}</td>
                                         <td>{r.assigned?.full_name}</td>

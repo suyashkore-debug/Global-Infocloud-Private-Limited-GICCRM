@@ -726,9 +726,9 @@ function CustomerProjects({ customerId }: { customerId: number }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.data.map((p) => (
+                    {data.data.map((p, n) => (
                         <tr key={p.id}>
-                            <td>{p.id}</td>
+                            <td>{n + 1}</td>
                             <td>
                                 <Link to={`/projects/${p.id}`}>{p.name}</Link>
                             </td>

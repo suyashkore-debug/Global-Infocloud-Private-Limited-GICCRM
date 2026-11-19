@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileSignature, Plus, Search } from 'lucide-react';
-import { formatDate } from '../../lib/format';
+import { formatDate, rowNumber } from '../../lib/format';
 import { money } from '../../lib/sales';
 import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
@@ -76,9 +76,9 @@ export function ContractsTable({ customerId, projectId }: { customerId?: number;
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.data.map((c) => (
+                                {data.data.map((c, n) => (
                                     <tr key={c.id}>
-                                        <td>{c.id}</td>
+                                        <td>{rowNumber(data.meta, n)}</td>
                                         <td>
                                             <Link to={`/contracts/${c.id}`} className="font-medium">
                                                 {c.subject}

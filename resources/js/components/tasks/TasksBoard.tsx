@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { api, errorMessage } from '../../lib/api';
 import { TASK_PRIORITIES, TASK_STATUSES, optionById } from '../../lib/constants';
 import { emit, TASKS_CHANGED, TIMERS_CHANGED } from '../../lib/events';
-import { formatDate, formatDuration, isOverdue } from '../../lib/format';
+import { formatDate, formatDuration, isOverdue, rowNumber } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { useEvent } from '../../hooks/useEvent';
 import { useStaff } from '../../hooks/useStaff';
@@ -333,10 +333,11 @@ export default function TasksBoard({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {data.data.map((task) => (
+                                        {data.data.map((task, n) => (
                                             <TaskRow
                                                 key={task.id}
                                                 task={task}
+                                                number={rowNumber(data.meta, n)}
                                                 showRelated={!projectId}
                                                 selected={selected.includes(task.id)}
                                                 onSelect={(on) => setSelected((s) => (on ? [...s, task.id] : s.filter((id) => id !== task.id)))}
@@ -384,7 +385,7 @@ function TasksSummary({ summary, active, onPick }: { summary: TaskList['meta']['
 
 const relatedLabel = (t: Task) => (t.project ? [`#${t.project.id}`, t.project.name, t.project.customer_name].filter(Boolean).join(' - ') : null);
 
-function TaskRow({ task, showRelated, selected, onSelect, onOpen, onEdit, run }: { task: Task; showRelated: boolean; selected: boolean; onSelect: (on: boolean) => void; onOpen: () => void; onEdit: () => void; run: (call: () => Promise<unknown>, message: string) => void }) {
+function TaskRow({ task, number, showRelated, selected, onSelect, onOpen, onEdit, run }: { task: Task; number: number; showRelated: boolean; selected: boolean; onSelect: (on: boolean) => void; onOpen: () => void; onEdit: () => void; run: (call: () => Promise<unknown>, message: string) => void }) {
     const status = optionById(TASK_STATUSES, task.status);
     const priority = optionById(TASK_PRIORITIES, task.priority);
     const cannotStart = !task.can?.track_time ? 'Only task assignees can start a timer' : task.status === 5 ? 'Complete' : null;
@@ -397,7 +398,7 @@ function TaskRow({ task, showRelated, selected, onSelect, onOpen, onEdit, run }:
             </td>
             <td>
                 <button type="button" onClick={onOpen} className="text-blue-600 hover:underline">
-                    {task.id}
+                    {number}
                 </button>
             </td>
             <td className="min-w-[16rem]">

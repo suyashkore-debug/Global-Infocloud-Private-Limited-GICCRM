@@ -53,7 +53,7 @@ api.interceptors.response.use(
         // A record of another workspace was opened (a link from a notification): switch to its workspace.
         const recordWorkspace = Number(response.headers?.['x-record-workspace']);
         if (recordWorkspace && recordWorkspace !== getLeadWorkspace()) {
-            setLeadWorkspace(recordWorkspace);
+            setLeadWorkspace(recordWorkspace, true);
         }
 
         return response;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LifeBuoy, Plus, Search } from 'lucide-react';
-import { formatDateTime, timeAgo } from '../../lib/format';
+import { formatDateTime, timeAgo, rowNumber } from '../../lib/format';
 import { useApi } from '../../hooks/useApi';
 import { SummaryCard, Button, EmptyState, ErrorNote, Input, Pagination, Select, Spinner, StatusBadge, Tag } from '../../components/ui';
 import type { Paginated, Ticket, TicketStatus } from '../../types';
@@ -94,9 +94,9 @@ export function TicketsTable({ customerId, projectId }: { customerId?: number; p
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.data.map((t) => (
+                                {data.data.map((t, n) => (
                                     <tr key={t.id} className={t.admin_read ? '' : 'font-semibold'}>
-                                        <td>{t.id}</td>
+                                        <td>{rowNumber(data.meta, n)}</td>
                                         <td>
                                             <Link to={`/tickets/${t.id}`}>{t.subject}</Link>
                                             {t.assigned && <p className="text-xs font-normal text-gray-500">Assigned: {t.assigned.full_name}</p>}

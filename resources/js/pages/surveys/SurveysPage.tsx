@@ -48,9 +48,9 @@ export default function SurveysPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {data.data.map((s) => (
+                            {data.data.map((s, n) => (
                                 <tr key={s.id}>
-                                    <td>{s.id}</td>
+                                    <td>{n + 1}</td>
                                     <td>
                                         <Link to={`/utilities/surveys/${s.id}`} className="font-medium text-blue-600 hover:underline">
                                             {s.subject}

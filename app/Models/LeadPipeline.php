@@ -25,6 +25,19 @@ class LeadPipeline extends Model
 
     protected static function booted(): void
     {
+        // The company's first workspace is its default one, and takes the statuses that are in
+        // no workspace yet (a new company has none until the administrator makes one).
+        static::creating(function (self $pipeline) {
+            if (! $pipeline->is_default && ! self::withoutGlobalScopes()->where('company_id', $pipeline->company_id)->where('is_default', true)->exists()) {
+                $pipeline->is_default = true;
+            }
+        });
+        static::created(function (self $pipeline) {
+            if ($pipeline->is_default) {
+                LeadStatus::withoutGlobalScopes()->where('company_id', $pipeline->company_id)->whereNull('pipeline_id')->update(['pipeline_id' => $pipeline->id]);
+            }
+        });
+
         // Settings are looked up per workspace (Options): a new, removed or default one changes that.
         static::saved(fn () => Options::forgetWorkspaces());
         static::deleted(fn () => Options::forgetWorkspaces());

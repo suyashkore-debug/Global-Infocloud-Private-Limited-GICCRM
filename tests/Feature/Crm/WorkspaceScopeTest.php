@@ -16,8 +16,7 @@ use App\Services\DefaultLookups;
  */
 function twoWorkspaces(array $team = []): array
 {
-    DefaultLookups::ensureLeadLists();
-    $sales = LeadPipeline::where('is_default', true)->value('id');
+    $sales = salesWorkspace();
     $post = test()->postJson('/api/setup/lead-pipelines', ['name' => 'Post-sales', 'color' => '#eb6834', 'sort_order' => 1, 'member_ids' => array_map(fn ($u) => $u->id, $team)])->json('data.id');
 
     return ['sales' => $sales, 'post' => $post, 'h' => ['X-Lead-Workspace' => (string) $post]];

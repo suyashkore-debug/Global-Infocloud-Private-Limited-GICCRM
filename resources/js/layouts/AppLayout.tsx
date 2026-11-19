@@ -44,7 +44,7 @@ import { ALWAYS_SHOWN, MENU_ICONS, SIDEBAR_DEFAULT, arrange, parseMenu } from '.
 import CommandPalette, { type PaletteAction, type PaletteLink } from './CommandPalette';
 import { Breadcrumbs, CrumbProvider } from './Breadcrumbs';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
-import { getLeadWorkspace, LEAD_WORKSPACE_CHANGED } from '../lib/leadWorkspace';
+import { getLeadWorkspace, keepsPage, LEAD_WORKSPACE_CHANGED, recordListPath } from '../lib/leadWorkspace';
 import { ChatIcon, CompanySwitcher, NewsfeedIcon, NotificationsBell, TodosIcon } from './HeaderWidgets';
 
 interface MenuNode {
@@ -118,13 +118,32 @@ function Shell() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
     // The lead workspace picked in the header: a change re-opens the page with its data.
+    // On a record's page (picked here or in another tab), the list opens first and the workspace
+    // follows once it has: reopening the record would switch back to the record's workspace.
     const [workspace, setWorkspace] = useState(getLeadWorkspace);
+    const pendingWorkspace = useRef<number | null>(null);
     useEffect(() => {
-        const follow = (e: Event) => setWorkspace((e as CustomEvent<number>).detail);
+        const follow = (e: Event) => {
+            const id = (e as CustomEvent<number>).detail;
+            const list = keepsPage(e) ? null : recordListPath(window.location.pathname);
+            if (list) {
+                pendingWorkspace.current = id;
+                navigate(list);
+
+                return;
+            }
+            setWorkspace(id);
+        };
         window.addEventListener(LEAD_WORKSPACE_CHANGED, follow);
 
         return () => window.removeEventListener(LEAD_WORKSPACE_CHANGED, follow);
-    }, []);
+    }, [navigate]);
+    useEffect(() => {
+        if (pendingWorkspace.current !== null) {
+            setWorkspace(pendingWorkspace.current);
+            pendingWorkspace.current = null;
+        }
+    }, [location.pathname]);
     const { canInstall, install } = useInstallApp();
     // Desktop sidebar: full (230px) or icons only (72px); remembered on this browser.
     const [collapsed, setCollapsed] = useState(() => {

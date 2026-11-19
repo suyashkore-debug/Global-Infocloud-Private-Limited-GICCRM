@@ -28,6 +28,18 @@ function companyAdmin(?Company $company = null): User
 }
 
 /**
+ * The signed-in admin's company with its lead lists and a "Sales" workspace, made in Setup as
+ * an administrator would (a company starts with none); returns its id.
+ */
+function salesWorkspace(): int
+{
+    App\Services\DefaultLookups::ensureLeadLists();
+
+    return App\Models\LeadPipeline::where('is_default', true)->value('id')
+        ?? test()->postJson('/api/setup/lead-pipelines', ['name' => 'Sales', 'color' => '#0b2c56', 'sort_order' => 0])->assertCreated()->json('data.id');
+}
+
+/**
  * A plain employee of the company, with the given "feature.capability" permissions.
  *
  * @param  array<int, string>  $permissions

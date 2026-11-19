@@ -42,12 +42,10 @@ class DefaultLookups
 
     public static function ensureLeadLists(): void
     {
-        // Every company has its "Sales" pipeline; statuses not in a pipeline are in the default one.
-        if (CurrentCompany::id()) {
-            if (! LeadPipeline::exists()) {
-                LeadPipeline::create(['name' => 'Sales', 'is_default' => true]);
-            }
-            $default = LeadPipeline::orderByDesc('is_default')->orderBy('sort_order')->value('id');
+        // No workspace is made for a company: the administrator makes the first one in Setup → Lead
+        // Workspaces (it becomes the default, see LeadPipeline). Until then the statuses are in no
+        // workspace; once there is one, statuses not in a workspace are in the default one.
+        if (CurrentCompany::id() && ($default = LeadPipeline::orderByDesc('is_default')->orderBy('sort_order')->value('id'))) {
             if (LeadStatus::whereNull('pipeline_id')->exists()) {
                 LeadStatus::whereNull('pipeline_id')->update(['pipeline_id' => $default]);
             }

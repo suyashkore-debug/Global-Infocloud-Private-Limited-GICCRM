@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Plus, Search } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import { usePermission } from '../../hooks/usePermission';
-import { formatDate } from '../../lib/format';
+import { formatDate, rowNumber } from '../../lib/format';
 import { Button, EmptyState, ErrorNote, Input, Pagination, Select, Spinner, Tag } from '../../components/ui';
 import type { CustomerFull, Paginated } from '../../types';
 import { useCustomFieldColumns } from '../../components/customfields/CustomFields';
@@ -75,9 +75,9 @@ export default function CustomersPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.data.map((c) => (
+                                {data.data.map((c, n) => (
                                     <tr key={c.id}>
-                                        <td>{c.id}</td>
+                                        <td>{rowNumber(data.meta, n)}</td>
                                         <td>
                                             <Link to={`/customers/${c.id}`} className="font-medium">
                                                 {c.name}

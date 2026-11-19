@@ -21,8 +21,7 @@ use Illuminate\Support\Facades\Queue;
  */
 function setupWorkspaces(): array
 {
-    DefaultLookups::ensureLeadLists();
-    $sales = LeadPipeline::where('is_default', true)->value('id');
+    $sales = salesWorkspace();
     $post = test()->postJson('/api/setup/lead-pipelines', ['name' => 'Post-sales', 'color' => '#eb6834', 'sort_order' => 1])->json('data.id');
 
     return ['sales' => $sales, 'post' => $post, 'h' => ['X-Lead-Workspace' => (string) $post]];

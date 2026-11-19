@@ -80,9 +80,9 @@ export default function CustomFieldsSetup() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data.data.map((f) => (
+                                {data.data.map((f, n) => (
                                     <tr key={f.id}>
-                                        <td>{f.id}</td>
+                                        <td>{n + 1}</td>
                                         <td>
                                             <button type="button" onClick={() => setEditing(f)} className="font-medium text-blue-600 hover:underline">
                                                 {f.name}
